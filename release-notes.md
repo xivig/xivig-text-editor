@@ -67,8 +67,19 @@ We are thrilled to announce the official **Release 1.0** of **Xivig Text Editor*
 |---|---|---|
 | **Windows** | `Xivig Text Editor Setup 1.0.0.exe` | NSIS Full Windows Installer |
 | **Windows** | `Xivig Text Editor 1.0.0.exe` | Standalone Portable Executable |
+| **macOS** | `Xivig-Text-Editor-1.0.0-mac.zip` | Native macOS `.app` Application Bundle |
+| **macOS** | `Xivig-Text-Editor-1.0.0-mac-x64.zip` | macOS x64 Application Archive |
 | **Linux** | `Xivig-Text-Editor-1.0.0-linux-x64.tar.gz` | Universal Linux x64 Tarball |
 | **Linux** | `Xivig-Text-Editor-1.0.0-linux-x64.zip` | Universal Linux x64 Zip Archive |
+
+### 🍎 macOS Installation Guide:
+1. Download `Xivig-Text-Editor-1.0.0-mac.zip` (or `Xivig-Text-Editor-1.0.0-mac-x64.zip`).
+2. Double-click to extract the archive to obtain `Xivig Text Editor.app`.
+3. Move `Xivig Text Editor.app` into your macOS `/Applications` directory.
+4. On first launch, if macOS Gatekeeper displays an unsigned developer alert, Right-Click (or Control-Click) the application and click **Open**, or remove quarantine via Terminal:
+   ```bash
+   xattr -cr "/Applications/Xivig Text Editor.app"
+   ```
 
 ---
 
