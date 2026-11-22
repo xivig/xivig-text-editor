@@ -21,6 +21,8 @@ export const Menubar: React.FC = () => {
 
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
+  const recentFiles = useFileStore((state) => state.recentFiles);
+  const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
 
   // Close menus on outside click
   useEffect(() => {
@@ -80,11 +82,46 @@ export const Menubar: React.FC = () => {
     }
   };
 
+  const handleOpenRecentFile = async (filePath: string, name: string) => {
+    if (window.xivig?.readFile) {
+      const res = await window.xivig.readFile(filePath);
+      if (res.success && res.content !== undefined) {
+        openDocument({
+          path: filePath,
+          name,
+          content: res.content,
+          language: name,
+        });
+      }
+    }
+  };
+
+  const handleOpenRecentWorkspace = async (folderPath: string) => {
+    if (window.xivig?.readDir) {
+      const res = await window.xivig.readDir(folderPath);
+      if (res.success && res.items) {
+        setCurrentFolder(folderPath, res.items);
+      }
+    }
+  };
+
+  const recentMenuItems: MenuItem[] = [
+    ...recentFiles.slice(0, 5).map((f) => ({
+      label: `📄 ${f.name}`,
+      action: () => handleOpenRecentFile(f.path, f.name),
+    })),
+    ...recentWorkspaces.slice(0, 3).map((w) => ({
+      label: `📁 ${w.name}`,
+      action: () => handleOpenRecentWorkspace(w.path),
+    })),
+  ];
+
   const menus: Record<string, MenuItem[]> = {
     File: [
       { label: 'New File', shortcut: 'Ctrl+N', action: () => createNewDocument() },
       { label: 'Open File...', shortcut: 'Ctrl+O', action: handleOpenFile },
       { label: 'Open Folder...', shortcut: 'Ctrl+K Ctrl+O', action: handleOpenFolder },
+      ...(recentMenuItems.length > 0 ? [{ divider: true, label: '' }, ...recentMenuItems] : []),
       { divider: true, label: '' },
       { label: 'Save', shortcut: 'Ctrl+S', action: handleSaveFile },
       { label: 'Save As...', shortcut: 'Ctrl+Shift+S', action: handleSaveAs },

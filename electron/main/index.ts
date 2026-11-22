@@ -1,14 +1,19 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-
-// The built directory structure
-//
-// ├─┬ dist-electron
-// │ ├── main
-// │ └── preload
-// ├─┬ dist
-// │ └── index.html
+import {
+  initDatabase,
+  saveSession,
+  restoreSession,
+  addRecentFile,
+  getRecentFiles,
+  addRecentWorkspace,
+  getRecentWorkspaces,
+  setSetting,
+  getSetting,
+  SavedSession,
+} from './database';
+import { watchWorkspace, stopWatching } from './watcher';
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
@@ -27,8 +32,8 @@ const indexHtml = path.join(RENDERER_DIST, 'index.html');
 async function createWindow() {
   win = new BrowserWindow({
     title: 'Xivig Editor',
-    width: 1200,
-    height: 800,
+    width: 1280,
+    height: 840,
     minWidth: 640,
     minHeight: 480,
     frame: false,
@@ -44,12 +49,10 @@ async function createWindow() {
 
   if (url) {
     win.loadURL(url);
-    // win.webContents.openDevTools();
   } else {
     win.loadFile(indexHtml);
   }
 
-  // Handle window maximize/unmaximize
   win.on('maximize', () => {
     win?.webContents.send('window-state-changed', { isMaximized: true });
   });
@@ -57,10 +60,16 @@ async function createWindow() {
   win.on('unmaximize', () => {
     win?.webContents.send('window-state-changed', { isMaximized: false });
   });
+
+  win.on('closed', () => {
+    stopWatching();
+    win = null;
+  });
 }
 
 // App lifecycle
 app.whenReady().then(() => {
+  initDatabase();
   createWindow();
 
   app.on('activate', () => {
@@ -71,6 +80,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  stopWatching();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -97,7 +107,7 @@ ipcMain.handle('window:isMaximized', () => {
   return win?.isMaximized() ?? false;
 });
 
-// File system IPC
+// File dialogs & System operations
 ipcMain.handle('dialog:openFile', async () => {
   if (!win) return { canceled: true };
   const result = await dialog.showOpenDialog(win, {
@@ -116,6 +126,7 @@ ipcMain.handle('dialog:openFile', async () => {
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     const name = path.basename(filePath);
+    addRecentFile(filePath, name);
     return { canceled: false, filePath, content, name };
   } catch (error: any) {
     return { canceled: false, filePath, error: error.message };
@@ -134,6 +145,10 @@ ipcMain.handle('dialog:openFolder', async () => {
 
   const folderPath = result.filePaths[0];
   try {
+    const folderName = path.basename(folderPath) || folderPath;
+    addRecentWorkspace(folderPath, folderName);
+    watchWorkspace(folderPath, win);
+
     const entries = await fs.readdir(folderPath, { withFileTypes: true });
     const files = entries.map((entry) => ({
       path: path.join(folderPath, entry.name),
@@ -149,6 +164,7 @@ ipcMain.handle('dialog:openFolder', async () => {
 ipcMain.handle('file:save', async (_, { filePath, content }: { filePath: string; content: string }) => {
   try {
     await fs.writeFile(filePath, content, 'utf-8');
+    addRecentFile(filePath, path.basename(filePath));
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -168,6 +184,7 @@ ipcMain.handle('file:saveDialog', async (_, { defaultName, content }: { defaultN
   if (content !== undefined) {
     try {
       await fs.writeFile(result.filePath, content, 'utf-8');
+      addRecentFile(result.filePath, path.basename(result.filePath));
     } catch (error: any) {
       return { canceled: false, filePath: result.filePath, error: error.message };
     }
@@ -179,6 +196,7 @@ ipcMain.handle('file:saveDialog', async (_, { defaultName, content }: { defaultN
 ipcMain.handle('file:read', async (_, filePath: string) => {
   try {
     const content = await fs.readFile(filePath, 'utf-8');
+    addRecentFile(filePath, path.basename(filePath));
     return { success: true, content };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -197,4 +215,75 @@ ipcMain.handle('file:readDir', async (_, dirPath: string) => {
   } catch (error: any) {
     return { success: false, error: error.message };
   }
+});
+
+// File Management operations (create, delete, rename)
+ipcMain.handle('file:create', async (_, { targetPath, isDirectory }: { targetPath: string; isDirectory: boolean }) => {
+  try {
+    if (isDirectory) {
+      await fs.mkdir(targetPath, { recursive: true });
+    } else {
+      await fs.writeFile(targetPath, '', { flag: 'wx' }); // fail if already exists
+    }
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('file:delete', async (_, targetPath: string) => {
+  try {
+    const stat = await fs.stat(targetPath);
+    if (stat.isDirectory()) {
+      await fs.rm(targetPath, { recursive: true, force: true });
+    } else {
+      await fs.unlink(targetPath);
+    }
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('file:rename', async (_, { oldPath, newPath }: { oldPath: string; newPath: string }) => {
+  try {
+    await fs.rename(oldPath, newPath);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Database & Session IPC
+ipcMain.handle('session:save', async (_, session: SavedSession) => {
+  return saveSession(session);
+});
+
+ipcMain.handle('session:restore', async () => {
+  const session = restoreSession();
+  if (session && session.activeFolder) {
+    watchWorkspace(session.activeFolder, win);
+  }
+  return session;
+});
+
+ipcMain.handle('history:getRecent', async () => {
+  return {
+    files: getRecentFiles(12),
+    workspaces: getRecentWorkspaces(10),
+  };
+});
+
+ipcMain.handle('settings:get', async (_, key: string) => {
+  return getSetting(key);
+});
+
+ipcMain.handle('settings:set', async (_, { key, value }: { key: string; value: string }) => {
+  setSetting(key, value);
+  return true;
+});
+
+ipcMain.handle('workspace:watch', async (_, folderPath: string) => {
+  watchWorkspace(folderPath, win);
+  return true;
 });

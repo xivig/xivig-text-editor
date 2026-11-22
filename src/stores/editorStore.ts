@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { EditorDocument } from '../types/editor';
+import { useFileStore } from './fileStore';
 
 interface EditorState {
   documents: EditorDocument[];
@@ -14,6 +15,40 @@ interface EditorState {
   updateCursor: (id: string, line: number, col: number) => void;
   createNewDocument: (language?: string) => void;
   getActiveDocument: () => EditorDocument | undefined;
+  setRestoredSession: (docs: EditorDocument[], activeId: string | null) => void;
+  persistSessionDebounced: () => void;
+}
+
+let saveDebounceTimer: NodeJS.Timeout | null = null;
+
+function triggerAutoSave() {
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(() => {
+    if (!window.xivig?.saveSession) return;
+
+    const editorState = useEditorStore.getState();
+    const fileState = useFileStore.getState();
+
+    const sessionPayload = {
+      activeDocId: editorState.activeDocumentId,
+      activeFolder: fileState.currentFolderPath,
+      isSidebarOpen: fileState.isSidebarOpen,
+      activeSidebarView: fileState.activeSidebarView || 'explorer',
+      documents: editorState.documents.map((doc, idx) => ({
+        id: doc.id,
+        path: doc.path,
+        name: doc.name,
+        content: doc.content,
+        language: doc.language,
+        isDirty: doc.isDirty,
+        cursorLine: doc.cursor.line,
+        cursorCol: doc.cursor.col,
+        orderIndex: idx,
+      })),
+    };
+
+    window.xivig.saveSession(sessionPayload);
+  }, 1000);
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -22,7 +57,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: 'welcome-tab',
       path: null,
       name: 'Welcome.md',
-      content: `# Xivig Editor ⚡\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Quick Start Shortcuts\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n\n### 🛠️ Built with:\n* **Electron 34** + **Node.js**\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Modern transaction-based editor core)\n* **Vite** (Instant hot module reload)\n* **Zustand** (Predictable reactive state)\n\n*Start typing or open a folder to explore your project!*`,
+      content: `# Xivig Editor ⚡\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Quick Start Shortcuts\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n\n### 🛠️ Built with:\n* **Electron 34** + **Node.js**\n* **SQLite** (Session persistence & workspace metadata)\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Modern transaction-based editor core)\n* **Vite** (Instant hot module reload)\n* **Zustand** (Predictable reactive state)\n\n*Start typing or open a folder to explore your project!*`,
       language: 'markdown',
       isDirty: false,
       cursor: { line: 1, col: 1 },
@@ -31,18 +66,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeDocumentId: 'welcome-tab',
   untitledCount: 1,
 
+  persistSessionDebounced: triggerAutoSave,
+
   getActiveDocument: () => {
     const { documents, activeDocumentId } = get();
     return documents.find((doc) => doc.id === activeDocumentId);
   },
 
+  setRestoredSession: (docs, activeId) => {
+    set({
+      documents: docs,
+      activeDocumentId: activeId,
+    });
+  },
+
   openDocument: (doc) => {
     const { documents } = get();
-    // If already open by path
     if (doc.path) {
       const existing = documents.find((d) => d.path === doc.path);
       if (existing) {
         set({ activeDocumentId: existing.id });
+        triggerAutoSave();
         return;
       }
     }
@@ -62,6 +106,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       documents: [...documents, newDoc],
       activeDocumentId: id,
     });
+    triggerAutoSave();
   },
 
   closeDocument: (id) => {
@@ -85,9 +130,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       documents: newDocs,
       activeDocumentId: nextActiveId,
     });
+    triggerAutoSave();
   },
 
-  setActiveDocument: (id) => set({ activeDocumentId: id }),
+  setActiveDocument: (id) => {
+    set({ activeDocumentId: id });
+    triggerAutoSave();
+  },
 
   updateDocumentContent: (id, content) => {
     set((state) => ({
@@ -95,6 +144,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         d.id === id ? { ...d, content, isDirty: true } : d
       ),
     }));
+    triggerAutoSave();
   },
 
   markDocumentSaved: (id, newPath) => {
@@ -110,6 +160,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         };
       }),
     }));
+    triggerAutoSave();
   },
 
   updateCursor: (id, line, col) => {
@@ -138,5 +189,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       activeDocumentId: id,
       untitledCount: untitledCount + 1,
     });
+    triggerAutoSave();
   },
 }));

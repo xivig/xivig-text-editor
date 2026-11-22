@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ActiveSidebarView, FileItem } from '../types/editor';
+import { RecentItem } from '../types/electron';
 
 interface FileState {
   currentFolderPath: string | null;
@@ -7,12 +8,18 @@ interface FileState {
   fileTree: FileItem[];
   activeSidebarView: ActiveSidebarView;
   isSidebarOpen: boolean;
+  recentFiles: RecentItem[];
+  recentWorkspaces: RecentItem[];
 
   setCurrentFolder: (folderPath: string, items: Array<{ path: string; name: string; isDirectory: boolean }>) => void;
+  closeCurrentFolder: () => void;
+  refreshCurrentFolder: () => Promise<void>;
   toggleFolderExpanded: (itemPath: string) => void;
   setFolderChildren: (folderPath: string, children: FileItem[]) => void;
   setActiveSidebarView: (view: ActiveSidebarView) => void;
   toggleSidebar: () => void;
+  setInitialSession: (folderPath: string | null, isSidebarOpen: boolean, view: ActiveSidebarView) => void;
+  loadRecentHistory: () => Promise<void>;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -21,6 +28,61 @@ export const useFileStore = create<FileState>((set, get) => ({
   fileTree: [],
   activeSidebarView: 'explorer',
   isSidebarOpen: true,
+  recentFiles: [],
+  recentWorkspaces: [],
+
+  loadRecentHistory: async () => {
+    if (window.xivig?.getRecentHistory) {
+      const res = await window.xivig.getRecentHistory();
+      set({
+        recentFiles: res.files || [],
+        recentWorkspaces: res.workspaces || [],
+      });
+    }
+  },
+
+  setInitialSession: (folderPath, isSidebarOpen, view) => {
+    set({
+      currentFolderPath: folderPath,
+      currentFolderName: folderPath ? folderPath.split(/[/\\]/).filter(Boolean).pop() || folderPath : null,
+      isSidebarOpen,
+      activeSidebarView: view,
+    });
+  },
+
+  closeCurrentFolder: () => {
+    set({
+      currentFolderPath: null,
+      currentFolderName: null,
+      fileTree: [],
+    });
+  },
+
+  refreshCurrentFolder: async () => {
+    const { currentFolderPath } = get();
+    if (!currentFolderPath || !window.xivig?.readDir) return;
+
+    const res = await window.xivig.readDir(currentFolderPath);
+    if (res.success && res.items) {
+      const items: FileItem[] = res.items
+        .map((item) => ({
+          id: item.path,
+          name: item.name,
+          path: item.path,
+          isDirectory: item.isDirectory,
+          extension: item.name.includes('.') ? item.name.split('.').pop() : undefined,
+          isExpanded: false,
+          children: item.isDirectory ? [] : undefined,
+        }))
+        .sort((a, b) => {
+          if (a.isDirectory && !b.isDirectory) return -1;
+          if (!a.isDirectory && b.isDirectory) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+      set({ fileTree: items });
+    }
+  },
 
   setCurrentFolder: (folderPath, rawItems) => {
     const folderName = folderPath.split(/[/\\]/).filter(Boolean).pop() || folderPath;
@@ -35,7 +97,6 @@ export const useFileStore = create<FileState>((set, get) => ({
         children: item.isDirectory ? [] : undefined,
       }))
       .sort((a, b) => {
-        // Directories first, then alphabetical
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
         return a.name.localeCompare(b.name);
@@ -48,6 +109,8 @@ export const useFileStore = create<FileState>((set, get) => ({
       activeSidebarView: 'explorer',
       isSidebarOpen: true,
     });
+
+    get().loadRecentHistory();
   },
 
   toggleFolderExpanded: (itemPath) => {

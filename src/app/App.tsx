@@ -8,6 +8,7 @@ import { Editor } from '../components/editor/Editor';
 import { StatusBar } from '../components/statusbar/StatusBar';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
+import { EditorDocument } from '../types/editor';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -15,7 +16,96 @@ export const App: React.FC = () => {
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
+  const setRestoredSession = useEditorStore((state) => state.setRestoredSession);
+
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
+  const setInitialSession = useFileStore((state) => state.setInitialSession);
+  const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
+  const loadRecentHistory = useFileStore((state) => state.loadRecentHistory);
+  const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
+
+  // Restore Session on Mount
+  useEffect(() => {
+    async function initSession() {
+      if (!window.xivig?.restoreSession) return;
+
+      try {
+        const session = await window.xivig.restoreSession();
+        if (session && session.documents && session.documents.length > 0) {
+          const restoredDocs: EditorDocument[] = session.documents.map((d) => ({
+            id: d.id,
+            path: d.path,
+            name: d.name,
+            content: d.content,
+            language: d.language,
+            isDirty: d.isDirty,
+            cursor: { line: d.cursorLine || 1, col: d.cursorCol || 1 },
+          }));
+
+          setRestoredSession(restoredDocs, session.activeDocId);
+          setInitialSession(
+            session.activeFolder,
+            session.isSidebarOpen ?? true,
+            (session.activeSidebarView as any) || 'explorer'
+          );
+
+          // If a folder was active, load its contents
+          if (session.activeFolder && window.xivig.readDir) {
+            const res = await window.xivig.readDir(session.activeFolder);
+            if (res.success && res.items) {
+              setCurrentFolder(session.activeFolder, res.items);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to restore session:', err);
+      }
+
+      loadRecentHistory();
+    }
+
+    initSession();
+  }, []);
+
+  // Listen to Workspace file changes from chokidar
+  useEffect(() => {
+    if (window.xivig?.onWorkspaceFilesChanged) {
+      const unsubscribe = window.xivig.onWorkspaceFilesChanged(() => {
+        refreshCurrentFolder();
+      });
+      return unsubscribe;
+    }
+  }, []);
+
+  // Save session on window beforeunload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const editorState = useEditorStore.getState();
+      const fileState = useFileStore.getState();
+      if (!window.xivig?.saveSession) return;
+
+      window.xivig.saveSession({
+        activeDocId: editorState.activeDocumentId,
+        activeFolder: fileState.currentFolderPath,
+        isSidebarOpen: fileState.isSidebarOpen,
+        activeSidebarView: fileState.activeSidebarView || 'explorer',
+        documents: editorState.documents.map((doc, idx) => ({
+          id: doc.id,
+          path: doc.path,
+          name: doc.name,
+          content: doc.content,
+          language: doc.language,
+          isDirty: doc.isDirty,
+          cursorLine: doc.cursor.line,
+          cursorCol: doc.cursor.col,
+          orderIndex: idx,
+        })),
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -76,18 +166,11 @@ export const App: React.FC = () => {
 
   return (
     <div style={appContainerStyle}>
-      {/* Window Titlebar */}
       <Titlebar />
-
-      {/* Menubar */}
       <Menubar />
-
-      {/* Main Workbench Layout */}
       <div style={workbenchStyle}>
         <ActivityBar />
         <Sidebar />
-
-        {/* Editor Area */}
         <main style={editorAreaStyle}>
           <TabBar />
           <div style={editorSurfaceStyle}>
@@ -95,8 +178,6 @@ export const App: React.FC = () => {
           </div>
         </main>
       </div>
-
-      {/* Bottom Status Bar */}
       <StatusBar />
     </div>
   );

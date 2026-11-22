@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Folder,
   FolderOpen,
@@ -9,6 +9,9 @@ import {
   FolderPlus,
   FilePlus,
   RefreshCw,
+  Clock,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
@@ -20,12 +23,21 @@ export const Sidebar: React.FC = () => {
   const currentFolderName = useFileStore((state) => state.currentFolderName);
   const currentFolderPath = useFileStore((state) => state.currentFolderPath);
   const fileTree = useFileStore((state) => state.fileTree);
+  const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
+  const recentFiles = useFileStore((state) => state.recentFiles);
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
+  const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
   const toggleFolderExpanded = useFileStore((state) => state.toggleFolderExpanded);
   const setFolderChildren = useFileStore((state) => state.setFolderChildren);
 
   const openDocument = useEditorStore((state) => state.openDocument);
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
+
+  // New file / folder inline prompt modal state
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [promptType, setPromptType] = useState<'file' | 'folder'>('file');
+  const [promptTargetDir, setPromptTargetDir] = useState<string>('');
+  const [promptInput, setPromptInput] = useState<string>('');
 
   if (!isSidebarOpen) return null;
 
@@ -38,11 +50,74 @@ export const Sidebar: React.FC = () => {
     }
   };
 
+  const handleOpenRecentWorkspace = async (folderPath: string) => {
+    if (window.xivig?.readDir) {
+      const res = await window.xivig.readDir(folderPath);
+      if (res.success && res.items) {
+        setCurrentFolder(folderPath, res.items);
+      }
+    }
+  };
+
+  const handleOpenRecentFile = async (filePath: string, name: string) => {
+    if (window.xivig?.readFile) {
+      const res = await window.xivig.readFile(filePath);
+      if (res.success && res.content !== undefined) {
+        openDocument({
+          path: filePath,
+          name,
+          content: res.content,
+          language: name,
+        });
+      }
+    }
+  };
+
+  const handleCreatePromptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promptInput.trim() || !window.xivig?.createFileOrFolder) return;
+
+    const baseDir = promptTargetDir || currentFolderPath;
+    if (!baseDir) return;
+
+    const targetPath = `${baseDir}/${promptInput.trim()}`;
+    const res = await window.xivig.createFileOrFolder(targetPath, promptType === 'folder');
+
+    if (res.success) {
+      setIsPromptOpen(false);
+      setPromptInput('');
+      await refreshCurrentFolder();
+
+      if (promptType === 'file') {
+        openDocument({
+          path: targetPath,
+          name: promptInput.trim(),
+          content: '',
+          language: promptInput.trim(),
+        });
+      }
+    } else {
+      alert(`Failed to create ${promptType}: ${res.error}`);
+    }
+  };
+
+  const handleDeleteItem = async (e: React.MouseEvent, item: FileItem) => {
+    e.stopPropagation();
+    const confirmed = confirm(`Are you sure you want to delete "${item.name}"?`);
+    if (confirmed && window.xivig?.deleteFileOrFolder) {
+      const res = await window.xivig.deleteFileOrFolder(item.path);
+      if (res.success) {
+        await refreshCurrentFolder();
+      } else {
+        alert(`Failed to delete: ${res.error}`);
+      }
+    }
+  };
+
   const handleFileClick = async (item: FileItem) => {
     if (item.isDirectory) {
       toggleFolderExpanded(item.path);
 
-      // If expanding and children not loaded, load them
       if (!item.isExpanded && (!item.children || item.children.length === 0)) {
         if (window.xivig?.readDir) {
           const res = await window.xivig.readDir(item.path);
@@ -67,7 +142,6 @@ export const Sidebar: React.FC = () => {
         }
       }
     } else {
-      // Open file
       if (window.xivig?.readFile) {
         const res = await window.xivig.readFile(item.path);
         if (res.success && res.content !== undefined) {
@@ -87,7 +161,7 @@ export const Sidebar: React.FC = () => {
       const paddingLeft = 14 + depth * 14;
 
       return (
-        <div key={item.path}>
+        <div key={item.path} className="tree-row-wrapper" style={{ position: 'relative' }}>
           <div
             onClick={() => handleFileClick(item)}
             style={{
@@ -96,9 +170,13 @@ export const Sidebar: React.FC = () => {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--xivig-surface-hover)';
+              const btn = e.currentTarget.querySelector('.item-action-delete') as HTMLElement;
+              if (btn) btn.style.display = 'flex';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
+              const btn = e.currentTarget.querySelector('.item-action-delete') as HTMLElement;
+              if (btn) btn.style.display = 'none';
             }}
           >
             {item.isDirectory ? (
@@ -123,6 +201,16 @@ export const Sidebar: React.FC = () => {
               </>
             )}
             <span style={itemNameStyle}>{item.name}</span>
+
+            {/* Quick delete button */}
+            <button
+              className="item-action-delete"
+              onClick={(e) => handleDeleteItem(e, item)}
+              title={`Delete ${item.name}`}
+              style={deleteItemBtnStyle}
+            >
+              <Trash2 size={11} />
+            </button>
           </div>
 
           {item.isDirectory && item.isExpanded && item.children && (
@@ -148,22 +236,63 @@ export const Sidebar: React.FC = () => {
         {activeView === 'explorer' && currentFolderPath && (
           <div style={headerActionsStyle}>
             <button
-              onClick={() => createNewDocument()}
+              onClick={() => {
+                setPromptType('file');
+                setPromptTargetDir(currentFolderPath);
+                setIsPromptOpen(true);
+              }}
               style={actionBtnStyle}
-              title="New File"
+              title="New File in Root"
             >
               <FilePlus size={14} />
             </button>
             <button
-              onClick={handleOpenFolderDialog}
+              onClick={() => {
+                setPromptType('folder');
+                setPromptTargetDir(currentFolderPath);
+                setIsPromptOpen(true);
+              }}
               style={actionBtnStyle}
-              title="Open Another Folder"
+              title="New Folder in Root"
             >
               <FolderPlus size={14} />
+            </button>
+            <button
+              onClick={() => refreshCurrentFolder()}
+              style={actionBtnStyle}
+              title="Refresh Workspace"
+            >
+              <RefreshCw size={13} />
             </button>
           </div>
         )}
       </div>
+
+      {/* Inline Create Prompt */}
+      {isPromptOpen && (
+        <form onSubmit={handleCreatePromptSubmit} style={promptContainerStyle}>
+          <div style={promptHeaderStyle}>
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>
+              New {promptType === 'file' ? 'File' : 'Folder'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsPromptOpen(false)}
+              style={{ color: 'var(--xivig-text-dim)' }}
+            >
+              <X size={12} />
+            </button>
+          </div>
+          <input
+            autoFocus
+            type="text"
+            value={promptInput}
+            onChange={(e) => setPromptInput(e.target.value)}
+            placeholder={promptType === 'file' ? 'filename.ts' : 'folder-name'}
+            style={promptInputStyle}
+          />
+        </form>
+      )}
 
       {/* Content */}
       <div style={sidebarContentStyle}>
@@ -175,7 +304,7 @@ export const Sidebar: React.FC = () => {
                   <ChevronDown size={13} style={{ marginRight: '4px' }} />
                   <span style={projectNameStyle}>{currentFolderName}</span>
                 </div>
-                <div style={{ marginTop: '4px' }}>
+                <div style={{ marginTop: '2px' }}>
                   {fileTree.length > 0 ? (
                     renderTree(fileTree)
                   ) : (
@@ -185,10 +314,52 @@ export const Sidebar: React.FC = () => {
               </div>
             ) : (
               <div style={emptyExplorerStyle}>
-                <p style={emptyExplorerTextStyle}>No folder open</p>
+                <p style={emptyExplorerTextStyle}>No workspace folder open</p>
                 <button onClick={handleOpenFolderDialog} style={openFolderBtnStyle}>
                   Open Folder
                 </button>
+
+                {/* Recent Workspaces section */}
+                {recentWorkspaces.length > 0 && (
+                  <div style={recentSectionStyle}>
+                    <div style={recentHeaderStyle}>
+                      <Clock size={12} style={{ marginRight: '6px' }} />
+                      <span>Recent Workspaces</span>
+                    </div>
+                    {recentWorkspaces.slice(0, 5).map((ws) => (
+                      <div
+                        key={ws.id}
+                        onClick={() => handleOpenRecentWorkspace(ws.path)}
+                        style={recentItemStyle}
+                        title={ws.path}
+                      >
+                        <Folder size={13} color="#6c8cff" style={{ marginRight: '6px', flexShrink: 0 }} />
+                        <span style={recentNameStyle}>{ws.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Recent Files section */}
+                {recentFiles.length > 0 && (
+                  <div style={recentSectionStyle}>
+                    <div style={recentHeaderStyle}>
+                      <Clock size={12} style={{ marginRight: '6px' }} />
+                      <span>Recent Files</span>
+                    </div>
+                    {recentFiles.slice(0, 5).map((rf) => (
+                      <div
+                        key={rf.id}
+                        onClick={() => handleOpenRecentFile(rf.path, rf.name)}
+                        style={recentItemStyle}
+                        title={rf.path}
+                      >
+                        <FileText size={13} color="#9299a8" style={{ marginRight: '6px', flexShrink: 0 }} />
+                        <span style={recentNameStyle}>{rf.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -202,7 +373,7 @@ export const Sidebar: React.FC = () => {
               style={{ width: '100%', marginBottom: '8px' }}
             />
             <p style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>
-              Global project regex search will be activated in Phase D.
+              Project-wide regex search engine will activate in Phase D.
             </p>
           </div>
         )}
@@ -210,7 +381,7 @@ export const Sidebar: React.FC = () => {
         {activeView === 'git' && (
           <div style={{ padding: '12px' }}>
             <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)' }}>
-              No Git changes detected.
+              Source Control (Git) status tracking initialized.
             </p>
           </div>
         )}
@@ -225,8 +396,11 @@ export const Sidebar: React.FC = () => {
 
         {activeView === 'settings' && (
           <div style={{ padding: '12px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)' }}>
-              Preferences & Keybindings
+            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)', marginBottom: '8px' }}>
+              Preferences & Storage
+            </p>
+            <p style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>
+              Metadata & sessions persist via SQLite database.
             </p>
           </div>
         )}
@@ -272,6 +446,25 @@ const actionBtnStyle: React.CSSProperties = {
   borderRadius: '3px',
 };
 
+const promptContainerStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  backgroundColor: 'var(--xivig-surface)',
+  borderBottom: '1px solid var(--xivig-border)',
+};
+
+const promptHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '6px',
+};
+
+const promptInputStyle: React.CSSProperties = {
+  width: '100%',
+  fontSize: '12px',
+  padding: '4px 6px',
+};
+
 const sidebarContentStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
@@ -300,6 +493,17 @@ const treeItemStyle: React.CSSProperties = {
   fontSize: '12.5px',
   color: 'var(--xivig-text)',
   transition: 'background-color 0.1s ease',
+  position: 'relative',
+};
+
+const deleteItemBtnStyle: React.CSSProperties = {
+  display: 'none',
+  position: 'absolute',
+  right: '8px',
+  top: '4px',
+  color: 'var(--xivig-text-dim)',
+  padding: '2px',
+  borderRadius: '2px',
 };
 
 const chevronIconStyle: React.CSSProperties = {
@@ -326,6 +530,8 @@ const itemNameStyle: React.CSSProperties = {
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  flex: 1,
+  paddingRight: '20px',
 };
 
 const emptyTreeNoticeStyle: React.CSSProperties = {
@@ -336,23 +542,59 @@ const emptyTreeNoticeStyle: React.CSSProperties = {
 };
 
 const emptyExplorerStyle: React.CSSProperties = {
-  padding: '24px 16px',
+  padding: '20px 14px',
   textAlign: 'center',
 };
 
 const emptyExplorerTextStyle: React.CSSProperties = {
   fontSize: '12px',
   color: 'var(--xivig-text-muted)',
-  marginBottom: '12px',
+  marginBottom: '10px',
 };
 
 const openFolderBtnStyle: React.CSSProperties = {
   backgroundColor: 'var(--xivig-surface)',
   border: '1px solid var(--xivig-border)',
   color: 'var(--xivig-text)',
-  padding: '6px 12px',
+  padding: '6px 14px',
   borderRadius: '4px',
   fontSize: '12px',
   fontWeight: 500,
   cursor: 'pointer',
+  marginBottom: '20px',
+};
+
+const recentSectionStyle: React.CSSProperties = {
+  textAlign: 'left',
+  marginTop: '16px',
+  borderTop: '1px solid var(--xivig-border-subtle)',
+  paddingTop: '12px',
+};
+
+const recentHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '11px',
+  fontWeight: 600,
+  color: 'var(--xivig-text-dim)',
+  marginBottom: '8px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+};
+
+const recentItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  padding: '5px 6px',
+  borderRadius: '3px',
+  cursor: 'pointer',
+  fontSize: '12px',
+  color: 'var(--xivig-text)',
+  transition: 'background-color 0.1s ease',
+};
+
+const recentNameStyle: React.CSSProperties = {
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 };
