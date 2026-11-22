@@ -8,18 +8,13 @@ import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon } from '../common/FileIcon';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { extractDocumentSymbols, ExtractedSymbol } from '../editor/codeIntelligence';
 
 interface FlatFile {
   path: string;
   name: string;
   relativePath: string;
   extension?: string;
-}
-
-interface DocumentSymbol {
-  name: string;
-  line: number;
-  kind: 'function' | 'class' | 'heading' | 'variable' | 'rule';
 }
 
 export const QuickOpen: React.FC = () => {
@@ -76,47 +71,11 @@ export const QuickOpen: React.FC = () => {
     }
   }, [isOpen, initialMode, fileTree, currentFolderPath]);
 
-  // Extract symbols from active document
-  const symbols: DocumentSymbol[] = React.useMemo(() => {
+  // Extract symbols from active document using advanced code intelligence
+  const symbols: ExtractedSymbol[] = React.useMemo(() => {
     if (!activeDoc || !activeDoc.content) return [];
-    const lines = activeDoc.content.split('\n');
-    const result: DocumentSymbol[] = [];
-
-    lines.forEach((lineText, idx) => {
-      const lineNum = idx + 1;
-      const trimmed = lineText.trim();
-
-      // Markdown headings
-      if (trimmed.startsWith('#')) {
-        result.push({ name: trimmed, line: lineNum, kind: 'heading' });
-      }
-      // Functions / methods / arrow functions
-      else if (/^(export\s+)?(async\s+)?function\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
-        const match = trimmed.match(/function\s+([a-zA-Z0-9_$]+)/);
-        if (match) result.push({ name: match[1] + '()', line: lineNum, kind: 'function' });
-      } else if (/^(export\s+)?(const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(async\s*)?(\([^)]*\)|[a-zA-Z0-9_$]+)\s*=>/.test(trimmed)) {
-        const match = trimmed.match(/(const|let|var)\s+([a-zA-Z0-9_$]+)/);
-        if (match) result.push({ name: match[2] + '()', line: lineNum, kind: 'function' });
-      }
-      // Python def / Rust fn
-      else if (/^(def|fn)\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
-        const match = trimmed.match(/(def|fn)\s+([a-zA-Z0-9_$]+)/);
-        if (match) result.push({ name: match[2] + '()', line: lineNum, kind: 'function' });
-      }
-      // Classes & Interfaces
-      else if (/^(export\s+)?(class|interface|type)\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
-        const match = trimmed.match(/(class|interface|type)\s+([a-zA-Z0-9_$]+)/);
-        if (match) result.push({ name: `${match[2]} (${match[1]})`, line: lineNum, kind: 'class' });
-      }
-      // CSS selectors
-      else if (activeDoc.language === 'css' && /^[.#a-zA-Z][^{]*\{/.test(trimmed)) {
-        const selector = trimmed.split('{')[0].trim();
-        result.push({ name: selector, line: lineNum, kind: 'rule' });
-      }
-    });
-
-    return result;
-  }, [activeDoc]);
+    return extractDocumentSymbols(activeDoc.content, activeDoc.language || 'text');
+  }, [activeDoc?.content, activeDoc?.language]);
 
   // Jump to specific line in active editor
   const jumpToLine = (lineNum: number) => {
@@ -270,9 +229,28 @@ export const QuickOpen: React.FC = () => {
             filteredSymbols.length > 0 ? (
               filteredSymbols.map((sym, idx) => {
                 const isSelected = idx === selectedIndex;
+                const kindColor =
+                  sym.kind === 'function' || sym.kind === 'method'
+                    ? '#b180f0'
+                    : sym.kind === 'class' || sym.kind === 'interface'
+                    ? '#4ec9b0'
+                    : sym.kind === 'variable'
+                    ? '#9cdcfe'
+                    : '#ce9178';
+                const kindBadge =
+                  sym.kind === 'function' || sym.kind === 'method'
+                    ? 'ƒ'
+                    : sym.kind === 'class'
+                    ? 'C'
+                    : sym.kind === 'interface'
+                    ? 'I'
+                    : sym.kind === 'variable'
+                    ? 'v'
+                    : '#';
+
                 return (
                   <div
-                    key={`${sym.name}-${sym.line}`}
+                    key={`${sym.name}-${sym.line}-${idx}`}
                     onClick={() => {
                       jumpToLine(sym.line);
                       close();
@@ -285,8 +263,30 @@ export const QuickOpen: React.FC = () => {
                     }}
                   >
                     <div style={itemContentStyle}>
-                      <Hash size={14} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
+                      <span
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '3px',
+                          backgroundColor: '#2d2d30',
+                          color: kindColor,
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          marginRight: '8px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {kindBadge}
+                      </span>
                       <span style={fileNameStyle}>{sym.name}</span>
+                      {sym.detail && (
+                        <span style={{ ...filePathStyle, marginRight: 'auto', marginLeft: '6px', opacity: 0.6 }}>
+                          {sym.detail}
+                        </span>
+                      )}
                       <span style={filePathStyle}>Line {sym.line}</span>
                     </div>
                   </div>

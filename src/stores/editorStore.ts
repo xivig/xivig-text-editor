@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { EditorDocument } from '../types/editor';
 import { useFileStore } from './fileStore';
+import { useLiveServerStore } from './liveServerStore';
 
 export type SplitLayout = 'single' | 'two-columns' | 'two-rows';
+export type PreviewMode = 'live-web' | 'markdown';
 
 interface EditorState {
   documents: EditorDocument[];
@@ -12,6 +14,8 @@ interface EditorState {
   activePane: 'primary' | 'secondary';
   untitledCount: number;
   closedDocumentsHistory: EditorDocument[];
+  isPreviewOpen: boolean;
+  previewMode: PreviewMode;
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
   closeDocument: (id: string) => void;
@@ -32,6 +36,9 @@ interface EditorState {
   getSecondaryDocument: () => EditorDocument | undefined;
   setRestoredSession: (docs: EditorDocument[], activeId: string | null) => void;
   persistSessionDebounced: () => void;
+  togglePreview: (mode?: PreviewMode) => void;
+  openPreview: (mode?: PreviewMode) => void;
+  closePreview: () => void;
 }
 
 let saveDebounceTimer: NodeJS.Timeout | null = null;
@@ -84,6 +91,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activePane: 'primary',
   untitledCount: 1,
   closedDocumentsHistory: [],
+  isPreviewOpen: false,
+  previewMode: 'live-web',
 
   persistSessionDebounced: triggerAutoSave,
 
@@ -249,6 +258,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ),
     }));
     triggerAutoSave();
+    try {
+      useLiveServerStore.getState().notifyReload();
+    } catch {}
   },
 
   markDocumentSaved: (id, newPath) => {
@@ -294,5 +306,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       untitledCount: untitledCount + 1,
     });
     triggerAutoSave();
+  },
+
+  togglePreview: (mode) => {
+    const { isPreviewOpen, previewMode, getActiveDocument } = get();
+    const doc = getActiveDocument();
+    const defaultMode: PreviewMode = doc?.language === 'markdown' ? 'markdown' : 'live-web';
+    const targetMode = mode || defaultMode;
+
+    if (isPreviewOpen && (!mode || previewMode === mode)) {
+      set({ isPreviewOpen: false });
+    } else {
+      set({ isPreviewOpen: true, previewMode: targetMode });
+    }
+  },
+
+  openPreview: (mode) => {
+    const { getActiveDocument } = get();
+    const doc = getActiveDocument();
+    const defaultMode: PreviewMode = doc?.language === 'markdown' ? 'markdown' : 'live-web';
+    set({ isPreviewOpen: true, previewMode: mode || defaultMode });
+  },
+
+  closePreview: () => {
+    set({ isPreviewOpen: false });
   },
 }));

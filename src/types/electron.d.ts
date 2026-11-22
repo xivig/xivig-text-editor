@@ -81,6 +81,14 @@ export interface XivigAPI {
   onBuildData: (callback: (data: { type: 'stdout' | 'stderr'; text: string }) => void) => () => void;
   onBuildDone: (callback: (data: { exitCode: number; durationMs: number }) => void) => () => void;
 
+  // Live Server & Live Reload
+  liveServerStart: (rootPath: string, port?: number) => Promise<{ success: boolean; port: number; url: string; error?: string }>;
+  liveServerStop: () => Promise<boolean>;
+  liveServerStatus: () => Promise<{ isRunning: boolean; port: number; url: string; rootPath: string }>;
+  liveServerOpenBrowser: (subPath?: string) => Promise<boolean>;
+  liveServerTriggerReload: () => Promise<boolean>;
+  onLiveServerChanged: (callback: (data: { isRunning: boolean; port: number; url: string; rootPath: string }) => void) => () => void;
+
   // System info
   platform: string;
 }

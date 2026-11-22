@@ -4,6 +4,7 @@ import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useBuildStore } from '../../stores/buildStore';
+import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 
@@ -204,6 +205,12 @@ export const Menubar: React.FC = () => {
     View: [
       { label: 'Command Palette...', shortcut: 'Ctrl+Shift+P', action: openCommandPalette },
       { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
+      { label: 'Go to Symbol...', shortcut: 'Ctrl+R', action: () => useUIStore.getState().openQuickOpenWithMode('@') },
+      { divider: true, label: '' },
+      { label: 'Toggle Live Web Preview', shortcut: 'Ctrl+K V', action: () => useEditorStore.getState().togglePreview('live-web') },
+      { label: 'Toggle Markdown Live Preview', shortcut: 'Ctrl+Shift+V', action: () => useEditorStore.getState().togglePreview('markdown') },
+      { label: 'Live Server: Toggle (Go Live)', action: () => useLiveServerStore.getState().toggleServer() },
+      { label: 'Live Server: Open in Browser', action: () => useLiveServerStore.getState().openInBrowser() },
       { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
       { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: () => toggleBottomPanel('terminal') },

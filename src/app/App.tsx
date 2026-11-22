@@ -5,6 +5,8 @@ import { ActivityBar } from '../components/activitybar/ActivityBar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { TabBar } from '../components/tabs/TabBar';
 import { Editor } from '../components/editor/Editor';
+import { LivePreviewPane } from '../components/editor/LivePreviewPane';
+import { MarkdownPreviewPane } from '../components/editor/MarkdownPreviewPane';
 import { LinkedFileBanner } from '../components/editor/LinkedFileBanner';
 import { StatusBar } from '../components/statusbar/StatusBar';
 import { BottomPanel } from '../components/terminal/BottomPanel';
@@ -48,6 +50,8 @@ export const App: React.FC = () => {
   const setRestoredSession = useEditorStore((state) => state.setRestoredSession);
   const splitLayout = useEditorStore((state) => state.splitLayout);
   const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
+  const isPreviewOpen = useEditorStore((state) => state.isPreviewOpen);
+  const previewMode = useEditorStore((state) => state.previewMode);
 
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
   const setInitialSession = useFileStore((state) => state.setInitialSession);
@@ -285,6 +289,10 @@ export const App: React.FC = () => {
           const view = getActiveEditorView();
           if (view) yankMark(view);
           return;
+        } else if (k === 'v') {
+          e.preventDefault();
+          useEditorStore.getState().togglePreview();
+          return;
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           setSplitLayout('two-columns');
@@ -394,6 +402,13 @@ export const App: React.FC = () => {
       if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 't') {
         e.preventDefault();
         useEditorStore.getState().reopenClosedTab();
+        return;
+      }
+
+      // Toggle Preview (Ctrl+Shift+V)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        useEditorStore.getState().togglePreview();
         return;
       }
 
@@ -614,13 +629,20 @@ export const App: React.FC = () => {
 
         {/* Editor Area with Split Panes Support & Distraction Free Mode */}
         {splitLayout === 'single' ? (
-          <main style={{ ...editorAreaStyle, maxWidth: isDistractionFree ? '1080px' : 'none', margin: isDistractionFree ? '0 auto' : '0' }}>
-            <TabBar pane="primary" />
-            <LinkedFileBanner />
-            <div style={editorSurfaceStyle}>
-              <SearchPanel />
-              <Editor pane="primary" />
+          <main style={{ ...editorAreaStyle, flexDirection: 'row', maxWidth: isDistractionFree ? '1080px' : 'none', margin: isDistractionFree ? '0 auto' : '0' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+              <TabBar pane="primary" />
+              <LinkedFileBanner />
+              <div style={editorSurfaceStyle}>
+                <SearchPanel />
+                <Editor pane="primary" />
+              </div>
             </div>
+            {isPreviewOpen && (
+              <div style={{ flex: 1, minWidth: '340px', height: '100%', overflow: 'hidden' }}>
+                {previewMode === 'markdown' ? <MarkdownPreviewPane /> : <LivePreviewPane />}
+              </div>
+            )}
           </main>
         ) : splitLayout === 'two-columns' ? (
           <main style={{ ...editorAreaStyle, flexDirection: 'row' }}>
@@ -635,10 +657,16 @@ export const App: React.FC = () => {
             </div>
             {/* Secondary Column */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-              <TabBar pane="secondary" />
-              <div style={editorSurfaceStyle}>
-                <Editor pane="secondary" />
-              </div>
+              {isPreviewOpen ? (
+                previewMode === 'markdown' ? <MarkdownPreviewPane /> : <LivePreviewPane />
+              ) : (
+                <>
+                  <TabBar pane="secondary" />
+                  <div style={editorSurfaceStyle}>
+                    <Editor pane="secondary" />
+                  </div>
+                </>
+              )}
             </div>
           </main>
         ) : (
@@ -654,10 +682,16 @@ export const App: React.FC = () => {
             </div>
             {/* Bottom Row */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', overflow: 'hidden' }}>
-              <TabBar pane="secondary" />
-              <div style={editorSurfaceStyle}>
-                <Editor pane="secondary" />
-              </div>
+              {isPreviewOpen ? (
+                previewMode === 'markdown' ? <MarkdownPreviewPane /> : <LivePreviewPane />
+              ) : (
+                <>
+                  <TabBar pane="secondary" />
+                  <div style={editorSurfaceStyle}>
+                    <Editor pane="secondary" />
+                  </div>
+                </>
+              )}
             </div>
           </main>
         )}

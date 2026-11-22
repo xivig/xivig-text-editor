@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Circle, Columns, Rows, Square } from 'lucide-react';
+import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen } from 'lucide-react';
 import { useEditorStore, SplitLayout } from '../../stores/editorStore';
 import { FileIcon } from '../common/FileIcon';
 
@@ -20,6 +20,13 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
   const splitLayout = useEditorStore((state) => state.splitLayout);
   const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
   const setActivePane = useEditorStore((state) => state.setActivePane);
+  const isPreviewOpen = useEditorStore((state) => state.isPreviewOpen);
+  const previewMode = useEditorStore((state) => state.previewMode);
+  const togglePreview = useEditorStore((state) => state.togglePreview);
+  const getActiveDocument = useEditorStore((state) => state.getActiveDocument);
+
+  const activeDoc = getActiveDocument();
+  const isMarkdown = activeDoc?.language === 'markdown' || activeDoc?.name.endsWith('.md');
 
   const handleToggleSplit = (layout: SplitLayout) => {
     if (splitLayout === layout) {
@@ -101,9 +108,35 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
         </button>
       </div>
 
-      {/* Pane Split Layout Controls (Rendered on primary tab bar) */}
+      {/* Pane Split & Preview Layout Controls (Rendered on primary tab bar) */}
       {pane === 'primary' && (
         <div style={layoutControlsStyle}>
+          {isMarkdown ? (
+            <button
+              onClick={() => togglePreview('markdown')}
+              style={{
+                ...splitBtnStyle,
+                color: isPreviewOpen && previewMode === 'markdown' ? 'var(--xivig-accent)' : 'var(--xivig-text-dim)',
+                backgroundColor: isPreviewOpen && previewMode === 'markdown' ? 'var(--xivig-accent-subtle)' : 'transparent',
+              }}
+              title="Toggle Markdown Live Preview (Ctrl+Shift+V)"
+            >
+              <BookOpen size={13} />
+            </button>
+          ) : (
+            <button
+              onClick={() => togglePreview('live-web')}
+              style={{
+                ...splitBtnStyle,
+                color: isPreviewOpen && previewMode === 'live-web' ? 'var(--xivig-accent)' : 'var(--xivig-text-dim)',
+                backgroundColor: isPreviewOpen && previewMode === 'live-web' ? 'var(--xivig-accent-subtle)' : 'transparent',
+              }}
+              title="Toggle Live Web Preview (Ctrl+K V)"
+            >
+              <Eye size={13} />
+            </button>
+          )}
+
           <button
             onClick={() => handleToggleSplit('two-columns')}
             style={{

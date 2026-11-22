@@ -1,10 +1,11 @@
 import React from 'react';
-import { GitBranch, AlertCircle, AlertTriangle } from 'lucide-react';
+import { GitBranch, AlertCircle, AlertTriangle, Radio } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useDiagnosticsStore } from '../../stores/diagnosticsStore';
+import { useLiveServerStore } from '../../stores/liveServerStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
@@ -22,6 +23,8 @@ export const StatusBar: React.FC = () => {
   const col = activeDoc?.cursor.col || 1;
   const fontSize = useSettingsStore((state) => state.settings.fontSize);
   const resetZoom = useSettingsStore((state) => state.resetZoom);
+
+  const { isRunning: isLiveRunning, port: livePort, toggleServer: toggleLiveServer, openInBrowser: openLiveBrowser } = useLiveServerStore();
 
   return (
     <footer style={statusBarStyle}>
@@ -54,6 +57,28 @@ export const StatusBar: React.FC = () => {
 
       {/* Right items */}
       <div style={sectionStyle}>
+        <div
+          onClick={(e) => {
+            if (e.altKey && isLiveRunning) {
+              openLiveBrowser();
+            } else {
+              toggleLiveServer();
+            }
+          }}
+          style={{
+            ...itemStyle,
+            color: isLiveRunning ? '#4ec9b0' : 'inherit',
+            fontWeight: isLiveRunning ? 600 : 'normal',
+          }}
+          title={
+            isLiveRunning
+              ? `Live Server: Running on port ${livePort} (Click to Stop, Alt+Click to Open Browser)`
+              : 'Live Server: Click to Go Live'
+          }
+        >
+          <Radio size={12} style={{ marginRight: '4px' }} className={isLiveRunning ? 'animate-pulse' : ''} />
+          <span>{isLiveRunning ? `Port: ${livePort}` : 'Go Live'}</span>
+        </div>
         <div style={itemStyle}>
           <span>Ln {line}, Col {col}</span>
         </div>

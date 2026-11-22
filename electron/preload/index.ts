@@ -69,6 +69,22 @@ const xivigAPI = {
     };
   },
 
+  // Live Server & Live Reload
+  liveServerStart: (rootPath: string, port?: number) =>
+    ipcRenderer.invoke('liveserver:start', { rootPath, port }),
+  liveServerStop: () => ipcRenderer.invoke('liveserver:stop'),
+  liveServerStatus: () => ipcRenderer.invoke('liveserver:status'),
+  liveServerOpenBrowser: (subPath?: string) =>
+    ipcRenderer.invoke('liveserver:openBrowser', subPath),
+  liveServerTriggerReload: () => ipcRenderer.invoke('liveserver:triggerReload'),
+  onLiveServerChanged: (callback: (data: any) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('liveserver:changed', handler);
+    return () => {
+      ipcRenderer.removeListener('liveserver:changed', handler);
+    };
+  },
+
   // Workspace Watcher listener
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => {
     const handler = (_: any, data: any) => callback(data);

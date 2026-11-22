@@ -47,6 +47,7 @@ import { getCustomSnippetSource } from './snippets';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
+import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import logoUrl from '../../assets/logo.png';
@@ -139,6 +140,9 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         highlightActiveLine(),
         highlightSelectionMatches(),
         htmlLinkedFilesTooltip,
+        hoverDocsExtension,
+        parameterHintsExtension,
+        codeIntelligenceKeymap,
         langExtension,
         keymap.of([
           {

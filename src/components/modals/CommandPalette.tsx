@@ -6,7 +6,9 @@ import { useFileStore } from '../../stores/fileStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useBuildStore } from '../../stores/buildStore';
 import { useExtensionStore } from '../../stores/extensionStore';
+import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { goToDefinition } from '../editor/codeIntelligence';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
   extractHtmlLinks,
@@ -351,6 +353,51 @@ export const CommandPalette: React.FC = () => {
       title: 'Focus Source Control (Git)',
       shortcut: 'Ctrl+Shift+G',
       action: () => setActiveSidebarView('git'),
+    },
+    {
+      id: 'live:toggle-server',
+      category: 'Live Server',
+      title: 'Live Server: Toggle (Go Live / Stop)',
+      action: () => useLiveServerStore.getState().toggleServer(),
+    },
+    {
+      id: 'live:open-browser',
+      category: 'Live Server',
+      title: 'Live Server: Open in Default Browser',
+      action: () => useLiveServerStore.getState().openInBrowser(),
+    },
+    {
+      id: 'preview:toggle-live',
+      category: 'Preview',
+      title: 'Live Preview: Toggle Web Preview Pane',
+      shortcut: 'Ctrl+K V',
+      action: () => useEditorStore.getState().togglePreview('live-web'),
+    },
+    {
+      id: 'preview:toggle-markdown',
+      category: 'Preview',
+      title: 'Markdown: Toggle Live Preview',
+      shortcut: 'Ctrl+Shift+V',
+      action: () => useEditorStore.getState().togglePreview('markdown'),
+    },
+    {
+      id: 'goto:symbol',
+      category: 'Navigation',
+      title: 'Go to Symbol in Current File...',
+      shortcut: 'Ctrl+R',
+      action: () => useUIStore.getState().openQuickOpenWithMode('@'),
+    },
+    {
+      id: 'goto:definition',
+      category: 'Navigation',
+      title: 'Go to Definition',
+      shortcut: 'F12',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          goToDefinition(view);
+        }
+      },
     },
     {
       id: 'lang:select',

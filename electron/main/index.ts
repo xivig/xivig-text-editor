@@ -17,6 +17,13 @@ import { watchWorkspace, stopWatching } from './watcher';
 import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
 import { getGitStatus, commitChanges } from './git';
 import { runBuildProcess, stopBuildProcess } from './build';
+import {
+  startLiveServer,
+  stopLiveServer,
+  getLiveServerStatus,
+  openLiveServerInBrowser,
+  triggerLiveReload,
+} from './liveserver';
 
 process.on('uncaughtException', (error) => {
   console.error('[Xivig Main] Uncaught Exception:', error);
@@ -88,6 +95,7 @@ async function createWindow() {
     stopWatching();
     stopTerminal();
     stopBuildProcess();
+    stopLiveServer();
     win = null;
   });
 }
@@ -190,6 +198,7 @@ ipcMain.handle('file:save', async (_, { filePath, content }: { filePath: string;
   try {
     await fs.writeFile(filePath, content, 'utf-8');
     addRecentFile(filePath, path.basename(filePath));
+    triggerLiveReload();
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -210,6 +219,7 @@ ipcMain.handle('file:saveDialog', async (_, { defaultName, content }: { defaultN
     try {
       await fs.writeFile(result.filePath, content, 'utf-8');
       addRecentFile(result.filePath, path.basename(result.filePath));
+      triggerLiveReload();
     } catch (error: any) {
       return { canceled: false, filePath: result.filePath, error: error.message };
     }
@@ -341,4 +351,27 @@ ipcMain.handle('build:run', async (_, options: { command: string; args?: string[
 
 ipcMain.handle('build:stop', async () => {
   return stopBuildProcess();
+});
+
+// Live Server & Live Reload IPC
+ipcMain.handle('liveserver:start', async (_, { rootPath, port }: { rootPath: string; port?: number }) => {
+  return startLiveServer(rootPath, port, win);
+});
+
+ipcMain.handle('liveserver:stop', async () => {
+  return stopLiveServer(win);
+});
+
+ipcMain.handle('liveserver:status', async () => {
+  return getLiveServerStatus();
+});
+
+ipcMain.handle('liveserver:openBrowser', async (_, subPath?: string) => {
+  openLiveServerInBrowser(subPath);
+  return true;
+});
+
+ipcMain.handle('liveserver:triggerReload', async () => {
+  triggerLiveReload();
+  return true;
 });
