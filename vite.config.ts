@@ -34,6 +34,33 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('@codemirror') || id.includes('codemirror') || id.includes('@lezer')) {
+              return 'codemirror';
+            }
+            if (id.includes('@xterm')) {
+              return 'xterm';
+            }
+            if (id.includes('js-beautify')) {
+              return 'beautify';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            if (id.includes('react') || id.includes('zustand')) {
+              return 'react-vendor';
+            }
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
   },
