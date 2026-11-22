@@ -103,12 +103,7 @@ export function runBuildProcess(
 export function stopBuildProcess(): boolean {
   if (activeBuildProcess) {
     try {
-      if (process.platform === 'win32' && activeBuildProcess.pid) {
-        // Force kill child process tree on Windows
-        spawn('taskkill', ['/pid', activeBuildProcess.pid.toString(), '/t', '/f']);
-      } else {
-        activeBuildProcess.kill('SIGTERM');
-      }
+      activeBuildProcess.kill('SIGTERM');
     } catch {
       // ignore kill errors
     }

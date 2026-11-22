@@ -18,6 +18,14 @@ import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
 import { getGitStatus, commitChanges } from './git';
 import { runBuildProcess, stopBuildProcess } from './build';
 
+process.on('uncaughtException', (error) => {
+  console.error('[Xivig Main] Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Xivig Main] Unhandled Rejection:', reason);
+});
+
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
@@ -56,7 +64,14 @@ async function createWindow() {
   });
 
   if (url) {
-    win.loadURL(url);
+    win.loadURL(url).catch((err) => {
+      console.warn('[Xivig Main] Initial loadURL failed, retrying in 500ms...', err);
+      setTimeout(() => {
+        if (win && !win.isDestroyed()) {
+          win.loadURL(url);
+        }
+      }, 500);
+    });
   } else {
     win.loadFile(indexHtml);
   }
