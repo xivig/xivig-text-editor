@@ -13,7 +13,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['better-sqlite3', 'chokidar'],
+              external: ['chokidar'],
             },
           },
         },
