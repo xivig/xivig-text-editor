@@ -111,6 +111,9 @@ const shortcuts: KeyShortcut[] = [
   // Emmet
   { category: 'Emmet', command: 'Expand Abbreviation', keys: 'Tab / Ctrl + E' },
   { category: 'Emmet', command: 'Wrap with Abbreviation', keys: 'Ctrl + Alt + W' },
+
+  // CSS & Color
+  { category: 'CSS & Color', command: 'CSS Color Swatch & Interactive Picker', keys: 'Click Swatch Widget' },
 ];
 
 export const KeymapModal: React.FC = () => {

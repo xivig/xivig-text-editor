@@ -42,6 +42,7 @@ import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
 import { bookmarkField, bookmarkGutter } from './bookmarks';
 import { autoRenameTagExtension } from './autoRenameTag';
+import { cssColorHighlighterExtension } from './colorHighlighter';
 import { getCustomSnippetSource } from './snippets';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
@@ -116,6 +117,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         bookmarkField,
         bookmarkGutter,
         autoRenameTagExtension,
+        cssColorHighlighterExtension,
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),

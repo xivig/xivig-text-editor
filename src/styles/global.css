@@ -177,3 +177,14 @@ input, textarea {
 .cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionMatchedText {
   color: #ffffff !important;
 }
+
+/* Inline CSS Color Highlighter Swatches */
+.cm-css-color-swatch {
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cm-css-color-swatch:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 2px var(--xivig-accent), 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+}
+
