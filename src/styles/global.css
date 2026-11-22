@@ -82,7 +82,7 @@ input, textarea {
   background-color: var(--xivig-editor) !important;
   color: var(--xivig-text-dim) !important;
   border-right: 1px solid var(--xivig-border-subtle) !important;
-  padding-right: 8px !important;
+  padding-right: 6px !important;
 }
 
 .cm-activeLineGutter {
@@ -101,4 +101,75 @@ input, textarea {
 
 .cm-selectionBackground, ::selection {
   background-color: rgba(108, 140, 255, 0.3) !important;
+}
+
+/* Bracket matching indicator */
+.cm-matchingBracket {
+  background-color: rgba(108, 140, 255, 0.35) !important;
+  outline: 1px solid var(--xivig-accent) !important;
+  border-radius: 2px !important;
+}
+
+.cm-nonmatchingBracket {
+  background-color: rgba(239, 100, 100, 0.35) !important;
+  outline: 1px solid var(--xivig-error) !important;
+}
+
+/* Fold Gutter */
+.cm-foldGutter {
+  width: 14px;
+}
+
+.cm-foldGutter .cm-gutterElement {
+  cursor: pointer;
+  color: var(--xivig-text-dim) !important;
+  transition: color 0.15s ease;
+}
+
+.cm-foldGutter .cm-gutterElement:hover {
+  color: var(--xivig-accent) !important;
+}
+
+/* Autocomplete Tooltip */
+.cm-tooltip-autocomplete {
+  background: var(--xivig-surface) !important;
+  border: 1px solid var(--xivig-border) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  padding: 4px !important;
+}
+
+.cm-tooltip-autocomplete > ul > li {
+  padding: 4px 8px !important;
+  border-radius: 3px !important;
+  font-size: 12px !important;
+  color: var(--xivig-text) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: var(--xivig-accent) !important;
+  color: #ffffff !important;
+}
+
+.cm-completionLabel {
+  font-weight: 500;
+}
+
+.cm-completionDetail {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--xivig-text-dim);
+  margin-left: 10px;
+}
+
+.cm-completionMatchedText {
+  text-decoration: none !important;
+  font-weight: 700;
+  color: var(--xivig-accent);
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionMatchedText {
+  color: #ffffff !important;
 }

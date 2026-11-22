@@ -6,6 +6,7 @@ interface UIState {
   isSearchPanelOpen: boolean;
   searchMode: 'find' | 'replace';
   isMinimapOpen: boolean;
+  isLanguageSelectorOpen: boolean;
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -20,6 +21,9 @@ interface UIState {
   toggleSearchPanel: (mode?: 'find' | 'replace') => void;
 
   toggleMinimap: () => void;
+
+  openLanguageSelector: () => void;
+  closeLanguageSelector: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -28,6 +32,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   isSearchPanelOpen: false,
   searchMode: 'find',
   isMinimapOpen: true,
+  isLanguageSelectorOpen: false,
+
+  openLanguageSelector: () =>
+    set({ isLanguageSelectorOpen: true, isCommandPaletteOpen: false, isQuickOpenOpen: false }),
+  closeLanguageSelector: () => set({ isLanguageSelectorOpen: false }),
 
   toggleMinimap: () => set((state) => ({ isMinimapOpen: !state.isMinimapOpen })),
 

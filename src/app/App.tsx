@@ -9,6 +9,7 @@ import { StatusBar } from '../components/statusbar/StatusBar';
 import { CommandPalette } from '../components/modals/CommandPalette';
 import { QuickOpen } from '../components/modals/QuickOpen';
 import { SearchPanel } from '../components/search/SearchPanel';
+import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
   const closeSearchPanel = useUIStore((state) => state.closeSearchPanel);
   const closeCommandPalette = useUIStore((state) => state.closeCommandPalette);
   const closeQuickOpen = useUIStore((state) => state.closeQuickOpen);
+  const closeLanguageSelector = useUIStore((state) => state.closeLanguageSelector);
 
   // Restore Session on Mount
   useEffect(() => {
@@ -130,6 +132,7 @@ export const App: React.FC = () => {
         closeCommandPalette();
         closeQuickOpen();
         closeSearchPanel();
+        closeLanguageSelector();
         return;
       }
 
@@ -284,6 +287,7 @@ export const App: React.FC = () => {
       {/* Floating Modals */}
       <CommandPalette />
       <QuickOpen />
+      <LanguageSelectorModal />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import { EditorState } from '@codemirror/state';
 import {
   foldGutter,
   foldKeymap,
+  codeFolding,
   indentOnInput,
   bracketMatching,
 } from '@codemirror/language';
@@ -28,6 +29,7 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import {
   autocompletion,
   completionKeymap,
+  completeAnyWord,
   closeBrackets,
   closeBracketsKeymap,
 } from '@codemirror/autocomplete';
@@ -37,6 +39,7 @@ import { xivigSyntaxTheme } from './xivigTheme';
 import { getLanguageExtension } from './languageSupport';
 import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
+import { getCustomSnippetSource } from './snippets';
 import { Minimap } from './Minimap';
 import logoUrl from '../../assets/logo.png';
 
@@ -84,6 +87,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         highlightActiveLineGutter(),
         highlightSpecialChars(),
         history(),
+        codeFolding(),
         foldGutter(),
         drawSelection(),
         dropCursor(),
@@ -91,7 +95,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         indentOnInput(),
         bracketMatching(),
         closeBrackets(),
-        autocompletion(),
+        autocompletion({
+          override: [getCustomSnippetSource(activeDoc.language || activeDoc.name), completeAnyWord],
+          defaultKeymap: true,
+        }),
         rectangularSelection(),
         crosshairCursor(),
         highlightActiveLine(),

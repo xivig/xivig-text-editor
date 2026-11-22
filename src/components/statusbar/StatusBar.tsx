@@ -1,10 +1,12 @@
 import React from 'react';
 import { GitBranch, AlertCircle } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
+import { useUIStore } from '../../stores/uiStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
 
   const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
@@ -38,7 +40,11 @@ export const StatusBar: React.FC = () => {
         <div style={itemStyle}>
           <span>LF</span>
         </div>
-        <div style={{ ...itemStyle, color: 'var(--xivig-accent)', fontWeight: 500 }}>
+        <div
+          onClick={openLanguageSelector}
+          style={{ ...itemStyle, color: 'var(--xivig-accent)', fontWeight: 500 }}
+          title="Select Language Mode (Click to change)"
+        >
           <span>{languageName}</span>
         </div>
       </div>
