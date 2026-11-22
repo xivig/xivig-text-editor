@@ -16,6 +16,7 @@ import {
 import { watchWorkspace, stopWatching } from './watcher';
 import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
 import { getGitStatus, commitChanges } from './git';
+import { runBuildProcess, stopBuildProcess } from './build';
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
@@ -71,6 +72,7 @@ async function createWindow() {
   win.on('closed', () => {
     stopWatching();
     stopTerminal();
+    stopBuildProcess();
     win = null;
   });
 }
@@ -315,4 +317,13 @@ ipcMain.handle('git:status', async (_, cwd: string) => {
 
 ipcMain.handle('git:commit', async (_, { cwd, message }: { cwd: string; message: string }) => {
   return commitChanges(cwd, message);
+});
+
+// Build System & Task Runner IPC
+ipcMain.handle('build:run', async (_, options: { command: string; args?: string[]; cwd?: string }) => {
+  return runBuildProcess(options, win);
+});
+
+ipcMain.handle('build:stop', async () => {
+  return stopBuildProcess();
 });

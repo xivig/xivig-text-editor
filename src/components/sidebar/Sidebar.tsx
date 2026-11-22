@@ -17,6 +17,7 @@ import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon, FolderIcon } from '../common/FileIcon';
+import { ExtensionsView } from '../extensions/ExtensionsView';
 
 export const Sidebar: React.FC = () => {
   const isSidebarOpen = useFileStore((state) => state.isSidebarOpen);
@@ -532,13 +533,7 @@ export const Sidebar: React.FC = () => {
           </div>
         )}
 
-        {activeView === 'extensions' && (
-          <div style={{ padding: '12px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)' }}>
-              Extension Marketplace (Xivig Packages)
-            </p>
-          </div>
-        )}
+        {activeView === 'extensions' && <ExtensionsView />}
 
         {activeView === 'settings' && (
           <div style={{ padding: '16px' }}>

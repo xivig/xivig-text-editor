@@ -4,6 +4,8 @@ import { useUIStore } from '../../stores/uiStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useBuildStore } from '../../stores/buildStore';
+import { useExtensionStore } from '../../stores/extensionStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
@@ -30,6 +32,7 @@ export const CommandPalette: React.FC = () => {
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
+  const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
   const openWrapWithAbbreviation = useUIStore((state) => state.openWrapWithAbbreviation);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -212,6 +215,52 @@ export const CommandPalette: React.FC = () => {
           language: 'settings',
           path: null,
         }),
+    },
+    {
+      id: 'build:run',
+      category: 'Build',
+      title: 'Build: Run Active File / Default Target',
+      shortcut: 'Ctrl+B / F7',
+      action: () => useBuildStore.getState().executeBuild(),
+    },
+    {
+      id: 'build:select',
+      category: 'Build',
+      title: 'Build: Select Build System & Task...',
+      shortcut: 'Ctrl+Shift+B',
+      action: openBuildSystemModal,
+    },
+    {
+      id: 'build:stop',
+      category: 'Build',
+      title: 'Build: Cancel / Stop Running Build',
+      action: () => useBuildStore.getState().stopBuild(),
+    },
+    {
+      id: 'pkg:marketplace',
+      category: 'Package Control',
+      title: 'Package Control: Browse Extensions & Packages',
+      shortcut: 'Ctrl+Shift+X',
+      action: () => setActiveSidebarView('extensions'),
+    },
+    {
+      id: 'pkg:install',
+      category: 'Package Control',
+      title: 'Package Control: Install Package...',
+      shortcut: 'Ctrl+Shift+X',
+      action: () => setActiveSidebarView('extensions'),
+    },
+    {
+      id: 'view:problems',
+      category: 'View',
+      title: 'Toggle Problems Panel',
+      action: () => toggleBottomPanel('problems'),
+    },
+    {
+      id: 'view:output',
+      category: 'View',
+      title: 'Toggle Output Panel (Build & Logs)',
+      action: () => toggleBottomPanel('output'),
     },
     {
       id: 'help:keymap',

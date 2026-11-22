@@ -46,6 +46,7 @@ import { cssColorHighlighterExtension } from './colorHighlighter';
 import { getCustomSnippetSource } from './snippets';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
+import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import logoUrl from '../../assets/logo.png';
@@ -118,6 +119,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         bookmarkGutter,
         autoRenameTagExtension,
         cssColorHighlighterExtension,
+        ...createDiagnosticsLinter(activeDoc.id, activeDoc.path, activeDoc.name),
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),

@@ -14,10 +14,13 @@ import { SearchPanel } from '../components/search/SearchPanel';
 import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModal';
 import { KeymapModal } from '../components/modals/KeymapModal';
 import { WrapWithAbbreviationModal } from '../components/modals/WrapWithAbbreviationModal';
+import { BuildSystemModal } from '../components/modals/BuildSystemModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useBuildStore } from '../stores/buildStore';
+import { useExtensionStore } from '../stores/extensionStore';
 import { EditorDocument } from '../types/editor';
 import { getActiveEditorView } from '../components/editor/editorViewRegistry';
 import {
@@ -66,6 +69,8 @@ export const App: React.FC = () => {
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const closeKeymapModal = useUIStore((state) => state.closeKeymapModal);
+  const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
+  const closeBuildSystemModal = useUIStore((state) => state.closeBuildSystemModal);
   const openWrapWithAbbreviation = useUIStore((state) => state.openWrapWithAbbreviation);
   const closeWrapWithAbbreviation = useUIStore((state) => state.closeWrapWithAbbreviation);
 
@@ -74,8 +79,9 @@ export const App: React.FC = () => {
 
   // Restore Session and Settings on Mount
   useEffect(() => {
-    // Load persisted user settings
+    // Load persisted user settings & extensions
     useSettingsStore.getState().loadSettings();
+    useExtensionStore.getState().loadInstalledExtensions();
 
     async function initSession() {
       if (!window.xivig?.restoreSession) return;
@@ -187,6 +193,7 @@ export const App: React.FC = () => {
         closeSearchPanel();
         closeLanguageSelector();
         closeKeymapModal();
+        closeBuildSystemModal();
         closeWrapWithAbbreviation();
         chordRef.current = null;
         return;
@@ -551,9 +558,18 @@ export const App: React.FC = () => {
         if (activeDoc) {
           closeDocument(activeDoc.id);
         }
+      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        openBuildSystemModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
-        toggleSidebar();
+        useBuildStore.getState().executeBuild();
+      } else if (e.key === 'F7') {
+        e.preventDefault();
+        useBuildStore.getState().executeBuild();
+      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'x') {
+        e.preventDefault();
+        setActiveSidebarView('extensions');
       } else if (isCtrlOrMeta && e.key === '\\') {
         e.preventDefault();
         setSplitLayout(splitLayout === 'single' ? 'two-columns' : 'single');
@@ -658,6 +674,7 @@ export const App: React.FC = () => {
       <LanguageSelectorModal />
       <KeymapModal />
       <WrapWithAbbreviationModal />
+      <BuildSystemModal />
     </div>
   );
 };

@@ -114,6 +114,13 @@ const shortcuts: KeyShortcut[] = [
 
   // CSS & Color
   { category: 'CSS & Color', command: 'CSS Color Swatch & Interactive Picker', keys: 'Click Swatch Widget' },
+
+  // Build System & Tasks
+  { category: 'Build & Tasks', command: 'Run Active File / Default Build Target', keys: 'Ctrl + B / F7' },
+  { category: 'Build & Tasks', command: 'Select Build System / Configure Task', keys: 'Ctrl + Shift + B' },
+
+  // Package Control & Extensions
+  { category: 'Package Control', command: 'Browse Packages & Extensions', keys: 'Ctrl + Shift + X' },
 ];
 
 export const KeymapModal: React.FC = () => {

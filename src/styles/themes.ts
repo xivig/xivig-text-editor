@@ -1,4 +1,15 @@
-export type ThemeId = 'xivig-dark' | 'monokai' | 'dracula' | 'one-dark' | 'solarized-light';
+export type ThemeId =
+  | 'xivig-dark'
+  | 'monokai'
+  | 'dracula'
+  | 'one-dark'
+  | 'solarized-light'
+  | 'nord'
+  | 'tokyo-night'
+  | 'cyberpunk'
+  | 'github-dark'
+  | 'synthwave'
+  | (string & {});
 
 export interface ThemeColors {
   id: ThemeId;
@@ -146,7 +157,131 @@ export const themes: Record<ThemeId, ThemeColors> = {
       selection: 'rgba(38, 139, 210, 0.22)',
     },
   },
+  'nord': {
+    id: 'nord',
+    name: 'Nord Theme',
+    isDark: true,
+    colors: {
+      bg: '#2e3440',
+      surface: '#242933',
+      surfaceHover: '#3b4252',
+      sidebar: '#242933',
+      activityBar: '#1f232a',
+      tabActive: '#2e3440',
+      tabInactive: '#242933',
+      editor: '#2e3440',
+      statusbar: '#1f232a',
+      accent: '#88c0d0',
+      accentHover: '#81a1c1',
+      text: '#eceff4',
+      textMuted: '#d8dee9',
+      textDim: '#4c566a',
+      border: '#3b4252',
+      borderSubtle: '#2e3440',
+      selection: 'rgba(136, 192, 208, 0.25)',
+    },
+  },
+  'tokyo-night': {
+    id: 'tokyo-night',
+    name: 'Tokyo Night',
+    isDark: true,
+    colors: {
+      bg: '#1a1b26',
+      surface: '#16161e',
+      surfaceHover: '#292e42',
+      sidebar: '#16161e',
+      activityBar: '#13141c',
+      tabActive: '#1a1b26',
+      tabInactive: '#16161e',
+      editor: '#1a1b26',
+      statusbar: '#13141c',
+      accent: '#7aa2f7',
+      accentHover: '#bb9af7',
+      text: '#c0caf5',
+      textMuted: '#9aa5ce',
+      textDim: '#565f89',
+      border: '#292e42',
+      borderSubtle: '#1f2335',
+      selection: 'rgba(122, 162, 247, 0.25)',
+    },
+  },
+  'cyberpunk': {
+    id: 'cyberpunk',
+    name: 'Cyberpunk 2077',
+    isDark: true,
+    colors: {
+      bg: '#0d0f18',
+      surface: '#121526',
+      surfaceHover: '#1c223c',
+      sidebar: '#0a0c14',
+      activityBar: '#07080d',
+      tabActive: '#0d0f18',
+      tabInactive: '#121526',
+      editor: '#0d0f18',
+      statusbar: '#07080d',
+      accent: '#fee801',
+      accentHover: '#00f0ff',
+      text: '#e5e7eb',
+      textMuted: '#9ca3af',
+      textDim: '#ff003c',
+      border: '#2a3356',
+      borderSubtle: '#1c223c',
+      selection: 'rgba(254, 232, 1, 0.28)',
+    },
+  },
+  'github-dark': {
+    id: 'github-dark',
+    name: 'GitHub Dark',
+    isDark: true,
+    colors: {
+      bg: '#0d1117',
+      surface: '#161b22',
+      surfaceHover: '#21262d',
+      sidebar: '#161b22',
+      activityBar: '#090d12',
+      tabActive: '#0d1117',
+      tabInactive: '#161b22',
+      editor: '#0d1117',
+      statusbar: '#090d12',
+      accent: '#58a6ff',
+      accentHover: '#1f6feb',
+      text: '#c9d1d9',
+      textMuted: '#8b949e',
+      textDim: '#6e7681',
+      border: '#30363d',
+      borderSubtle: '#21262d',
+      selection: 'rgba(88, 166, 255, 0.25)',
+    },
+  },
+  'synthwave': {
+    id: 'synthwave',
+    name: "SynthWave '84",
+    isDark: true,
+    colors: {
+      bg: '#262335',
+      surface: '#201d2d',
+      surfaceHover: '#342f49',
+      sidebar: '#201d2d',
+      activityBar: '#181522',
+      tabActive: '#262335',
+      tabInactive: '#201d2d',
+      editor: '#262335',
+      statusbar: '#181522',
+      accent: '#ff7edb',
+      accentHover: '#fede5d',
+      text: '#f8f8f2',
+      textMuted: '#b6b1cc',
+      textDim: '#847b9b',
+      border: '#463f63',
+      borderSubtle: '#342f49',
+      selection: 'rgba(255, 126, 219, 0.28)',
+    },
+  },
 };
+
+export function registerCustomTheme(customTheme: ThemeColors): void {
+  themes[customTheme.id] = customTheme;
+}
 
 export function applyThemeToCssVariables(themeId: ThemeId): void {
   const theme = themes[themeId] || themes['xivig-dark'];

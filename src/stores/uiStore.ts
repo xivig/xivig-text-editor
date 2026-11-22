@@ -10,6 +10,7 @@ interface UIState {
   isBottomPanelOpen: boolean;
   activeBottomTab: 'terminal' | 'output' | 'problems';
   isKeymapModalOpen: boolean;
+  isBuildSystemModalOpen: boolean;
   isWrapWithAbbreviationOpen: boolean;
   isDistractionFree: boolean;
   quickOpenInitialMode: string;
@@ -37,6 +38,10 @@ interface UIState {
   openKeymapModal: () => void;
   closeKeymapModal: () => void;
 
+  openBuildSystemModal: () => void;
+  closeBuildSystemModal: () => void;
+  toggleBuildSystemModal: () => void;
+
   openWrapWithAbbreviation: () => void;
   closeWrapWithAbbreviation: () => void;
 
@@ -52,11 +57,17 @@ export const useUIStore = create<UIState>((set, get) => ({
   isMinimapOpen: true,
   isLanguageSelectorOpen: false,
   isKeymapModalOpen: false,
+  isBuildSystemModalOpen: false,
   isWrapWithAbbreviationOpen: false,
   isDistractionFree: false,
   quickOpenInitialMode: '',
   isBottomPanelOpen: false,
   activeBottomTab: 'terminal',
+
+  openBuildSystemModal: () => set({ isBuildSystemModalOpen: true }),
+  closeBuildSystemModal: () => set({ isBuildSystemModalOpen: false }),
+  toggleBuildSystemModal: () =>
+    set((state) => ({ isBuildSystemModalOpen: !state.isBuildSystemModalOpen })),
 
   toggleDistractionFree: () =>
     set((state) => ({ isDistractionFree: !state.isDistractionFree })),

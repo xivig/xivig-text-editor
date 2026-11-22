@@ -3,6 +3,7 @@ import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useBuildStore } from '../../stores/buildStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 
@@ -25,6 +26,7 @@ export const Menubar: React.FC = () => {
 
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
+  const setActiveSidebarView = useFileStore((state) => state.setActiveSidebarView);
   const recentFiles = useFileStore((state) => state.recentFiles);
   const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
   const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
@@ -35,6 +37,7 @@ export const Menubar: React.FC = () => {
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
+  const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
 
   // Close menus on outside click
   useEffect(() => {
@@ -204,7 +207,10 @@ export const Menubar: React.FC = () => {
       { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
       { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: () => toggleBottomPanel('terminal') },
+      { label: 'Toggle Problems Panel', action: () => toggleBottomPanel('problems') },
+      { label: 'Toggle Output Panel', action: () => toggleBottomPanel('output') },
       { label: 'Toggle Minimap', action: toggleMinimap },
+      { label: 'Extensions', shortcut: 'Ctrl+Shift+X', action: () => setActiveSidebarView('extensions') },
       { divider: true, label: '' },
       { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },
       { label: 'Layout: 2 Columns', shortcut: 'Alt+Shift+2', action: () => setSplitLayout('two-columns') },
@@ -215,6 +221,28 @@ export const Menubar: React.FC = () => {
       { label: 'Reset Zoom', shortcut: 'Ctrl+0', action: () => useSettingsStore.getState().resetZoom() },
       { divider: true, label: '' },
       { label: 'Toggle Full Screen', shortcut: 'F11' },
+    ],
+    Tools: [
+      {
+        label: 'Build',
+        shortcut: 'Ctrl+B',
+        action: () => useBuildStore.getState().executeBuild(),
+      },
+      {
+        label: 'Build With...',
+        shortcut: 'Ctrl+Shift+B',
+        action: openBuildSystemModal,
+      },
+      {
+        label: 'Cancel Build',
+        action: () => useBuildStore.getState().stopBuild(),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Package Control: Browse Packages',
+        shortcut: 'Ctrl+Shift+X',
+        action: () => setActiveSidebarView('extensions'),
+      },
     ],
     Help: [
       {

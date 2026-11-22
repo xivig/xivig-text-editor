@@ -1,16 +1,21 @@
 import React from 'react';
-import { GitBranch, AlertCircle } from 'lucide-react';
+import { GitBranch, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useDiagnosticsStore } from '../../stores/diagnosticsStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
+  const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const gitBranch = useFileStore((state) => state.gitBranch);
   const isGitRepo = useFileStore((state) => state.isGitRepo);
+
+  const totalErrors = useDiagnosticsStore((state) => state.getTotalErrors());
+  const totalWarnings = useDiagnosticsStore((state) => state.getTotalWarnings());
 
   const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
@@ -26,9 +31,24 @@ export const StatusBar: React.FC = () => {
           <GitBranch size={12} style={{ marginRight: '4px' }} />
           <span>{isGitRepo ? gitBranch : 'no git'}</span>
         </div>
-        <div style={itemStyle}>
+        <div
+          onClick={() => toggleBottomPanel('problems')}
+          style={{
+            ...itemStyle,
+            color: totalErrors > 0 ? '#ef6464' : totalWarnings > 0 ? '#e6ad45' : 'inherit',
+          }}
+          title={`Problems: ${totalErrors} errors, ${totalWarnings} warnings (Click to view)`}
+        >
           <AlertCircle size={12} style={{ marginRight: '4px' }} />
-          <span>0</span>
+          <span style={{ fontWeight: totalErrors > 0 || totalWarnings > 0 ? 600 : 'normal' }}>
+            {totalErrors}
+          </span>
+          {totalWarnings > 0 && (
+            <span style={{ marginLeft: '6px', display: 'flex', alignItems: 'center' }}>
+              <AlertTriangle size={11} style={{ marginRight: '3px' }} />
+              {totalWarnings}
+            </span>
+          )}
         </div>
       </div>
 

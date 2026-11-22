@@ -43,6 +43,32 @@ const xivigAPI = {
   getGitStatus: (cwd: string) => ipcRenderer.invoke('git:status', cwd),
   commitGit: (cwd: string, message: string) => ipcRenderer.invoke('git:commit', { cwd, message }),
 
+  // Build System & Task Runner
+  buildRun: (options: { command: string; args?: string[]; cwd?: string }) =>
+    ipcRenderer.invoke('build:run', options),
+  buildStop: () => ipcRenderer.invoke('build:stop'),
+  onBuildStart: (callback: (data: { command: string; args: string[]; cwd: string; timestamp: string }) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('build:start', handler);
+    return () => {
+      ipcRenderer.removeListener('build:start', handler);
+    };
+  },
+  onBuildData: (callback: (data: { type: 'stdout' | 'stderr'; text: string }) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('build:data', handler);
+    return () => {
+      ipcRenderer.removeListener('build:data', handler);
+    };
+  },
+  onBuildDone: (callback: (data: { exitCode: number; durationMs: number }) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('build:done', handler);
+    return () => {
+      ipcRenderer.removeListener('build:done', handler);
+    };
+  },
+
   // Workspace Watcher listener
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => {
     const handler = (_: any, data: any) => callback(data);
