@@ -40,6 +40,7 @@ import { getEditorTheme } from './editorThemes';
 import { getLanguageExtension } from './languageSupport';
 import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
+import { bookmarkField, bookmarkGutter } from './bookmarks';
 import { getCustomSnippetSource } from './snippets';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
@@ -111,6 +112,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         history(),
         codeFolding(),
         foldGutter(),
+        bookmarkField,
+        bookmarkGutter,
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),

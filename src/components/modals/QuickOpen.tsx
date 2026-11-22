@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Hash, Code, Navigation } from 'lucide-react';
+import { EditorSelection } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { useUIStore } from '../../stores/uiStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon } from '../common/FileIcon';
+import { getActiveEditorView } from '../editor/editorViewRegistry';
 
 interface FlatFile {
   path: string;
@@ -13,13 +16,21 @@ interface FlatFile {
   extension?: string;
 }
 
+interface DocumentSymbol {
+  name: string;
+  line: number;
+  kind: 'function' | 'class' | 'heading' | 'variable' | 'rule';
+}
+
 export const QuickOpen: React.FC = () => {
   const isOpen = useUIStore((state) => state.isQuickOpenOpen);
   const close = useUIStore((state) => state.closeQuickOpen);
+  const initialMode = useUIStore((state) => state.quickOpenInitialMode);
 
   const fileTree = useFileStore((state) => state.fileTree);
   const currentFolderPath = useFileStore((state) => state.currentFolderPath);
   const openDocument = useEditorStore((state) => state.openDocument);
+  const activeDoc = useEditorStore((state) => state.getActiveDocument());
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -30,7 +41,7 @@ export const QuickOpen: React.FC = () => {
   // Flatten the file tree whenever opened
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
+      setQuery(initialMode || '');
       setSelectedIndex(0);
 
       const files: FlatFile[] = [];
@@ -54,16 +65,92 @@ export const QuickOpen: React.FC = () => {
 
       traverse(fileTree);
       setFlatFiles(files);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          if (initialMode) {
+            inputRef.current.setSelectionRange(initialMode.length, initialMode.length);
+          }
+        }
+      }, 50);
     }
-  }, [isOpen, fileTree, currentFolderPath]);
+  }, [isOpen, initialMode, fileTree, currentFolderPath]);
 
-  const filteredFiles = flatFiles.filter((f) => {
-    const q = query.toLowerCase();
-    return f.name.toLowerCase().includes(q) || f.relativePath.toLowerCase().includes(q);
+  // Extract symbols from active document
+  const symbols: DocumentSymbol[] = React.useMemo(() => {
+    if (!activeDoc || !activeDoc.content) return [];
+    const lines = activeDoc.content.split('\n');
+    const result: DocumentSymbol[] = [];
+
+    lines.forEach((lineText, idx) => {
+      const lineNum = idx + 1;
+      const trimmed = lineText.trim();
+
+      // Markdown headings
+      if (trimmed.startsWith('#')) {
+        result.push({ name: trimmed, line: lineNum, kind: 'heading' });
+      }
+      // Functions / methods / arrow functions
+      else if (/^(export\s+)?(async\s+)?function\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
+        const match = trimmed.match(/function\s+([a-zA-Z0-9_$]+)/);
+        if (match) result.push({ name: match[1] + '()', line: lineNum, kind: 'function' });
+      } else if (/^(export\s+)?(const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(async\s*)?(\([^)]*\)|[a-zA-Z0-9_$]+)\s*=>/.test(trimmed)) {
+        const match = trimmed.match(/(const|let|var)\s+([a-zA-Z0-9_$]+)/);
+        if (match) result.push({ name: match[2] + '()', line: lineNum, kind: 'function' });
+      }
+      // Python def / Rust fn
+      else if (/^(def|fn)\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
+        const match = trimmed.match(/(def|fn)\s+([a-zA-Z0-9_$]+)/);
+        if (match) result.push({ name: match[2] + '()', line: lineNum, kind: 'function' });
+      }
+      // Classes & Interfaces
+      else if (/^(export\s+)?(class|interface|type)\s+([a-zA-Z0-9_$]+)/.test(trimmed)) {
+        const match = trimmed.match(/(class|interface|type)\s+([a-zA-Z0-9_$]+)/);
+        if (match) result.push({ name: `${match[2]} (${match[1]})`, line: lineNum, kind: 'class' });
+      }
+      // CSS selectors
+      else if (activeDoc.language === 'css' && /^[.#a-zA-Z][^{]*\{/.test(trimmed)) {
+        const selector = trimmed.split('{')[0].trim();
+        result.push({ name: selector, line: lineNum, kind: 'rule' });
+      }
+    });
+
+    return result;
+  }, [activeDoc]);
+
+  // Jump to specific line in active editor
+  const jumpToLine = (lineNum: number) => {
+    const view = getActiveEditorView();
+    if (view) {
+      const clamped = Math.max(1, Math.min(lineNum, view.state.doc.lines));
+      const line = view.state.doc.line(clamped);
+      view.dispatch({
+        selection: EditorSelection.cursor(line.from),
+        effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
+      });
+      view.focus();
+    }
+  };
+
+  const isLineMode = query.startsWith(':');
+  const isSymbolMode = query.startsWith('@');
+
+  const filteredSymbols = symbols.filter((s) => {
+    const q = query.substring(1).trim().toLowerCase();
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q);
   });
 
-  const handleSelectFile = async (file: FlatFile) => {
+  const parsedLineNumber = isLineMode ? parseInt(query.substring(1).trim(), 10) : null;
+
+  const filteredFiles = flatFiles.filter((f) => {
+    if (isLineMode || isSymbolMode) return false;
+    const cleanQuery = query.split(':')[0].trim().toLowerCase();
+    if (!cleanQuery) return true;
+    return f.name.toLowerCase().includes(cleanQuery) || f.relativePath.toLowerCase().includes(cleanQuery);
+  });
+
+  const handleSelectFile = async (file: FlatFile, targetLine?: number) => {
     close();
     if (window.xivig?.readFile) {
       const res = await window.xivig.readFile(file.path);
@@ -74,6 +161,10 @@ export const QuickOpen: React.FC = () => {
           content: res.content,
           language: file.name,
         });
+
+        if (targetLine && targetLine > 0) {
+          setTimeout(() => jumpToLine(targetLine), 60);
+        }
       }
     }
   };
@@ -84,14 +175,24 @@ export const QuickOpen: React.FC = () => {
       close();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredFiles.length));
+      const count = isLineMode ? 1 : isSymbolMode ? filteredSymbols.length : filteredFiles.length;
+      setSelectedIndex((prev) => (prev + 1) % Math.max(1, count));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filteredFiles.length) % Math.max(1, filteredFiles.length));
+      const count = isLineMode ? 1 : isSymbolMode ? filteredSymbols.length : filteredFiles.length;
+      setSelectedIndex((prev) => (prev - 1 + count) % Math.max(1, count));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredFiles[selectedIndex]) {
-        handleSelectFile(filteredFiles[selectedIndex]);
+      if (isLineMode && parsedLineNumber && !isNaN(parsedLineNumber)) {
+        jumpToLine(parsedLineNumber);
+        close();
+      } else if (isSymbolMode && filteredSymbols[selectedIndex]) {
+        jumpToLine(filteredSymbols[selectedIndex].line);
+        close();
+      } else if (filteredFiles[selectedIndex]) {
+        const parts = query.split(':');
+        const targetLine = parts.length > 1 ? parseInt(parts[1], 10) : undefined;
+        handleSelectFile(filteredFiles[selectedIndex], targetLine);
       }
     }
   };
@@ -112,7 +213,13 @@ export const QuickOpen: React.FC = () => {
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {/* Search header */}
         <div style={searchHeaderStyle}>
-          <Search size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
+          {isLineMode ? (
+            <Navigation size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
+          ) : isSymbolMode ? (
+            <Code size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
+          ) : (
+            <Search size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
+          )}
           <input
             ref={inputRef}
             type="text"
@@ -122,22 +229,83 @@ export const QuickOpen: React.FC = () => {
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Search files by name (e.g. App.tsx, styles)..."
+            placeholder={
+              isLineMode
+                ? 'Type line number to jump to (e.g. :42)...'
+                : isSymbolMode
+                ? 'Search symbol in file (e.g. @function, @class)...'
+                : 'Type file name, or :line to jump, or @symbol...'
+            }
             style={inputStyle}
           />
         </div>
 
         {/* Results list */}
         <div ref={listRef} style={resultsContainerStyle}>
-          {filteredFiles.length > 0 ? (
+          {isLineMode ? (
+            <div
+              onClick={() => {
+                if (parsedLineNumber && !isNaN(parsedLineNumber)) {
+                  jumpToLine(parsedLineNumber);
+                  close();
+                }
+              }}
+              style={{
+                ...itemStyle,
+                backgroundColor: 'var(--xivig-accent-active)',
+                borderLeft: '2px solid var(--xivig-accent)',
+              }}
+            >
+              <div style={itemContentStyle}>
+                <Navigation size={15} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
+                <span style={fileNameStyle}>
+                  {parsedLineNumber && !isNaN(parsedLineNumber)
+                    ? `Jump to Line ${parsedLineNumber}`
+                    : 'Type line number after : (e.g. :25)'}
+                </span>
+                <span style={filePathStyle}>Press Enter to jump</span>
+              </div>
+            </div>
+          ) : isSymbolMode ? (
+            filteredSymbols.length > 0 ? (
+              filteredSymbols.map((sym, idx) => {
+                const isSelected = idx === selectedIndex;
+                return (
+                  <div
+                    key={`${sym.name}-${sym.line}`}
+                    onClick={() => {
+                      jumpToLine(sym.line);
+                      close();
+                    }}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    style={{
+                      ...itemStyle,
+                      backgroundColor: isSelected ? 'var(--xivig-accent-active)' : 'transparent',
+                      borderLeft: isSelected ? '2px solid var(--xivig-accent)' : '2px solid transparent',
+                    }}
+                  >
+                    <div style={itemContentStyle}>
+                      <Hash size={14} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
+                      <span style={fileNameStyle}>{sym.name}</span>
+                      <span style={filePathStyle}>Line {sym.line}</span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={emptyStyle}>No matching symbols in current file</div>
+            )
+          ) : filteredFiles.length > 0 ? (
             filteredFiles.map((file, idx) => {
               const isSelected = idx === selectedIndex;
-              const isCode = file.extension && ['ts', 'tsx', 'js', 'jsx', 'json', 'py', 'rs'].includes(file.extension);
-
               return (
                 <div
                   key={file.path}
-                  onClick={() => handleSelectFile(file)}
+                  onClick={() => {
+                    const parts = query.split(':');
+                    const targetLine = parts.length > 1 ? parseInt(parts[1], 10) : undefined;
+                    handleSelectFile(file, targetLine);
+                  }}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   style={{
                     ...itemStyle,
@@ -175,18 +343,19 @@ const backdropStyle: React.CSSProperties = {
   backgroundColor: 'rgba(0, 0, 0, 0.55)',
   display: 'flex',
   justifyContent: 'center',
+  alignItems: 'flex-start',
   paddingTop: '60px',
-  zIndex: 10000,
-  backdropFilter: 'blur(2px)',
+  zIndex: 1000,
+  backdropFilter: 'blur(3px)',
 };
 
 const modalStyle: React.CSSProperties = {
   width: '560px',
-  maxHeight: '440px',
+  maxHeight: '420px',
   backgroundColor: 'var(--xivig-surface)',
-  border: '1px solid var(--xivig-border)',
   borderRadius: '8px',
-  boxShadow: '0 16px 40px rgba(0, 0, 0, 0.65)',
+  border: '1px solid var(--xivig-border)',
+  boxShadow: '0 16px 36px rgba(0, 0, 0, 0.45)',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
@@ -196,31 +365,28 @@ const searchHeaderStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   padding: '12px 16px',
-  borderBottom: '1px solid var(--xivig-border)',
-  backgroundColor: 'var(--xivig-surface)',
+  borderBottom: '1px solid var(--xivig-border-subtle)',
 };
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
-  backgroundColor: 'transparent',
+  background: 'none',
   border: 'none',
-  outline: 'none',
-  fontSize: '14px',
   color: 'var(--xivig-text)',
-  padding: 0,
+  fontSize: '14px',
+  outline: 'none',
 };
 
 const resultsContainerStyle: React.CSSProperties = {
-  flex: 1,
+  maxHeight: '340px',
   overflowY: 'auto',
   padding: '6px 0',
-  maxHeight: '380px',
 };
 
 const itemStyle: React.CSSProperties = {
+  padding: '8px 16px',
   display: 'flex',
   alignItems: 'center',
-  padding: '8px 16px',
   cursor: 'pointer',
   transition: 'background-color 0.1s ease',
 };
@@ -234,18 +400,19 @@ const itemContentStyle: React.CSSProperties = {
 
 const fileNameStyle: React.CSSProperties = {
   fontSize: '13px',
-  color: 'var(--xivig-text)',
   fontWeight: 500,
+  color: 'var(--xivig-text)',
   marginRight: '12px',
-  flexShrink: 0,
+  whiteSpace: 'nowrap',
 };
 
 const filePathStyle: React.CSSProperties = {
-  fontSize: '11.5px',
+  fontSize: '11px',
   color: 'var(--xivig-text-dim)',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  marginLeft: 'auto',
 };
 
 const emptyStyle: React.CSSProperties = {

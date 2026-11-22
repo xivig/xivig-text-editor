@@ -19,6 +19,22 @@ import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { EditorDocument } from '../types/editor';
+import { getActiveEditorView } from '../components/editor/editorViewRegistry';
+import {
+  transformToUppercase,
+  transformToLowercase,
+  centerCursor,
+  setMark,
+  selectToMark,
+  deleteToMark,
+  swapWithMark,
+  yankMark,
+  skipAndSelectNextOccurrence,
+} from '../components/editor/sublimeKeymap';
+import { switchSiblingFile } from '../utils/fileSwitcher';
+import { deleteToLineEnd, deleteToLineStart } from '@codemirror/commands';
+import { unfoldAll } from '@codemirror/language';
+import { findNext, findPrevious } from '@codemirror/search';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -35,9 +51,13 @@ export const App: React.FC = () => {
   const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
   const loadRecentHistory = useFileStore((state) => state.loadRecentHistory);
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
+  const setActiveSidebarView = useFileStore((state) => state.setActiveSidebarView);
 
   const toggleCommandPalette = useUIStore((state) => state.toggleCommandPalette);
   const toggleQuickOpen = useUIStore((state) => state.toggleQuickOpen);
+  const openQuickOpenWithMode = useUIStore((state) => state.openQuickOpenWithMode);
+  const isDistractionFree = useUIStore((state) => state.isDistractionFree);
+  const toggleDistractionFree = useUIStore((state) => state.toggleDistractionFree);
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const closeSearchPanel = useUIStore((state) => state.closeSearchPanel);
   const closeCommandPalette = useUIStore((state) => state.closeCommandPalette);
@@ -172,16 +192,18 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Multi-key chord handling (e.g. Ctrl+K Ctrl+S, Ctrl+K Ctrl+O)
+      // Multi-key chord handling (Sublime Text Ctrl+K ...)
       if (chordRef.current === 'k') {
-        if (isCtrlOrMeta && e.key.toLowerCase() === 's') {
+        const k = e.key.toLowerCase();
+        chordRef.current = null;
+        if (chordTimeoutRef.current) clearTimeout(chordTimeoutRef.current);
+
+        if (k === 's') {
           e.preventDefault();
-          chordRef.current = null;
           openKeymapModal();
           return;
-        } else if (isCtrlOrMeta && e.key.toLowerCase() === 'o') {
+        } else if (k === 'o') {
           e.preventDefault();
-          chordRef.current = null;
           if (window.xivig?.openFolderDialog) {
             const res = await window.xivig.openFolderDialog();
             if (!res.canceled && res.folderPath && res.files) {
@@ -189,8 +211,82 @@ export const App: React.FC = () => {
             }
           }
           return;
+        } else if (k === 'u') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) transformToUppercase(view);
+          return;
+        } else if (k === 'l') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) transformToLowercase(view);
+          return;
+        } else if (k === 'k') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) deleteToLineEnd(view);
+          return;
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) deleteToLineStart(view);
+          return;
+        } else if (k === 'c') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) centerCursor(view);
+          return;
+        } else if (k === 'w') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view && deleteToMark(view)) {
+            return;
+          }
+          useEditorStore.getState().closeAllTabs();
+          return;
+        } else if (k === 'b') {
+          e.preventDefault();
+          toggleSidebar();
+          return;
+        } else if (k === '0' || k === 'j') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) unfoldAll(view);
+          return;
+        } else if (k === 'd') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) skipAndSelectNextOccurrence(view);
+          return;
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) setMark(view);
+          return;
+        } else if (k === 'a') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) selectToMark(view);
+          return;
+        } else if (k === 'x') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) swapWithMark(view);
+          return;
+        } else if (k === 'y') {
+          e.preventDefault();
+          const view = getActiveEditorView();
+          if (view) yankMark(view);
+          return;
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSplitLayout('two-columns');
+          return;
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSplitLayout('single');
+          return;
         }
-        chordRef.current = null;
       }
 
       if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'k') {
@@ -200,6 +296,180 @@ export const App: React.FC = () => {
         chordTimeoutRef.current = setTimeout(() => {
           chordRef.current = null;
         }, 1500);
+        return;
+      }
+
+      // New Window / Close Window (Ctrl+Shift+N / Ctrl+Shift+W)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        window.open(window.location.href, '_blank');
+        return;
+      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        window.xivig?.closeWindow?.();
+        return;
+      }
+
+      // Close Tab / File (Ctrl+F4)
+      if (isCtrlOrMeta && e.key === 'F4') {
+        e.preventDefault();
+        if (activeDoc) closeDocument(activeDoc.id);
+        return;
+      }
+
+      // Switch Header / Source Sibling File (Alt+O / Alt+Shift+O)
+      if (e.altKey && !e.shiftKey && !isCtrlOrMeta && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        switchSiblingFile(false);
+        return;
+      } else if (e.altKey && e.shiftKey && !isCtrlOrMeta && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        switchSiblingFile(true);
+        return;
+      }
+
+      // Slurp Find String (Ctrl+E)
+      if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view) {
+          const sel = view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to);
+          if (sel) {
+            openSearchPanel('find');
+          }
+        }
+        return;
+      }
+
+      // Slurp Replace String (Ctrl+Shift+E)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        openSearchPanel('replace');
+        return;
+      }
+
+      // Build / Toggle Console (F7)
+      if (!isCtrlOrMeta && !e.shiftKey && e.key === 'F7') {
+        e.preventDefault();
+        toggleBottomPanel('terminal');
+        return;
+      }
+
+      // Distraction Free Mode (Shift+F11)
+      if (e.shiftKey && e.key === 'F11') {
+        e.preventDefault();
+        toggleDistractionFree();
+        return;
+      } else if (!e.shiftKey && e.key === 'F11') {
+        e.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+        return;
+      }
+
+      // Find Next / Previous (F3 / Shift+F3)
+      if (!isCtrlOrMeta && !e.shiftKey && e.key === 'F3') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view) findNext(view);
+        return;
+      } else if (!isCtrlOrMeta && e.shiftKey && e.key === 'F3') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view) findPrevious(view);
+        return;
+      }
+
+      // Reopen Closed Tab (Ctrl+Shift+T)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        useEditorStore.getState().reopenClosedTab();
+        return;
+      }
+
+      // Tab Cycling (Ctrl+Tab / Ctrl+Shift+Tab, Ctrl+PageDown / Ctrl+PageUp)
+      if (isCtrlOrMeta && !e.shiftKey && (e.key === 'Tab' || e.key === 'PageDown')) {
+        e.preventDefault();
+        useEditorStore.getState().nextTab();
+        return;
+      } else if (isCtrlOrMeta && e.shiftKey && (e.key === 'Tab' || e.key === 'PageUp')) {
+        e.preventDefault();
+        useEditorStore.getState().previousTab();
+        return;
+      }
+
+      // Direct Tab Switching (Alt+1 through Alt+0)
+      if (e.altKey && !e.shiftKey && !isCtrlOrMeta && ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(e.key)) {
+        e.preventDefault();
+        const tabIndex = e.key === '0' ? 9 : parseInt(e.key, 10) - 1;
+        useEditorStore.getState().switchToTab(tabIndex);
+        return;
+      }
+
+      // Go to Line (Ctrl+G)
+      if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        openQuickOpenWithMode(':');
+        return;
+      }
+
+      // Go to Symbol (Ctrl+R)
+      if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        openQuickOpenWithMode('@');
+        return;
+      }
+
+      // Go to Term in File (Ctrl+;)
+      if (isCtrlOrMeta && !e.shiftKey && e.key === ';') {
+        e.preventDefault();
+        openQuickOpenWithMode('#');
+        return;
+      }
+
+      // Focus Search in Sidebar (Ctrl+Shift+F)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setActiveSidebarView('search');
+        return;
+      }
+
+      // Focus Explorer in Sidebar (Ctrl+Shift+E)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        setActiveSidebarView('explorer');
+        return;
+      }
+
+      // Focus Git in Sidebar (Ctrl+Shift+G)
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        setActiveSidebarView('git');
+        return;
+      }
+
+      // Focus Sidebar (Ctrl+0)
+      if (isCtrlOrMeta && (e.key === '0' || e.code === 'Digit0')) {
+        e.preventDefault();
+        toggleSidebar();
+        return;
+      }
+
+      // Alt+Shift Layouts (1=single, 2=two columns, 3=two rows, 5=two columns, 8=two rows)
+      if (e.altKey && e.shiftKey && e.key === '1') {
+        e.preventDefault();
+        setSplitLayout('single');
+        return;
+      } else if (e.altKey && e.shiftKey && (e.key === '2' || e.key === '5')) {
+        e.preventDefault();
+        setSplitLayout('two-columns');
+        return;
+      } else if (e.altKey && e.shiftKey && (e.key === '3' || e.key === '8' || e.key === '9')) {
+        e.preventDefault();
+        setSplitLayout('two-rows');
         return;
       }
 
@@ -321,14 +591,14 @@ export const App: React.FC = () => {
   return (
     <div style={appContainerStyle}>
       <Titlebar />
-      <Menubar />
-      <div style={workbenchStyle}>
-        <ActivityBar />
-        <Sidebar />
+      {!isDistractionFree && <Menubar />}
+      <div style={{ ...workbenchStyle, justifyContent: isDistractionFree ? 'center' : 'stretch' }}>
+        {!isDistractionFree && <ActivityBar />}
+        {!isDistractionFree && <Sidebar />}
 
-        {/* Editor Area with Split Panes Support */}
+        {/* Editor Area with Split Panes Support & Distraction Free Mode */}
         {splitLayout === 'single' ? (
-          <main style={editorAreaStyle}>
+          <main style={{ ...editorAreaStyle, maxWidth: isDistractionFree ? '1080px' : 'none', margin: isDistractionFree ? '0 auto' : '0' }}>
             <TabBar pane="primary" />
             <LinkedFileBanner />
             <div style={editorSurfaceStyle}>
@@ -380,7 +650,7 @@ export const App: React.FC = () => {
       {/* Integrated Terminal & Bottom Panel */}
       <BottomPanel />
 
-      <StatusBar />
+      {!isDistractionFree && <StatusBar />}
 
       {/* Floating Modals */}
       <CommandPalette />

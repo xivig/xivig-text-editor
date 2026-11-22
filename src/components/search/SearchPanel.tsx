@@ -15,6 +15,7 @@ import {
   findPrevious,
   replaceNext,
   replaceAll,
+  selectSelectionMatches,
   SearchCursor,
   RegExpCursor,
 } from '@codemirror/search';
@@ -138,6 +139,25 @@ export const SearchPanel: React.FC = () => {
     if (e.key === 'Escape') {
       e.preventDefault();
       close();
+    } else if (e.altKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      setCaseSensitive((prev) => !prev);
+    } else if (e.altKey && e.key.toLowerCase() === 'r') {
+      e.preventDefault();
+      setRegexp((prev) => !prev);
+    } else if (e.altKey && e.key.toLowerCase() === 'w') {
+      e.preventDefault();
+      setWholeWord((prev) => !prev);
+    } else if (e.ctrlKey && e.altKey && e.key === 'Enter') {
+      e.preventDefault();
+      handleReplaceAll();
+    } else if (e.altKey && e.key === 'Enter') {
+      e.preventDefault();
+      const view = getActiveEditorView();
+      if (view) {
+        selectSelectionMatches(view);
+        close();
+      }
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (e.shiftKey) {

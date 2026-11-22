@@ -11,14 +11,19 @@ interface UIState {
   activeBottomTab: 'terminal' | 'output' | 'problems';
   isKeymapModalOpen: boolean;
   isWrapWithAbbreviationOpen: boolean;
+  isDistractionFree: boolean;
+  quickOpenInitialMode: string;
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
 
   openQuickOpen: () => void;
+  openQuickOpenWithMode: (mode: string) => void;
   closeQuickOpen: () => void;
   toggleQuickOpen: () => void;
+
+  toggleDistractionFree: () => void;
 
   openSearchPanel: (mode?: 'find' | 'replace') => void;
   closeSearchPanel: () => void;
@@ -48,8 +53,13 @@ export const useUIStore = create<UIState>((set, get) => ({
   isLanguageSelectorOpen: false,
   isKeymapModalOpen: false,
   isWrapWithAbbreviationOpen: false,
+  isDistractionFree: false,
+  quickOpenInitialMode: '',
   isBottomPanelOpen: false,
   activeBottomTab: 'terminal',
+
+  toggleDistractionFree: () =>
+    set((state) => ({ isDistractionFree: !state.isDistractionFree })),
 
   openWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: true }),
   closeWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: false }),
@@ -83,8 +93,10 @@ export const useUIStore = create<UIState>((set, get) => ({
     })),
 
   openQuickOpen: () =>
-    set({ isQuickOpenOpen: true, isCommandPaletteOpen: false }),
-  closeQuickOpen: () => set({ isQuickOpenOpen: false }),
+    set({ isQuickOpenOpen: true, quickOpenInitialMode: '', isCommandPaletteOpen: false }),
+  openQuickOpenWithMode: (mode: string) =>
+    set({ isQuickOpenOpen: true, quickOpenInitialMode: mode, isCommandPaletteOpen: false }),
+  closeQuickOpen: () => set({ isQuickOpenOpen: false, quickOpenInitialMode: '' }),
   toggleQuickOpen: () =>
     set((state) => ({
       isQuickOpenOpen: !state.isQuickOpenOpen,

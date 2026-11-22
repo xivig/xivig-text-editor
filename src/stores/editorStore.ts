@@ -11,9 +11,15 @@ interface EditorState {
   splitLayout: SplitLayout;
   activePane: 'primary' | 'secondary';
   untitledCount: number;
+  closedDocumentsHistory: EditorDocument[];
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
   closeDocument: (id: string) => void;
+  closeAllTabs: () => void;
+  reopenClosedTab: () => void;
+  nextTab: () => void;
+  previousTab: () => void;
+  switchToTab: (index: number) => void;
   setActiveDocument: (id: string) => void;
   setSecondaryDocument: (id: string | null) => void;
   setSplitLayout: (layout: SplitLayout) => void;
@@ -77,6 +83,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   splitLayout: 'single',
   activePane: 'primary',
   untitledCount: 1,
+  closedDocumentsHistory: [],
 
   persistSessionDebounced: triggerAutoSave,
 
@@ -155,10 +162,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   closeDocument: (id) => {
-    const { documents, activeDocumentId } = get();
+    const { documents, activeDocumentId, closedDocumentsHistory } = get();
     const index = documents.findIndex((d) => d.id === id);
     if (index === -1) return;
 
+    const closedDoc = documents[index];
     const newDocs = documents.filter((d) => d.id !== id);
     let nextActiveId = activeDocumentId;
 
@@ -174,8 +182,59 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       documents: newDocs,
       activeDocumentId: nextActiveId,
+      closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), closedDoc],
     });
     triggerAutoSave();
+  },
+
+  closeAllTabs: () => {
+    const { documents, closedDocumentsHistory } = get();
+    set({
+      documents: [],
+      activeDocumentId: null,
+      secondaryDocumentId: null,
+      closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...documents],
+    });
+    triggerAutoSave();
+  },
+
+  reopenClosedTab: () => {
+    const { closedDocumentsHistory } = get();
+    if (closedDocumentsHistory.length === 0) return;
+    const last = closedDocumentsHistory[closedDocumentsHistory.length - 1];
+    set({
+      closedDocumentsHistory: closedDocumentsHistory.slice(0, -1),
+    });
+    get().openDocument({
+      id: last.id,
+      path: last.path,
+      name: last.name,
+      content: last.content,
+      language: last.language,
+    });
+  },
+
+  nextTab: () => {
+    const { documents, activeDocumentId } = get();
+    if (documents.length <= 1) return;
+    const idx = documents.findIndex((d) => d.id === activeDocumentId);
+    const nextIdx = (idx + 1) % documents.length;
+    set({ activeDocumentId: documents[nextIdx].id });
+  },
+
+  previousTab: () => {
+    const { documents, activeDocumentId } = get();
+    if (documents.length <= 1) return;
+    const idx = documents.findIndex((d) => d.id === activeDocumentId);
+    const prevIdx = (idx - 1 + documents.length) % documents.length;
+    set({ activeDocumentId: documents[prevIdx].id });
+  },
+
+  switchToTab: (index: number) => {
+    const { documents } = get();
+    if (index >= 0 && index < documents.length) {
+      set({ activeDocumentId: documents[index].id });
+    }
   },
 
   setActiveDocument: (id) => {
