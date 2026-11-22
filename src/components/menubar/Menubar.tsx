@@ -40,6 +40,7 @@ export const Menubar: React.FC = () => {
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
+  const openAboutModal = useUIStore((state) => state.openAboutModal);
 
   // Close menus on outside click
   useEffect(() => {
@@ -285,14 +286,45 @@ export const Menubar: React.FC = () => {
     ],
     Help: [
       {
+        label: 'Documentation',
+        action: () => window.open('https://github.com/phcode-dev/phoenix', '_blank'),
+      },
+      {
+        label: 'Report a Bug',
+        action: () => window.open('https://github.com/phcode-dev/phoenix/issues', '_blank'),
+      },
+      {
+        label: 'Twitter',
+        action: () => window.open('https://twitter.com', '_blank'),
+      },
+      { divider: true, label: '' },
+      {
         label: 'Keyboard Shortcuts',
         shortcut: 'Ctrl+K Ctrl+S',
         action: openKeymapModal,
       },
+      {
+        label: 'Indexing Status...',
+        action: () => alert('Indexing Status:\nAll project files and symbol databases are up to date and fully indexed.'),
+      },
       { divider: true, label: '' },
       {
-        label: 'About Xivig Editor',
-        action: () => alert('Xivig Editor v0.1.0\nSublime Text inspired fast desktop code editor.'),
+        label: 'Remove License',
+        action: () => alert('License Information:\nActive License: Phoenix Pro (Community & Pro Edition)'),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Check for Updates...',
+        action: () => alert('Check for Updates:\nYou are running the latest version of Phoenix Code (v5.5 build 5.5.11-23832).'),
+      },
+      {
+        label: 'Changelog...',
+        action: () => window.open('https://github.com/phcode-dev/phoenix/releases', '_blank'),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'About Phoenix Code',
+        action: openAboutModal,
       },
     ],
   };

@@ -33,6 +33,7 @@ export const CommandPalette: React.FC = () => {
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
+  const openAboutModal = useUIStore((state) => state.openAboutModal);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
@@ -271,6 +272,12 @@ export const CommandPalette: React.FC = () => {
       title: 'Keyboard Shortcuts Cheat Sheet',
       shortcut: 'Ctrl+K Ctrl+S',
       action: openKeymapModal,
+    },
+    {
+      id: 'help:about',
+      category: 'Help',
+      title: 'About Phoenix Code',
+      action: openAboutModal,
     },
     {
       id: 'view:sidebar',

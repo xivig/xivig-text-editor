@@ -16,6 +16,7 @@ interface UIState {
   colorPickerInitialColor: string;
   colorPickerRange: { from: number; to: number } | null;
   isLoremIpsumOpen: boolean;
+  isAboutModalOpen: boolean;
   isDistractionFree: boolean;
   quickOpenInitialMode: string;
 
@@ -55,6 +56,9 @@ interface UIState {
   openLoremIpsumModal: () => void;
   closeLoremIpsumModal: () => void;
 
+  openAboutModal: () => void;
+  closeAboutModal: () => void;
+
   toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
   setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
@@ -73,6 +77,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   colorPickerInitialColor: '#6c8cff',
   colorPickerRange: null,
   isLoremIpsumOpen: false,
+  isAboutModalOpen: false,
   isDistractionFree: false,
   quickOpenInitialMode: '',
   isBottomPanelOpen: false,
@@ -100,6 +105,9 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   openLoremIpsumModal: () => set({ isLoremIpsumOpen: true }),
   closeLoremIpsumModal: () => set({ isLoremIpsumOpen: false }),
+
+  openAboutModal: () => set({ isAboutModalOpen: true }),
+  closeAboutModal: () => set({ isAboutModalOpen: false }),
 
   openKeymapModal: () => set({ isKeymapModalOpen: true }),
   closeKeymapModal: () => set({ isKeymapModalOpen: false }),
