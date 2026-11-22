@@ -35,6 +35,8 @@ import {
 import { useEditorStore } from '../../stores/editorStore';
 import { xivigSyntaxTheme } from './xivigTheme';
 import { getLanguageExtension } from './languageSupport';
+import { setActiveEditorView } from './editorViewRegistry';
+import logoUrl from '../../assets/logo.png';
 
 export const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,10 +125,12 @@ export const Editor: React.FC = () => {
     });
 
     viewRef.current = view;
+    setActiveEditorView(view);
 
     return () => {
       view.destroy();
       viewRef.current = null;
+      setActiveEditorView(null);
     };
   }, [activeDocumentId]);
 
@@ -134,7 +138,11 @@ export const Editor: React.FC = () => {
     return (
       <div style={emptyContainerStyle}>
         <div style={emptyContentStyle}>
-          <div style={{ fontSize: '32px', marginBottom: '16px' }}>⚡</div>
+          <img
+            src={logoUrl}
+            alt="Xivig Logo"
+            style={{ width: '56px', height: '56px', marginBottom: '16px', objectFit: 'contain' }}
+          />
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--xivig-text)', marginBottom: '8px' }}>
             No Open Documents
           </h2>

@@ -6,8 +6,12 @@ import { Sidebar } from '../components/sidebar/Sidebar';
 import { TabBar } from '../components/tabs/TabBar';
 import { Editor } from '../components/editor/Editor';
 import { StatusBar } from '../components/statusbar/StatusBar';
+import { CommandPalette } from '../components/modals/CommandPalette';
+import { QuickOpen } from '../components/modals/QuickOpen';
+import { SearchPanel } from '../components/search/SearchPanel';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
+import { useUIStore } from '../stores/uiStore';
 import { EditorDocument } from '../types/editor';
 
 export const App: React.FC = () => {
@@ -23,6 +27,13 @@ export const App: React.FC = () => {
   const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
   const loadRecentHistory = useFileStore((state) => state.loadRecentHistory);
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
+
+  const toggleCommandPalette = useUIStore((state) => state.toggleCommandPalette);
+  const toggleQuickOpen = useUIStore((state) => state.toggleQuickOpen);
+  const openSearchPanel = useUIStore((state) => state.openSearchPanel);
+  const closeSearchPanel = useUIStore((state) => state.closeSearchPanel);
+  const closeCommandPalette = useUIStore((state) => state.closeCommandPalette);
+  const closeQuickOpen = useUIStore((state) => state.closeQuickOpen);
 
   // Restore Session on Mount
   useEffect(() => {
@@ -112,7 +123,27 @@ export const App: React.FC = () => {
     const handleKeyDown = async (e: KeyboardEvent) => {
       const isCtrlOrMeta = e.ctrlKey || e.metaKey;
 
-      if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'n') {
+      // Escape key closes modals / search
+      if (e.key === 'Escape') {
+        closeCommandPalette();
+        closeQuickOpen();
+        closeSearchPanel();
+        return;
+      }
+
+      if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        toggleCommandPalette();
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        toggleQuickOpen();
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        openSearchPanel('find');
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        openSearchPanel('replace');
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         createNewDocument();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'o') {
@@ -162,7 +193,20 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeDoc, createNewDocument, openDocument, closeDocument, markDocumentSaved, toggleSidebar]);
+  }, [
+    activeDoc,
+    createNewDocument,
+    openDocument,
+    closeDocument,
+    markDocumentSaved,
+    toggleSidebar,
+    toggleCommandPalette,
+    toggleQuickOpen,
+    openSearchPanel,
+    closeSearchPanel,
+    closeCommandPalette,
+    closeQuickOpen,
+  ]);
 
   return (
     <div style={appContainerStyle}>
@@ -174,11 +218,16 @@ export const App: React.FC = () => {
         <main style={editorAreaStyle}>
           <TabBar />
           <div style={editorSurfaceStyle}>
+            <SearchPanel />
             <Editor />
           </div>
         </main>
       </div>
       <StatusBar />
+
+      {/* Floating Modals */}
+      <CommandPalette />
+      <QuickOpen />
     </div>
   );
 };

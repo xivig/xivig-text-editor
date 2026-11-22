@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
+import { useUIStore } from '../../stores/uiStore';
 
 interface MenuItem {
   label: string;
@@ -23,6 +24,10 @@ export const Menubar: React.FC = () => {
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
   const recentFiles = useFileStore((state) => state.recentFiles);
   const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
+
+  const openSearchPanel = useUIStore((state) => state.openSearchPanel);
+  const openCommandPalette = useUIStore((state) => state.openCommandPalette);
+  const openQuickOpen = useUIStore((state) => state.openQuickOpen);
 
   // Close menus on outside click
   useEffect(() => {
@@ -142,8 +147,8 @@ export const Menubar: React.FC = () => {
       { label: 'Copy', shortcut: 'Ctrl+C' },
       { label: 'Paste', shortcut: 'Ctrl+V' },
       { divider: true, label: '' },
-      { label: 'Find', shortcut: 'Ctrl+F' },
-      { label: 'Replace', shortcut: 'Ctrl+H' },
+      { label: 'Find', shortcut: 'Ctrl+F', action: () => openSearchPanel('find') },
+      { label: 'Replace', shortcut: 'Ctrl+H', action: () => openSearchPanel('replace') },
     ],
     Selection: [
       { label: 'Select All', shortcut: 'Ctrl+A' },
@@ -151,6 +156,9 @@ export const Menubar: React.FC = () => {
       { label: 'Shrink Selection', shortcut: 'Shift+Alt+Left' },
     ],
     View: [
+      { label: 'Command Palette...', shortcut: 'Ctrl+Shift+P', action: openCommandPalette },
+      { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
+      { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
       { label: 'Toggle Full Screen', shortcut: 'F11' },
     ],

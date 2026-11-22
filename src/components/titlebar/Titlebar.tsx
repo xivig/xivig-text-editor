@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
+import logoUrl from '../../assets/logo.png';
 
 export const Titlebar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -33,7 +34,11 @@ export const Titlebar: React.FC = () => {
     <header style={titlebarStyle}>
       {/* Brand & Logo */}
       <div style={leftSectionStyle}>
-        <div style={logoBadgeStyle}>⚡</div>
+        <img
+          src={logoUrl}
+          alt="Xivig Logo"
+          style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
+        />
         <span style={brandTextStyle}>Xivig</span>
       </div>
 

@@ -30,8 +30,13 @@ const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = path.join(RENDERER_DIST, 'index.html');
 
 async function createWindow() {
+  const iconPath = process.env.VITE_DEV_SERVER_URL
+    ? path.join(process.env.APP_ROOT, 'public/logo.png')
+    : path.join(RENDERER_DIST, 'logo.png');
+
   win = new BrowserWindow({
     title: 'Xivig Editor',
+    icon: iconPath,
     width: 1280,
     height: 840,
     minWidth: 640,

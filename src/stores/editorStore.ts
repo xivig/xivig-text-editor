@@ -57,7 +57,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: 'welcome-tab',
       path: null,
       name: 'Welcome.md',
-      content: `# Xivig Editor ⚡\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Quick Start Shortcuts\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n\n### 🛠️ Built with:\n* **Electron 34** + **Node.js**\n* **SQLite** (Session persistence & workspace metadata)\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Modern transaction-based editor core)\n* **Vite** (Instant hot module reload)\n* **Zustand** (Predictable reactive state)\n\n*Start typing or open a folder to explore your project!*`,
+      content: `# Xivig Editor\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Keyboard Shortcuts\n* **Ctrl + Shift + P**: Command Palette\n* **Ctrl + P**: Quick Open File\n* **Ctrl + F**: Find / Search\n* **Ctrl + H**: Replace\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n* **Ctrl + B**: Toggle Sidebar\n\n### 🛠️ Architecture:\n* **Electron 34** + **Node.js**\n* **SQLite & Session Persistence**\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Multi-cursor, syntax highlighting & transactions)\n* **Vite** (Ultra-fast HMR)\n* **Zustand** (UI & Document State)\n\n*Start editing or open a folder to explore your project!*`,
       language: 'markdown',
       isDirty: false,
       cursor: { line: 1, col: 1 },
