@@ -57,7 +57,7 @@ export const LoremIpsumModal: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={16} color="var(--xivig-accent, #6c8cff)" />
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
-              Brackets Lorem Ipsum Generator
+              Lorem Ipsum Generator
             </span>
           </div>
           <button onClick={close} style={closeBtnStyle}>

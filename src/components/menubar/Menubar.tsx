@@ -192,7 +192,7 @@ export const Menubar: React.FC = () => {
       },
       { divider: true, label: '' },
       {
-        label: 'Beautify Code (Brackets Beautify)',
+        label: 'Beautify Code',
         shortcut: 'Ctrl+Alt+B',
         action: () => {
           const view = getActiveEditorView();
@@ -200,7 +200,7 @@ export const Menubar: React.FC = () => {
         },
       },
       {
-        label: 'Color Picker (Brackets Quick Edit)',
+        label: 'Color Picker',
         shortcut: 'Ctrl+Alt+C',
         action: () => {
           const view = getActiveEditorView();
@@ -217,7 +217,7 @@ export const Menubar: React.FC = () => {
         },
       },
       {
-        label: 'Insert Lorem Ipsum... (Brackets)',
+        label: 'Insert Lorem Ipsum...',
         shortcut: 'Ctrl+Alt+L',
         action: () => useUIStore.getState().openLoremIpsumModal(),
       },

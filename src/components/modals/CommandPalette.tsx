@@ -403,7 +403,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'format:beautify',
       category: 'Format',
-      title: 'Beautify Code (Brackets Beautify: HTML/CSS/JS)',
+      title: 'Beautify Code',
       shortcut: 'Ctrl+Alt+B',
       action: () => {
         const view = getActiveEditorView();
@@ -415,7 +415,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'edit:color-picker',
       category: 'Edit',
-      title: 'Brackets Color Picker (Quick Edit)',
+      title: 'Color Picker',
       shortcut: 'Ctrl+Alt+C',
       action: () => {
         const view = getActiveEditorView();
@@ -434,7 +434,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'edit:lorem-ipsum',
       category: 'Edit',
-      title: 'Insert Lorem Ipsum... (Brackets)',
+      title: 'Insert Lorem Ipsum...',
       shortcut: 'Ctrl+Alt+L',
       action: () => useUIStore.getState().openLoremIpsumModal(),
     },

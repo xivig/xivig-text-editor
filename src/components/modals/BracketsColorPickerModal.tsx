@@ -173,7 +173,7 @@ export const BracketsColorPickerModal: React.FC = () => {
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>
-              Brackets Color Picker
+              Color Picker
             </span>
             <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase' }}>
               (Quick Edit)
