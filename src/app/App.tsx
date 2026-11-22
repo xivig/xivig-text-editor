@@ -20,6 +20,9 @@ import { BuildSystemModal } from '../components/modals/BuildSystemModal';
 import { BracketsColorPickerModal } from '../components/modals/BracketsColorPickerModal';
 import { LoremIpsumModal } from '../components/modals/LoremIpsumModal';
 import { AboutModal } from '../components/modals/AboutModal';
+import { IndexingStatusModal } from '../components/modals/IndexingStatusModal';
+import { RemoveLicenseModal } from '../components/modals/RemoveLicenseModal';
+import { UpdateCheckModal } from '../components/modals/UpdateCheckModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
@@ -738,6 +741,9 @@ export const App: React.FC = () => {
       <BracketsColorPickerModal />
       <LoremIpsumModal />
       <AboutModal />
+      <IndexingStatusModal />
+      <RemoveLicenseModal />
+      <UpdateCheckModal />
     </div>
   );
 };

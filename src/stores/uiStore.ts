@@ -17,6 +17,9 @@ interface UIState {
   colorPickerRange: { from: number; to: number } | null;
   isLoremIpsumOpen: boolean;
   isAboutModalOpen: boolean;
+  isIndexingStatusOpen: boolean;
+  isRemoveLicenseOpen: boolean;
+  isUpdateCheckOpen: boolean;
   isDistractionFree: boolean;
   quickOpenInitialMode: string;
 
@@ -59,6 +62,15 @@ interface UIState {
   openAboutModal: () => void;
   closeAboutModal: () => void;
 
+  openIndexingStatusModal: () => void;
+  closeIndexingStatusModal: () => void;
+
+  openRemoveLicenseModal: () => void;
+  closeRemoveLicenseModal: () => void;
+
+  openUpdateCheckModal: () => void;
+  closeUpdateCheckModal: () => void;
+
   toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
   setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
@@ -78,6 +90,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   colorPickerRange: null,
   isLoremIpsumOpen: false,
   isAboutModalOpen: false,
+  isIndexingStatusOpen: false,
+  isRemoveLicenseOpen: false,
+  isUpdateCheckOpen: false,
   isDistractionFree: false,
   quickOpenInitialMode: '',
   isBottomPanelOpen: false,
@@ -108,6 +123,15 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   openAboutModal: () => set({ isAboutModalOpen: true }),
   closeAboutModal: () => set({ isAboutModalOpen: false }),
+
+  openIndexingStatusModal: () => set({ isIndexingStatusOpen: true }),
+  closeIndexingStatusModal: () => set({ isIndexingStatusOpen: false }),
+
+  openRemoveLicenseModal: () => set({ isRemoveLicenseOpen: true }),
+  closeRemoveLicenseModal: () => set({ isRemoveLicenseOpen: false }),
+
+  openUpdateCheckModal: () => set({ isUpdateCheckOpen: true }),
+  closeUpdateCheckModal: () => set({ isUpdateCheckOpen: false }),
 
   openKeymapModal: () => set({ isKeymapModalOpen: true }),
   closeKeymapModal: () => set({ isKeymapModalOpen: false }),

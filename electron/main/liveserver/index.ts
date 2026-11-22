@@ -60,6 +60,19 @@ let currentPort = 5500;
 let currentRoot = '';
 const sseClients = new Set<http.ServerResponse>();
 
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (m) => {
+    switch (m) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#39;';
+      default: return m;
+    }
+  });
+}
+
 export function getLiveServerStatus(): LiveServerStatus {
   return {
     isRunning: currentServer !== null,
@@ -122,11 +135,18 @@ export async function startLiveServer(
           return;
         }
 
-        // 2. Resolve requested file path against currentRoot
-        let safePath = path.normalize(path.join(currentRoot, pathname));
-        if (!safePath.startsWith(path.normalize(currentRoot))) {
-          res.writeHead(403, { 'Content-Type': 'text/plain' });
-          res.end('403 Forbidden');
+        // 2. Resolve requested file path against currentRoot and prevent path traversal
+        const normalizedRoot = path.resolve(currentRoot);
+        const cleanPath = path.normalize(pathname).replace(/^([a-zA-Z]:|[/\\])+/, '');
+        let safePath = path.resolve(normalizedRoot, cleanPath);
+
+        if (safePath !== normalizedRoot && !safePath.startsWith(normalizedRoot + path.sep)) {
+          res.writeHead(403, {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'SAMEORIGIN',
+          });
+          res.end('403 Forbidden: Access outside workspace root is not allowed.');
           return;
         }
 
@@ -139,15 +159,19 @@ export async function startLiveServer(
         }
 
         if (!fs.existsSync(safePath) || fs.statSync(safePath).isDirectory()) {
-          res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.writeHead(404, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'SAMEORIGIN',
+          });
           res.end(`
             <!DOCTYPE html>
             <html>
               <head><title>404 Not Found - Xivig Live Server</title></head>
               <body style="font-family: system-ui, sans-serif; background: #17191f; color: #e5e7eb; padding: 40px;">
                 <h2 style="color: #ef6464;">404 Not Found</h2>
-                <p>Cannot find: <code>${pathname}</code></p>
-                <p style="color: #9299a8;">Serving from: <code>${currentRoot}</code></p>
+                <p>Cannot find: <code>${escapeHtml(pathname)}</code></p>
+                <p style="color: #9299a8;">Serving from: <code>${escapeHtml(currentRoot)}</code></p>
               </body>
             </html>
           `);
@@ -172,11 +196,13 @@ export async function startLiveServer(
             res.writeHead(200, {
               'Content-Type': contentType,
               'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'X-Content-Type-Options': 'nosniff',
+              'X-Frame-Options': 'SAMEORIGIN',
             });
             res.end(html);
           } catch (err: any) {
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
-            res.end(`500 Internal Server Error: ${err.message}`);
+            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+            res.end(`500 Internal Server Error`);
           }
           return;
         }
@@ -188,12 +214,13 @@ export async function startLiveServer(
             'Content-Type': contentType,
             'Content-Length': stat.size,
             'Access-Control-Allow-Origin': '*',
+            'X-Content-Type-Options': 'nosniff',
           });
           const stream = fs.createReadStream(safePath);
           stream.pipe(res);
         } catch (err: any) {
-          res.writeHead(500, { 'Content-Type': 'text/plain' });
-          res.end(`500 Error: ${err.message}`);
+          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+          res.end(`500 Error`);
         }
       });
 

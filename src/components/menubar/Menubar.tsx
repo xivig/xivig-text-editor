@@ -11,7 +11,7 @@ import { beautifyActiveEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 
 interface MenuItem {
-  label: string;
+  label: React.ReactNode;
   shortcut?: string;
   action?: () => void;
   divider?: boolean;
@@ -42,6 +42,9 @@ export const Menubar: React.FC = () => {
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
   const openAboutModal = useUIStore((state) => state.openAboutModal);
+  const openIndexingStatusModal = useUIStore((state) => state.openIndexingStatusModal);
+  const openRemoveLicenseModal = useUIStore((state) => state.openRemoveLicenseModal);
+  const openUpdateCheckModal = useUIStore((state) => state.openUpdateCheckModal);
 
   // Close menus on outside click
   useEffect(() => {
@@ -162,6 +165,11 @@ export const Menubar: React.FC = () => {
             language: 'settings',
             path: null,
           }),
+      },
+      {
+        label: 'Preferences: Key Bindings',
+        shortcut: 'Ctrl+K Ctrl+S',
+        action: openKeymapModal,
       },
       { divider: true, label: '' },
       { label: 'Exit', action: () => window.xivig?.closeWindow?.() },
@@ -321,11 +329,11 @@ export const Menubar: React.FC = () => {
     Help: [
       {
         label: 'Documentation',
-        action: () => window.open('https://github.com/xivig/xivig-text-editor', '_blank'),
+        action: () => window.open('https://github.com/xivig/xivig-text-editor#readme', '_blank'),
       },
       {
         label: 'Report a Bug',
-        action: () => window.open('https://github.com/xivig/xivig-text-editor/issues', '_blank'),
+        action: () => window.open('https://github.com/xivig/xivig-text-editor/issues/new/choose', '_blank'),
       },
       {
         label: 'Twitter',
@@ -333,31 +341,29 @@ export const Menubar: React.FC = () => {
       },
       { divider: true, label: '' },
       {
-        label: 'Keyboard Shortcuts',
-        shortcut: 'Ctrl+K Ctrl+S',
-        action: openKeymapModal,
-      },
-      {
         label: 'Indexing Status...',
-        action: () => alert('Indexing Status:\nAll project files and symbol databases are up to date and fully indexed.'),
+        action: openIndexingStatusModal,
       },
       { divider: true, label: '' },
       {
         label: 'Remove License',
-        action: () => alert('License Information:\nActive License: Xivig Community License'),
+        action: openRemoveLicenseModal,
       },
       { divider: true, label: '' },
       {
         label: 'Check for Updates...',
-        action: () => alert('Check for Updates:\nYou are running the latest version of Xivig Text Editor (Release 1.0).'),
+        action: openUpdateCheckModal,
       },
       {
         label: 'Changelog...',
         action: () => window.open('https://github.com/xivig/xivig-text-editor/releases', '_blank'),
       },
-      { divider: true, label: '' },
       {
-        label: 'About Xivig Text Editor',
+        label: (
+          <span>
+            <u>A</u>bout Xivig Text Editor
+          </span>
+        ),
         action: openAboutModal,
       },
     ],
@@ -398,12 +404,12 @@ export const Menubar: React.FC = () => {
                       }}
                       style={dropdownItemStyle}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--xivig-accent-active)';
+                        e.currentTarget.style.backgroundColor = '#383b42';
                         e.currentTarget.style.color = '#ffffff';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = 'var(--xivig-text)';
+                        e.currentTarget.style.color = '#c9ccd3';
                       }}
                     >
                       <span>{item.label}</span>
@@ -446,11 +452,11 @@ const dropdownStyle: React.CSSProperties = {
   top: '100%',
   left: 0,
   minWidth: '200px',
-  backgroundColor: 'var(--xivig-surface)',
-  border: '1px solid var(--xivig-border)',
+  backgroundColor: '#212224',
+  border: '1px solid #383a40',
   borderRadius: '4px',
   padding: '4px 0',
-  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
   zIndex: 1000,
 };
 
@@ -459,9 +465,14 @@ const dropdownItemStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '6px 12px',
+  padding: '6px 14px',
   fontSize: '12px',
   textAlign: 'left',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  color: '#c9ccd3',
+  fontFamily: 'inherit',
 };
 
 const shortcutStyle: React.CSSProperties = {
@@ -472,6 +483,6 @@ const shortcutStyle: React.CSSProperties = {
 
 const dividerStyle: React.CSSProperties = {
   height: '1px',
-  backgroundColor: 'var(--xivig-border-subtle)',
+  backgroundColor: '#35373d',
   margin: '4px 0',
 };

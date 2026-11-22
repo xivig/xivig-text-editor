@@ -1,0 +1,56 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve Xivig Text Editor
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please ensure you are running the latest version of Xivig Text Editor before submitting.
+  - type: input
+    id: version
+    attributes:
+      label: Xivig Version
+      description: What version of Xivig Text Editor are you running? (Check Help -> About)
+      placeholder: e.g. Release 1.0 (v1.0.0)
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon - M1/M2/M3)
+        - macOS (Intel)
+        - Linux (Ubuntu/Debian)
+        - Linux (Fedora/Arch)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions on how to trigger the issue.
+      placeholder: |
+        1. Open folder '...'
+        2. Press shortcut '...'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true

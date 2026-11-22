@@ -83,6 +83,29 @@ async function createWindow() {
     win.loadFile(indexHtml);
   }
 
+  // Security: Prevent unapproved child windows and open external URLs in system browser
+  win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+    if (targetUrl.startsWith('https:') || targetUrl.startsWith('http:') || targetUrl.startsWith('mailto:')) {
+      shell.openExternal(targetUrl);
+    }
+    return { action: 'deny' };
+  });
+
+  // Security: Prevent top-level window from navigating to untrusted origins
+  win.webContents.on('will-navigate', (event, navigationUrl) => {
+    const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
+    if (isDev && navigationUrl.startsWith(process.env.VITE_DEV_SERVER_URL!)) {
+      return;
+    }
+    if (!isDev && navigationUrl.startsWith('file://')) {
+      return;
+    }
+    event.preventDefault();
+    if (navigationUrl.startsWith('https:') || navigationUrl.startsWith('http:')) {
+      shell.openExternal(navigationUrl);
+    }
+  });
+
   win.on('maximize', () => {
     win?.webContents.send('window-state-changed', { isMaximized: true });
   });
