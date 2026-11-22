@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Plus, Circle, Columns, Rows, Square } from 'lucide-react';
 import { useEditorStore, SplitLayout } from '../../stores/editorStore';
+import { FileIcon } from '../common/FileIcon';
 
 interface TabBarProps {
   pane?: 'primary' | 'secondary';
@@ -54,6 +55,12 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
                 color: isActive ? 'var(--xivig-text)' : 'var(--xivig-text-muted)',
               }}
             >
+              <FileIcon
+                filename={doc.name}
+                isSettings={doc.id === 'settings'}
+                size={14}
+                style={{ marginRight: '6px', flexShrink: 0 }}
+              />
               <span style={tabNameStyle}>{doc.name}</span>
 
               <div style={tabIndicatorContainerStyle}>

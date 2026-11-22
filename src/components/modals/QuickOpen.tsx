@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileCode, FileText, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
+import { FileIcon } from '../common/FileIcon';
 
 interface FlatFile {
   path: string;
@@ -146,11 +147,7 @@ export const QuickOpen: React.FC = () => {
                 >
                   <div style={itemContentStyle}>
                     <span style={{ marginRight: '8px', display: 'flex', alignItems: 'center' }}>
-                      {isCode ? (
-                        <FileCode size={14} color="#61afef" />
-                      ) : (
-                        <FileText size={14} color="#9299a8" />
-                      )}
+                      <FileIcon filename={file.name} size={15} />
                     </span>
                     <span style={fileNameStyle}>{file.name}</span>
                     <span style={filePathStyle}>{file.relativePath}</span>

@@ -16,6 +16,7 @@ import {
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
+import { FileIcon, FolderIcon } from '../common/FileIcon';
 
 export const Sidebar: React.FC = () => {
   const isSidebarOpen = useFileStore((state) => state.isSidebarOpen);
@@ -191,18 +192,14 @@ export const Sidebar: React.FC = () => {
                   {item.isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </span>
                 <span style={folderIconStyle}>
-                  {item.isExpanded ? <FolderOpen size={14} color="#6c8cff" /> : <Folder size={14} color="#9299a8" />}
+                  <FolderIcon folderName={item.name} isOpen={item.isExpanded} size={14} />
                 </span>
               </>
             ) : (
               <>
                 <span style={{ width: '13px' }} />
                 <span style={fileIconStyle}>
-                  {item.extension && ['ts', 'tsx', 'js', 'jsx', 'json', 'py', 'rs'].includes(item.extension) ? (
-                    <FileCode size={13} color="#61afef" />
-                  ) : (
-                    <FileText size={13} color="#9299a8" />
-                  )}
+                  <FileIcon filename={item.name} size={14} />
                 </span>
               </>
             )}
@@ -362,7 +359,7 @@ export const Sidebar: React.FC = () => {
                         style={recentItemStyle}
                         title={ws.path}
                       >
-                        <Folder size={13} color="#6c8cff" style={{ marginRight: '6px', flexShrink: 0 }} />
+                        <FolderIcon folderName={ws.name} size={14} style={{ marginRight: '6px', flexShrink: 0 }} />
                         <span style={recentNameStyle}>{ws.name}</span>
                       </div>
                     ))}
@@ -383,7 +380,7 @@ export const Sidebar: React.FC = () => {
                         style={recentItemStyle}
                         title={rf.path}
                       >
-                        <FileText size={13} color="#9299a8" style={{ marginRight: '6px', flexShrink: 0 }} />
+                        <FileIcon filename={rf.name} size={14} style={{ marginRight: '6px', flexShrink: 0 }} />
                         <span style={recentNameStyle}>{rf.name}</span>
                       </div>
                     ))}
