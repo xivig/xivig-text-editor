@@ -31,6 +31,7 @@ export const Menubar: React.FC = () => {
   const openQuickOpen = useUIStore((state) => state.openQuickOpen);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
+  const openKeymapModal = useUIStore((state) => state.openKeymapModal);
 
   // Close menus on outside click
   useEffect(() => {
@@ -140,6 +141,19 @@ export const Menubar: React.FC = () => {
         action: () => activeDoc && closeDocument(activeDoc.id),
       },
       { divider: true, label: '' },
+      {
+        label: 'Preferences: Settings',
+        shortcut: 'Ctrl+,',
+        action: () =>
+          openDocument({
+            id: 'settings',
+            name: 'Settings',
+            content: '',
+            language: 'settings',
+            path: null,
+          }),
+      },
+      { divider: true, label: '' },
       { label: 'Exit', action: () => window.xivig?.closeWindow?.() },
     ],
     Edit: [
@@ -180,6 +194,12 @@ export const Menubar: React.FC = () => {
       { label: 'Toggle Full Screen', shortcut: 'F11' },
     ],
     Help: [
+      {
+        label: 'Keyboard Shortcuts',
+        shortcut: 'Ctrl+K Ctrl+S',
+        action: openKeymapModal,
+      },
+      { divider: true, label: '' },
       {
         label: 'About Xivig Editor',
         action: () => alert('Xivig Editor v0.1.0\nSublime Text inspired fast desktop code editor.'),

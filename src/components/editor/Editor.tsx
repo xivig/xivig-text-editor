@@ -41,6 +41,7 @@ import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
 import { getCustomSnippetSource } from './snippets';
 import { Minimap } from './Minimap';
+import { SettingsView } from '../settings/SettingsView';
 import logoUrl from '../../assets/logo.png';
 
 interface EditorProps {
@@ -150,6 +151,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       setActiveEditorView(null);
     };
   }, [activeDocumentId]);
+
+  if (activeDoc?.id === 'settings') {
+    return <SettingsView />;
+  }
 
   if (!activeDoc) {
     return (

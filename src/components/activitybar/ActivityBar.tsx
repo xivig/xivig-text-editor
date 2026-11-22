@@ -1,6 +1,7 @@
 import React from 'react';
 import { Files, Search, GitBranch, Package, Settings } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
+import { useEditorStore } from '../../stores/editorStore';
 import { ActiveSidebarView } from '../../types/editor';
 
 export const ActivityBar: React.FC = () => {
@@ -39,13 +40,17 @@ export const ActivityBar: React.FC = () => {
 
       <div style={itemsGroupStyle}>
         <button
-          onClick={() => setActiveSidebarView('settings')}
-          title="Settings"
-          style={{
-            ...iconBtnStyle,
-            color: isSidebarOpen && activeView === 'settings' ? 'var(--xivig-accent)' : 'var(--xivig-text-dim)',
-            borderLeft: isSidebarOpen && activeView === 'settings' ? '2px solid var(--xivig-accent)' : '2px solid transparent',
+          onClick={() => {
+            useEditorStore.getState().openDocument({
+              id: 'settings',
+              name: 'Settings',
+              content: '',
+              language: 'settings',
+              path: null,
+            });
           }}
+          title="Settings (Ctrl+,)"
+          style={iconBtnStyle}
         >
           <Settings size={20} />
         </button>

@@ -11,9 +11,11 @@ import { CommandPalette } from '../components/modals/CommandPalette';
 import { QuickOpen } from '../components/modals/QuickOpen';
 import { SearchPanel } from '../components/search/SearchPanel';
 import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModal';
+import { KeymapModal } from '../components/modals/KeymapModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { EditorDocument } from '../types/editor';
 
 export const App: React.FC = () => {
@@ -40,9 +42,17 @@ export const App: React.FC = () => {
   const closeQuickOpen = useUIStore((state) => state.closeQuickOpen);
   const closeLanguageSelector = useUIStore((state) => state.closeLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
+  const openKeymapModal = useUIStore((state) => state.openKeymapModal);
+  const closeKeymapModal = useUIStore((state) => state.closeKeymapModal);
 
-  // Restore Session on Mount
+  const chordRef = React.useRef<string | null>(null);
+  const chordTimeoutRef = React.useRef<any>(null);
+
+  // Restore Session and Settings on Mount
   useEffect(() => {
+    // Load persisted user settings
+    useSettingsStore.getState().loadSettings();
+
     async function initSession() {
       if (!window.xivig?.restoreSession) return;
 
@@ -135,6 +145,39 @@ export const App: React.FC = () => {
         closeQuickOpen();
         closeSearchPanel();
         closeLanguageSelector();
+        closeKeymapModal();
+        chordRef.current = null;
+        return;
+      }
+
+      // Multi-key chord handling (e.g. Ctrl+K Ctrl+S, Ctrl+K Ctrl+O)
+      if (chordRef.current === 'k') {
+        if (isCtrlOrMeta && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          chordRef.current = null;
+          openKeymapModal();
+          return;
+        } else if (isCtrlOrMeta && e.key.toLowerCase() === 'o') {
+          e.preventDefault();
+          chordRef.current = null;
+          if (window.xivig?.openFolderDialog) {
+            const res = await window.xivig.openFolderDialog();
+            if (!res.canceled && res.folderPath && res.files) {
+              setCurrentFolder(res.folderPath, res.files);
+            }
+          }
+          return;
+        }
+        chordRef.current = null;
+      }
+
+      if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        chordRef.current = 'k';
+        if (chordTimeoutRef.current) clearTimeout(chordTimeoutRef.current);
+        chordTimeoutRef.current = setTimeout(() => {
+          chordRef.current = null;
+        }, 1500);
         return;
       }
 
@@ -144,6 +187,15 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         toggleQuickOpen();
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key === ',') {
+        e.preventDefault();
+        openDocument({
+          id: 'settings',
+          name: 'Settings',
+          content: '',
+          language: 'settings',
+          path: null,
+        });
       } else if (isCtrlOrMeta && (e.key === '`' || e.key === '~')) {
         e.preventDefault();
         toggleBottomPanel('terminal');
@@ -297,6 +349,7 @@ export const App: React.FC = () => {
       <CommandPalette />
       <QuickOpen />
       <LanguageSelectorModal />
+      <KeymapModal />
     </div>
   );
 };

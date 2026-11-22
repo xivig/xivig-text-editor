@@ -544,13 +544,27 @@ export const Sidebar: React.FC = () => {
         )}
 
         {activeView === 'settings' && (
-          <div style={{ padding: '12px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)', marginBottom: '8px' }}>
-              Preferences & Storage
+          <div style={{ padding: '16px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--xivig-text)', marginBottom: '8px' }}>
+              Preferences & Themes
             </p>
-            <p style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>
-              Metadata & sessions persist via SQLite database.
+            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)', marginBottom: '16px' }}>
+              Customize font sizes, line height, tab spacing, and themes.
             </p>
+            <button
+              onClick={() => {
+                openDocument({
+                  id: 'settings',
+                  name: 'Settings',
+                  content: '',
+                  language: 'settings',
+                  path: null,
+                });
+              }}
+              style={openFolderBtnStyle}
+            >
+              Open Settings (Ctrl+,)
+            </button>
           </div>
         )}
       </div>

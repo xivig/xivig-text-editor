@@ -20,6 +20,7 @@ export const CommandPalette: React.FC = () => {
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
+  const openKeymapModal = useUIStore((state) => state.openKeymapModal);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
@@ -148,6 +149,27 @@ export const CommandPalette: React.FC = () => {
       title: 'Replace in Document',
       shortcut: 'Ctrl+H',
       action: () => openSearchPanel('replace'),
+    },
+    {
+      id: 'pref:settings',
+      category: 'Preferences',
+      title: 'Open Settings (Preferences)',
+      shortcut: 'Ctrl+,',
+      action: () =>
+        openDocument({
+          id: 'settings',
+          name: 'Settings',
+          content: '',
+          language: 'settings',
+          path: null,
+        }),
+    },
+    {
+      id: 'help:keymap',
+      category: 'Help',
+      title: 'Keyboard Shortcuts Cheat Sheet',
+      shortcut: 'Ctrl+K Ctrl+S',
+      action: openKeymapModal,
     },
     {
       id: 'view:sidebar',

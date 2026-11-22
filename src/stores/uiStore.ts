@@ -9,6 +9,7 @@ interface UIState {
   isLanguageSelectorOpen: boolean;
   isBottomPanelOpen: boolean;
   activeBottomTab: 'terminal' | 'output' | 'problems';
+  isKeymapModalOpen: boolean;
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -27,6 +28,9 @@ interface UIState {
   openLanguageSelector: () => void;
   closeLanguageSelector: () => void;
 
+  openKeymapModal: () => void;
+  closeKeymapModal: () => void;
+
   toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
   setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
@@ -38,8 +42,12 @@ export const useUIStore = create<UIState>((set, get) => ({
   searchMode: 'find',
   isMinimapOpen: true,
   isLanguageSelectorOpen: false,
+  isKeymapModalOpen: false,
   isBottomPanelOpen: false,
   activeBottomTab: 'terminal',
+
+  openKeymapModal: () => set({ isKeymapModalOpen: true }),
+  closeKeymapModal: () => set({ isKeymapModalOpen: false }),
 
   toggleBottomPanel: (tab = 'terminal') =>
     set((state) => {
