@@ -1,0 +1,70 @@
+name: Release Multi-Platform Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Linux Build Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools libopenjp2-7
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Build Web & Electron Distribution
+        run: npm run build
+
+      - name: Package Windows Binaries (NSIS & Portable)
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win --x64
+
+      - name: Package Linux Binaries (AppImage & DEB)
+        if: runner.os == 'Linux'
+        run: npx electron-builder --linux --x64
+
+      - name: Package macOS Binaries (DMG & ZIP)
+        if: runner.os == 'macOS'
+        run: npx electron-builder --mac --x64 --arm64
+
+      - name: Upload Release Binaries
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
