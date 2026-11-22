@@ -6,6 +6,7 @@ import { Sidebar } from '../components/sidebar/Sidebar';
 import { TabBar } from '../components/tabs/TabBar';
 import { Editor } from '../components/editor/Editor';
 import { StatusBar } from '../components/statusbar/StatusBar';
+import { BottomPanel } from '../components/terminal/BottomPanel';
 import { CommandPalette } from '../components/modals/CommandPalette';
 import { QuickOpen } from '../components/modals/QuickOpen';
 import { SearchPanel } from '../components/search/SearchPanel';
@@ -38,6 +39,7 @@ export const App: React.FC = () => {
   const closeCommandPalette = useUIStore((state) => state.closeCommandPalette);
   const closeQuickOpen = useUIStore((state) => state.closeQuickOpen);
   const closeLanguageSelector = useUIStore((state) => state.closeLanguageSelector);
+  const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
 
   // Restore Session on Mount
   useEffect(() => {
@@ -142,6 +144,9 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         toggleQuickOpen();
+      } else if (isCtrlOrMeta && (e.key === '`' || e.key === '~')) {
+        e.preventDefault();
+        toggleBottomPanel('terminal');
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         openSearchPanel('find');
@@ -282,6 +287,10 @@ export const App: React.FC = () => {
           </main>
         )}
       </div>
+
+      {/* Integrated Terminal & Bottom Panel */}
+      <BottomPanel />
+
       <StatusBar />
 
       {/* Floating Modals */}

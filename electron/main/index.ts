@@ -14,6 +14,8 @@ import {
   SavedSession,
 } from './database';
 import { watchWorkspace, stopWatching } from './watcher';
+import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
+import { getGitStatus, commitChanges } from './git';
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
@@ -68,6 +70,7 @@ async function createWindow() {
 
   win.on('closed', () => {
     stopWatching();
+    stopTerminal();
     win = null;
   });
 }
@@ -291,4 +294,23 @@ ipcMain.handle('settings:set', async (_, { key, value }: { key: string; value: s
 ipcMain.handle('workspace:watch', async (_, folderPath: string) => {
   watchWorkspace(folderPath, win);
   return true;
+});
+
+// Terminal IPC
+ipcMain.handle('terminal:init', async (_, cwd?: string) => {
+  initTerminalSession(cwd || null, win);
+  return true;
+});
+
+ipcMain.on('terminal:write', (_, data: string) => {
+  writeToTerminal(data);
+});
+
+// Git IPC
+ipcMain.handle('git:status', async (_, cwd: string) => {
+  return getGitStatus(cwd);
+});
+
+ipcMain.handle('git:commit', async (_, { cwd, message }: { cwd: string; message: string }) => {
+  return commitChanges(cwd, message);
 });

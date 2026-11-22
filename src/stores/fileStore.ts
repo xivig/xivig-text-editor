@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { ActiveSidebarView, FileItem } from '../types/editor';
-import { RecentItem } from '../types/electron';
+import { RecentItem, GitFileChange } from '../types/electron';
 
 interface FileState {
   currentFolderPath: string | null;
@@ -11,6 +11,11 @@ interface FileState {
   recentFiles: RecentItem[];
   recentWorkspaces: RecentItem[];
 
+  // Git state
+  gitBranch: string;
+  gitChanges: GitFileChange[];
+  isGitRepo: boolean;
+
   setCurrentFolder: (folderPath: string, items: Array<{ path: string; name: string; isDirectory: boolean }>) => void;
   closeCurrentFolder: () => void;
   refreshCurrentFolder: () => Promise<void>;
@@ -20,6 +25,8 @@ interface FileState {
   toggleSidebar: () => void;
   setInitialSession: (folderPath: string | null, isSidebarOpen: boolean, view: ActiveSidebarView) => void;
   loadRecentHistory: () => Promise<void>;
+  loadGitStatus: () => Promise<void>;
+  commitGitChanges: (msg: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -30,6 +37,39 @@ export const useFileStore = create<FileState>((set, get) => ({
   isSidebarOpen: true,
   recentFiles: [],
   recentWorkspaces: [],
+  gitBranch: 'main',
+  gitChanges: [],
+  isGitRepo: false,
+
+  loadGitStatus: async () => {
+    const { currentFolderPath } = get();
+    if (!currentFolderPath || !window.xivig?.getGitStatus) return;
+
+    try {
+      const res = await window.xivig.getGitStatus(currentFolderPath);
+      set({
+        isGitRepo: res.isRepo,
+        gitBranch: res.branch || 'main',
+        gitChanges: res.changes || [],
+      });
+    } catch {
+      set({ isGitRepo: false, gitChanges: [] });
+    }
+  },
+
+  commitGitChanges: async (msg: string) => {
+    const { currentFolderPath, loadGitStatus, refreshCurrentFolder } = get();
+    if (!currentFolderPath || !window.xivig?.commitGit) {
+      return { success: false, error: 'No workspace open' };
+    }
+
+    const res = await window.xivig.commitGit(currentFolderPath, msg);
+    if (res.success) {
+      await loadGitStatus();
+      await refreshCurrentFolder();
+    }
+    return res;
+  },
 
   loadRecentHistory: async () => {
     if (window.xivig?.getRecentHistory) {
@@ -81,6 +121,7 @@ export const useFileStore = create<FileState>((set, get) => ({
         });
 
       set({ fileTree: items });
+      get().loadGitStatus();
     }
   },
 
@@ -111,6 +152,7 @@ export const useFileStore = create<FileState>((set, get) => ({
     });
 
     get().loadRecentHistory();
+    get().loadGitStatus();
   },
 
   toggleFolderExpanded: (itemPath) => {

@@ -28,6 +28,21 @@ const xivigAPI = {
   getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
   setSetting: (key: string, value: string) => ipcRenderer.invoke('settings:set', { key, value }),
 
+  // Terminal operations
+  terminalInit: (cwd?: string) => ipcRenderer.invoke('terminal:init', cwd),
+  terminalWrite: (data: string) => ipcRenderer.send('terminal:write', data),
+  onTerminalData: (callback: (data: string) => void) => {
+    const handler = (_: any, data: string) => callback(data);
+    ipcRenderer.on('terminal:data', handler);
+    return () => {
+      ipcRenderer.removeListener('terminal:data', handler);
+    };
+  },
+
+  // Git operations
+  getGitStatus: (cwd: string) => ipcRenderer.invoke('git:status', cwd),
+  commitGit: (cwd: string, message: string) => ipcRenderer.invoke('git:commit', { cwd, message }),
+
   // Workspace Watcher listener
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => {
     const handler = (_: any, data: any) => callback(data);

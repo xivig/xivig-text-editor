@@ -25,6 +25,18 @@ export interface SavedSession {
   documents: SavedDocumentState[];
 }
 
+export interface GitFileChange {
+  path: string;
+  status: 'M' | 'A' | 'D' | 'U' | '?';
+  staged: boolean;
+}
+
+export interface GitStatusResult {
+  isRepo: boolean;
+  branch: string;
+  changes: GitFileChange[];
+}
+
 export interface XivigAPI {
   // File operations
   openFileDialog: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
@@ -49,6 +61,15 @@ export interface XivigAPI {
   getRecentHistory: () => Promise<{ files: RecentItem[]; workspaces: RecentItem[] }>;
   getSetting: (key: string) => Promise<string | null>;
   setSetting: (key: string, value: string) => Promise<boolean>;
+
+  // Terminal
+  terminalInit: (cwd?: string) => Promise<boolean>;
+  terminalWrite: (data: string) => void;
+  onTerminalData: (callback: (data: string) => void) => () => void;
+
+  // Git
+  getGitStatus: (cwd: string) => Promise<GitStatusResult>;
+  commitGit: (cwd: string, message: string) => Promise<{ success: boolean; output?: string; error?: string }>;
 
   // Workspace Watcher
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => () => void;

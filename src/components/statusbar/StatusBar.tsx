@@ -1,12 +1,15 @@
 import React from 'react';
 import { GitBranch, AlertCircle } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
+import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
+  const gitBranch = useFileStore((state) => state.gitBranch);
+  const isGitRepo = useFileStore((state) => state.isGitRepo);
 
   const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
@@ -16,9 +19,9 @@ export const StatusBar: React.FC = () => {
     <footer style={statusBarStyle}>
       {/* Left items */}
       <div style={sectionStyle}>
-        <div style={itemStyle}>
+        <div style={itemStyle} title={isGitRepo ? `Git branch: ${gitBranch}` : 'Not a Git repository'}>
           <GitBranch size={12} style={{ marginRight: '4px' }} />
-          <span>main</span>
+          <span>{isGitRepo ? gitBranch : 'no git'}</span>
         </div>
         <div style={itemStyle}>
           <AlertCircle size={12} style={{ marginRight: '4px' }} />

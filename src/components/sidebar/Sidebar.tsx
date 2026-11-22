@@ -29,6 +29,10 @@ export const Sidebar: React.FC = () => {
   const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
   const toggleFolderExpanded = useFileStore((state) => state.toggleFolderExpanded);
   const setFolderChildren = useFileStore((state) => state.setFolderChildren);
+  const gitChanges = useFileStore((state) => state.gitChanges);
+  const isGitRepo = useFileStore((state) => state.isGitRepo);
+  const commitGitChanges = useFileStore((state) => state.commitGitChanges);
+  const loadGitStatus = useFileStore((state) => state.loadGitStatus);
 
   const openDocument = useEditorStore((state) => state.openDocument);
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -38,6 +42,8 @@ export const Sidebar: React.FC = () => {
   const [promptType, setPromptType] = useState<'file' | 'folder'>('file');
   const [promptTargetDir, setPromptTargetDir] = useState<string>('');
   const [promptInput, setPromptInput] = useState<string>('');
+  const [commitMessage, setCommitMessage] = useState('');
+  const [isCommitting, setIsCommitting] = useState(false);
 
   if (!isSidebarOpen) return null;
 
@@ -201,6 +207,29 @@ export const Sidebar: React.FC = () => {
               </>
             )}
             <span style={itemNameStyle}>{item.name}</span>
+
+            {/* Git status badge */}
+            {!item.isDirectory && (() => {
+              const change = gitChanges.find((c) =>
+                item.path.endsWith(c.path.replace(/\//g, '\\')) || item.path.endsWith(c.path) || c.path.endsWith(item.name)
+              );
+              if (!change) return null;
+              const color = change.status === 'M' ? '#e6ad45' : change.status === 'D' ? '#ef6464' : '#35b779';
+              return (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color,
+                    marginRight: '6px',
+                    padding: '1px 4px',
+                  }}
+                  title={`Git: ${change.status === 'M' ? 'Modified' : change.status === 'D' ? 'Deleted' : 'Untracked/Added'}`}
+                >
+                  {change.status === '?' ? 'U' : change.status}
+                </span>
+              );
+            })()}
 
             {/* Quick delete button */}
             <button
@@ -380,9 +409,129 @@ export const Sidebar: React.FC = () => {
 
         {activeView === 'git' && (
           <div style={{ padding: '12px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)' }}>
-              Source Control (Git) status tracking initialized.
-            </p>
+            {!isGitRepo ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <p style={{ fontSize: '12px', color: 'var(--xivig-text-muted)', marginBottom: '8px' }}>
+                  No Git repository detected in this workspace.
+                </p>
+              </div>
+            ) : (
+              <div>
+                {/* Commit Box */}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!commitMessage.trim()) return;
+                    setIsCommitting(true);
+                    const res = await commitGitChanges(commitMessage);
+                    setIsCommitting(false);
+                    if (res.success) {
+                      setCommitMessage('');
+                    } else {
+                      alert(`Commit failed: ${res.error}`);
+                    }
+                  }}
+                  style={{ marginBottom: '16px' }}
+                >
+                  <textarea
+                    rows={3}
+                    value={commitMessage}
+                    onChange={(e) => setCommitMessage(e.target.value)}
+                    placeholder="Message (Ctrl+Enter to commit)"
+                    style={{
+                      width: '100%',
+                      resize: 'none',
+                      fontSize: '12px',
+                      marginBottom: '8px',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isCommitting || !commitMessage.trim() || gitChanges.length === 0}
+                    style={{
+                      width: '100%',
+                      padding: '6px 12px',
+                      backgroundColor:
+                        gitChanges.length > 0 && commitMessage.trim()
+                          ? 'var(--xivig-accent)'
+                          : 'rgba(108, 140, 255, 0.3)',
+                      color: '#ffffff',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: gitChanges.length > 0 && commitMessage.trim() ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    {isCommitting ? 'Committing...' : 'Commit Changes'}
+                  </button>
+                </form>
+
+                {/* Changes List Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--xivig-text-muted)', textTransform: 'uppercase' }}>
+                    Changes ({gitChanges.length})
+                  </span>
+                  <button onClick={() => loadGitStatus()} style={{ color: 'var(--xivig-text-dim)', padding: '2px' }} title="Refresh Git Status">
+                    <RefreshCw size={12} />
+                  </button>
+                </div>
+
+                {/* Changed Files */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {gitChanges.length > 0 ? (
+                    gitChanges.map((change) => {
+                      const fileName = change.path.split(/[/\\]/).pop() || change.path;
+                      const color = change.status === 'M' ? '#e6ad45' : change.status === 'D' ? '#ef6464' : '#35b779';
+                      const fullPath = currentFolderPath ? `${currentFolderPath}/${change.path}` : change.path;
+
+                      return (
+                        <div
+                          key={change.path}
+                          onClick={async () => {
+                            if (window.xivig?.readFile) {
+                              const res = await window.xivig.readFile(fullPath);
+                              if (res.success && res.content !== undefined) {
+                                openDocument({
+                                  path: fullPath,
+                                  name: fileName,
+                                  content: res.content,
+                                  language: fileName,
+                                });
+                              }
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '4px 6px',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            transition: 'background-color 0.1s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--xivig-surface-hover)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          title={change.path}
+                        >
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                            <span style={{ color: 'var(--xivig-text)', marginRight: '6px' }}>{fileName}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>{change.path}</span>
+                          </div>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color }}>
+                            {change.status === '?' ? 'U' : change.status}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p style={{ fontSize: '12px', color: 'var(--xivig-text-dim)', fontStyle: 'italic', padding: '8px 0' }}>
+                      Working tree clean
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

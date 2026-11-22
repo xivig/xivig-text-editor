@@ -30,6 +30,7 @@ export const Menubar: React.FC = () => {
   const openCommandPalette = useUIStore((state) => state.openCommandPalette);
   const openQuickOpen = useUIStore((state) => state.openQuickOpen);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
+  const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
 
   // Close menus on outside click
   useEffect(() => {
@@ -169,6 +170,7 @@ export const Menubar: React.FC = () => {
       { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
       { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
+      { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: () => toggleBottomPanel('terminal') },
       { label: 'Toggle Minimap', action: toggleMinimap },
       { divider: true, label: '' },
       { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },

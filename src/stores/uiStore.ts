@@ -7,6 +7,8 @@ interface UIState {
   searchMode: 'find' | 'replace';
   isMinimapOpen: boolean;
   isLanguageSelectorOpen: boolean;
+  isBottomPanelOpen: boolean;
+  activeBottomTab: 'terminal' | 'output' | 'problems';
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -24,6 +26,9 @@ interface UIState {
 
   openLanguageSelector: () => void;
   closeLanguageSelector: () => void;
+
+  toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
+  setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -33,6 +38,18 @@ export const useUIStore = create<UIState>((set, get) => ({
   searchMode: 'find',
   isMinimapOpen: true,
   isLanguageSelectorOpen: false,
+  isBottomPanelOpen: false,
+  activeBottomTab: 'terminal',
+
+  toggleBottomPanel: (tab = 'terminal') =>
+    set((state) => {
+      if (state.isBottomPanelOpen && state.activeBottomTab === tab) {
+        return { isBottomPanelOpen: false };
+      }
+      return { isBottomPanelOpen: true, activeBottomTab: tab };
+    }),
+
+  setBottomTab: (tab) => set({ activeBottomTab: tab }),
 
   openLanguageSelector: () =>
     set({ isLanguageSelectorOpen: true, isCommandPaletteOpen: false, isQuickOpenOpen: false }),

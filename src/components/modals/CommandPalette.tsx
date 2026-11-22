@@ -19,6 +19,7 @@ export const CommandPalette: React.FC = () => {
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
+  const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
@@ -154,6 +155,13 @@ export const CommandPalette: React.FC = () => {
       title: 'Toggle Sidebar',
       shortcut: 'Ctrl+B',
       action: toggleSidebar,
+    },
+    {
+      id: 'view:terminal',
+      category: 'View',
+      title: 'Toggle Integrated Terminal',
+      shortcut: 'Ctrl+`',
+      action: () => toggleBottomPanel('terminal'),
     },
     {
       id: 'view:minimap',
