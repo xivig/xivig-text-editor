@@ -36,16 +36,25 @@ import { useEditorStore } from '../../stores/editorStore';
 import { xivigSyntaxTheme } from './xivigTheme';
 import { getLanguageExtension } from './languageSupport';
 import { setActiveEditorView } from './editorViewRegistry';
+import { sublimeKeybindings } from './sublimeKeymap';
+import { Minimap } from './Minimap';
 import logoUrl from '../../assets/logo.png';
 
-export const Editor: React.FC = () => {
+interface EditorProps {
+  pane?: 'primary' | 'secondary';
+}
+
+export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
-  const activeDoc = useEditorStore((state) => state.getActiveDocument());
-  const activeDocumentId = useEditorStore((state) => state.activeDocumentId);
+  const activeDoc = useEditorStore((state) =>
+    pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
+  );
+  const activeDocumentId = activeDoc?.id || null;
   const updateDocumentContent = useEditorStore((state) => state.updateDocumentContent);
   const updateCursor = useEditorStore((state) => state.updateCursor);
+  const setActivePane = useEditorStore((state) => state.setActivePane);
 
   // Maintain active document ID in ref for updateListener
   const docIdRef = useRef(activeDocumentId);
@@ -90,6 +99,7 @@ export const Editor: React.FC = () => {
         xivigSyntaxTheme,
         langExtension,
         keymap.of([
+          ...sublimeKeybindings,
           ...closeBracketsKeymap,
           ...defaultKeymap,
           ...searchKeymap,
@@ -164,14 +174,23 @@ export const Editor: React.FC = () => {
 
   return (
     <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        position: 'relative',
+      onMouseDown={() => {
+        setActivePane(pane);
+        if (viewRef.current) setActiveEditorView(viewRef.current);
       }}
-    />
+      style={{ width: '100%', height: '100%', display: 'flex', overflow: 'hidden' }}
+    >
+      <div
+        ref={containerRef}
+        style={{
+          flex: 1,
+          height: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      />
+      <Minimap view={viewRef.current} content={activeDoc.content} />
+    </div>
   );
 };
 

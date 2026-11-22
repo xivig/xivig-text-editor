@@ -21,6 +21,8 @@ export const App: React.FC = () => {
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
   const setRestoredSession = useEditorStore((state) => state.setRestoredSession);
+  const splitLayout = useEditorStore((state) => state.splitLayout);
+  const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
 
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
   const setInitialSession = useFileStore((state) => state.setInitialSession);
@@ -188,6 +190,18 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         toggleSidebar();
+      } else if (isCtrlOrMeta && e.key === '\\') {
+        e.preventDefault();
+        setSplitLayout(splitLayout === 'single' ? 'two-columns' : 'single');
+      } else if (e.altKey && e.shiftKey && e.key === '1') {
+        e.preventDefault();
+        setSplitLayout('single');
+      } else if (e.altKey && e.shiftKey && e.key === '2') {
+        e.preventDefault();
+        setSplitLayout('two-columns');
+      } else if (e.altKey && e.shiftKey && e.key === '3') {
+        e.preventDefault();
+        setSplitLayout('two-rows');
       }
     };
 
@@ -206,6 +220,8 @@ export const App: React.FC = () => {
     closeSearchPanel,
     closeCommandPalette,
     closeQuickOpen,
+    splitLayout,
+    setSplitLayout,
   ]);
 
   return (
@@ -215,13 +231,53 @@ export const App: React.FC = () => {
       <div style={workbenchStyle}>
         <ActivityBar />
         <Sidebar />
-        <main style={editorAreaStyle}>
-          <TabBar />
-          <div style={editorSurfaceStyle}>
-            <SearchPanel />
-            <Editor />
-          </div>
-        </main>
+
+        {/* Editor Area with Split Panes Support */}
+        {splitLayout === 'single' ? (
+          <main style={editorAreaStyle}>
+            <TabBar pane="primary" />
+            <div style={editorSurfaceStyle}>
+              <SearchPanel />
+              <Editor pane="primary" />
+            </div>
+          </main>
+        ) : splitLayout === 'two-columns' ? (
+          <main style={{ ...editorAreaStyle, flexDirection: 'row' }}>
+            {/* Primary Column */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
+              <TabBar pane="primary" />
+              <div style={editorSurfaceStyle}>
+                <SearchPanel />
+                <Editor pane="primary" />
+              </div>
+            </div>
+            {/* Secondary Column */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+              <TabBar pane="secondary" />
+              <div style={editorSurfaceStyle}>
+                <Editor pane="secondary" />
+              </div>
+            </div>
+          </main>
+        ) : (
+          <main style={{ ...editorAreaStyle, flexDirection: 'column' }}>
+            {/* Top Row */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', borderBottom: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
+              <TabBar pane="primary" />
+              <div style={editorSurfaceStyle}>
+                <SearchPanel />
+                <Editor pane="primary" />
+              </div>
+            </div>
+            {/* Bottom Row */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', overflow: 'hidden' }}>
+              <TabBar pane="secondary" />
+              <div style={editorSurfaceStyle}>
+                <Editor pane="secondary" />
+              </div>
+            </div>
+          </main>
+        )}
       </div>
       <StatusBar />
 

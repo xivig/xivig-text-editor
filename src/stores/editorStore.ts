@@ -2,19 +2,28 @@ import { create } from 'zustand';
 import { EditorDocument } from '../types/editor';
 import { useFileStore } from './fileStore';
 
+export type SplitLayout = 'single' | 'two-columns' | 'two-rows';
+
 interface EditorState {
   documents: EditorDocument[];
   activeDocumentId: string | null;
+  secondaryDocumentId: string | null;
+  splitLayout: SplitLayout;
+  activePane: 'primary' | 'secondary';
   untitledCount: number;
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
   closeDocument: (id: string) => void;
   setActiveDocument: (id: string) => void;
+  setSecondaryDocument: (id: string | null) => void;
+  setSplitLayout: (layout: SplitLayout) => void;
+  setActivePane: (pane: 'primary' | 'secondary') => void;
   updateDocumentContent: (id: string, content: string) => void;
   markDocumentSaved: (id: string, newPath?: string) => void;
   updateCursor: (id: string, line: number, col: number) => void;
   createNewDocument: (language?: string) => void;
   getActiveDocument: () => EditorDocument | undefined;
+  getSecondaryDocument: () => EditorDocument | undefined;
   setRestoredSession: (docs: EditorDocument[], activeId: string | null) => void;
   persistSessionDebounced: () => void;
 }
@@ -64,6 +73,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     },
   ],
   activeDocumentId: 'welcome-tab',
+  secondaryDocumentId: null,
+  splitLayout: 'single',
+  activePane: 'primary',
   untitledCount: 1,
 
   persistSessionDebounced: triggerAutoSave,
@@ -71,6 +83,33 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   getActiveDocument: () => {
     const { documents, activeDocumentId } = get();
     return documents.find((doc) => doc.id === activeDocumentId);
+  },
+
+  getSecondaryDocument: () => {
+    const { documents, secondaryDocumentId, activeDocumentId } = get();
+    if (secondaryDocumentId) {
+      return documents.find((doc) => doc.id === secondaryDocumentId);
+    }
+    // Fallback: pick another document or active
+    return documents.find((doc) => doc.id !== activeDocumentId) || documents.find((doc) => doc.id === activeDocumentId);
+  },
+
+  setSplitLayout: (layout) => {
+    const { documents, activeDocumentId, secondaryDocumentId } = get();
+    let nextSecondary = secondaryDocumentId;
+    if (layout !== 'single' && !nextSecondary) {
+      // Automatically choose another tab for second pane if available
+      const other = documents.find((d) => d.id !== activeDocumentId);
+      nextSecondary = other ? other.id : activeDocumentId;
+    }
+    set({ splitLayout: layout, secondaryDocumentId: nextSecondary });
+    triggerAutoSave();
+  },
+
+  setActivePane: (pane) => set({ activePane: pane }),
+  setSecondaryDocument: (id) => {
+    set({ secondaryDocumentId: id });
+    triggerAutoSave();
   },
 
   setRestoredSession: (docs, activeId) => {
@@ -85,7 +124,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (doc.path) {
       const existing = documents.find((d) => d.path === doc.path);
       if (existing) {
-        set({ activeDocumentId: existing.id });
+        if (get().activePane === 'secondary') {
+          set({ secondaryDocumentId: existing.id });
+        } else {
+          set({ activeDocumentId: existing.id });
+        }
         triggerAutoSave();
         return;
       }
@@ -104,7 +147,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     set({
       documents: [...documents, newDoc],
-      activeDocumentId: id,
+      ...(get().activePane === 'secondary'
+        ? { secondaryDocumentId: id }
+        : { activeDocumentId: id }),
     });
     triggerAutoSave();
   },

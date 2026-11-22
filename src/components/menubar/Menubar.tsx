@@ -24,10 +24,12 @@ export const Menubar: React.FC = () => {
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
   const recentFiles = useFileStore((state) => state.recentFiles);
   const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
+  const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
 
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const openCommandPalette = useUIStore((state) => state.openCommandPalette);
   const openQuickOpen = useUIStore((state) => state.openQuickOpen);
+  const toggleMinimap = useUIStore((state) => state.toggleMinimap);
 
   // Close menus on outside click
   useEffect(() => {
@@ -152,14 +154,27 @@ export const Menubar: React.FC = () => {
     ],
     Selection: [
       { label: 'Select All', shortcut: 'Ctrl+A' },
-      { label: 'Expand Selection', shortcut: 'Shift+Alt+Right' },
-      { label: 'Shrink Selection', shortcut: 'Shift+Alt+Left' },
+      { label: 'Select Next Occurrence', shortcut: 'Ctrl+D' },
+      { label: 'Select Line', shortcut: 'Ctrl+L' },
+      { divider: true, label: '' },
+      { label: 'Duplicate Line Down', shortcut: 'Shift+Alt+Down' },
+      { label: 'Move Line Down', shortcut: 'Alt+Down' },
+      { label: 'Move Line Up', shortcut: 'Alt+Up' },
+      { divider: true, label: '' },
+      { label: 'Toggle Line Comment', shortcut: 'Ctrl+/' },
+      { label: 'Delete Line', shortcut: 'Ctrl+Shift+K' },
     ],
     View: [
       { label: 'Command Palette...', shortcut: 'Ctrl+Shift+P', action: openCommandPalette },
       { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
       { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
+      { label: 'Toggle Minimap', action: toggleMinimap },
+      { divider: true, label: '' },
+      { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },
+      { label: 'Layout: 2 Columns', shortcut: 'Alt+Shift+2', action: () => setSplitLayout('two-columns') },
+      { label: 'Layout: 2 Rows', shortcut: 'Alt+Shift+3', action: () => setSplitLayout('two-rows') },
+      { divider: true, label: '' },
       { label: 'Toggle Full Screen', shortcut: 'F11' },
     ],
     Help: [

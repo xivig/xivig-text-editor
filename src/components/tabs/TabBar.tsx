@@ -1,30 +1,38 @@
 import React from 'react';
-import { X, Plus, Circle } from 'lucide-react';
-import { useEditorStore } from '../../stores/editorStore';
+import { X, Plus, Circle, Columns, Rows, Square } from 'lucide-react';
+import { useEditorStore, SplitLayout } from '../../stores/editorStore';
 
-export const TabBar: React.FC = () => {
+interface TabBarProps {
+  pane?: 'primary' | 'secondary';
+}
+
+export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
   const documents = useEditorStore((state) => state.documents);
-  const activeDocumentId = useEditorStore((state) => state.activeDocumentId);
-  const setActiveDocument = useEditorStore((state) => state.setActiveDocument);
+  const activeDocumentId = useEditorStore((state) =>
+    pane === 'secondary' ? state.secondaryDocumentId : state.activeDocumentId
+  );
+  const setActiveDocument = useEditorStore((state) =>
+    pane === 'secondary' ? state.setSecondaryDocument : state.setActiveDocument
+  );
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
+  const splitLayout = useEditorStore((state) => state.splitLayout);
+  const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
+  const setActivePane = useEditorStore((state) => state.setActivePane);
 
-  if (documents.length === 0) {
-    return (
-      <div style={emptyTabBarStyle}>
-        <button
-          onClick={() => createNewDocument()}
-          style={addTabBtnStyle}
-          title="New File (Ctrl+N)"
-        >
-          <Plus size={14} />
-        </button>
-      </div>
-    );
-  }
+  const handleToggleSplit = (layout: SplitLayout) => {
+    if (splitLayout === layout) {
+      setSplitLayout('single');
+    } else {
+      setSplitLayout(layout);
+    }
+  };
 
   return (
-    <div style={tabBarContainerStyle}>
+    <div
+      onClick={() => setActivePane(pane)}
+      style={tabBarContainerStyle}
+    >
       <div style={tabsScrollContainerStyle}>
         {documents.map((doc) => {
           const isActive = doc.id === activeDocumentId;
@@ -34,7 +42,6 @@ export const TabBar: React.FC = () => {
               key={doc.id}
               onClick={() => setActiveDocument(doc.id)}
               onAuxClick={(e) => {
-                // Middle click closes tab
                 if (e.button === 1) {
                   e.preventDefault();
                   closeDocument(doc.id);
@@ -49,7 +56,6 @@ export const TabBar: React.FC = () => {
             >
               <span style={tabNameStyle}>{doc.name}</span>
 
-              {/* Dirty indicator or close button */}
               <div style={tabIndicatorContainerStyle}>
                 {doc.isDirty ? (
                   <button
@@ -78,15 +84,52 @@ export const TabBar: React.FC = () => {
             </div>
           );
         })}
+
+        <button
+          onClick={() => createNewDocument()}
+          style={addTabBtnStyle}
+          title="New File (Ctrl+N)"
+        >
+          <Plus size={14} />
+        </button>
       </div>
 
-      <button
-        onClick={() => createNewDocument()}
-        style={addTabBtnStyle}
-        title="New File (Ctrl+N)"
-      >
-        <Plus size={14} />
-      </button>
+      {/* Pane Split Layout Controls (Rendered on primary tab bar) */}
+      {pane === 'primary' && (
+        <div style={layoutControlsStyle}>
+          <button
+            onClick={() => handleToggleSplit('two-columns')}
+            style={{
+              ...splitBtnStyle,
+              color: splitLayout === 'two-columns' ? 'var(--xivig-accent)' : 'var(--xivig-text-dim)',
+              backgroundColor: splitLayout === 'two-columns' ? 'var(--xivig-accent-subtle)' : 'transparent',
+            }}
+            title="Split Editor Into Columns (Alt+Shift+2)"
+          >
+            <Columns size={13} />
+          </button>
+          <button
+            onClick={() => handleToggleSplit('two-rows')}
+            style={{
+              ...splitBtnStyle,
+              color: splitLayout === 'two-rows' ? 'var(--xivig-accent)' : 'var(--xivig-text-dim)',
+              backgroundColor: splitLayout === 'two-rows' ? 'var(--xivig-accent-subtle)' : 'transparent',
+            }}
+            title="Split Editor Into Rows (Alt+Shift+3)"
+          >
+            <Rows size={13} />
+          </button>
+          {splitLayout !== 'single' && (
+            <button
+              onClick={() => setSplitLayout('single')}
+              style={splitBtnStyle}
+              title="Close Split View (Alt+Shift+1)"
+            >
+              <Square size={12} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -96,9 +139,11 @@ const tabBarContainerStyle: React.CSSProperties = {
   backgroundColor: 'var(--xivig-activity-bar)',
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   borderBottom: '1px solid var(--xivig-border-subtle)',
   userSelect: 'none',
   overflow: 'hidden',
+  paddingRight: '6px',
 };
 
 const tabsScrollContainerStyle: React.CSSProperties = {
@@ -106,6 +151,7 @@ const tabsScrollContainerStyle: React.CSSProperties = {
   height: '100%',
   overflowX: 'auto',
   scrollbarWidth: 'none',
+  flex: 1,
 };
 
 const tabItemStyle: React.CSSProperties = {
@@ -145,7 +191,6 @@ const closeTabBtnStyle: React.CSSProperties = {
   padding: '2px',
   color: 'inherit',
   opacity: 0.6,
-  transition: 'opacity 0.15s, background-color 0.15s',
 };
 
 const dirtyIndicatorBtnStyle: React.CSSProperties = {
@@ -155,19 +200,26 @@ const dirtyIndicatorBtnStyle: React.CSSProperties = {
   padding: '2px',
 };
 
-const emptyTabBarStyle: React.CSSProperties = {
-  height: 'var(--xivig-tabbar-height)',
-  backgroundColor: 'var(--xivig-activity-bar)',
-  borderBottom: '1px solid var(--xivig-border-subtle)',
-  display: 'flex',
-  alignItems: 'center',
-  paddingLeft: '8px',
-};
-
 const addTabBtnStyle: React.CSSProperties = {
   padding: '6px 10px',
   color: 'var(--xivig-text-dim)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+};
+
+const layoutControlsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  paddingLeft: '8px',
+};
+
+const splitBtnStyle: React.CSSProperties = {
+  padding: '4px 6px',
+  borderRadius: '3px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'color 0.1s, background-color 0.1s',
 };

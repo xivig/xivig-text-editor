@@ -17,12 +17,14 @@ export const CommandPalette: React.FC = () => {
   const close = useUIStore((state) => state.closeCommandPalette);
   const openQuickOpen = useUIStore((state) => state.openQuickOpen);
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
+  const toggleMinimap = useUIStore((state) => state.toggleMinimap);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
+  const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
 
   const toggleSidebar = useFileStore((state) => state.toggleSidebar);
   const setActiveSidebarView = useFileStore((state) => state.setActiveSidebarView);
@@ -151,6 +153,33 @@ export const CommandPalette: React.FC = () => {
       title: 'Toggle Sidebar',
       shortcut: 'Ctrl+B',
       action: toggleSidebar,
+    },
+    {
+      id: 'view:minimap',
+      category: 'View',
+      title: 'Toggle Minimap',
+      action: toggleMinimap,
+    },
+    {
+      id: 'view:layout-single',
+      category: 'View',
+      title: 'Layout: Single Column',
+      shortcut: 'Alt+Shift+1',
+      action: () => setSplitLayout('single'),
+    },
+    {
+      id: 'view:layout-2col',
+      category: 'View',
+      title: 'Layout: Two Columns (Split Right)',
+      shortcut: 'Alt+Shift+2',
+      action: () => setSplitLayout('two-columns'),
+    },
+    {
+      id: 'view:layout-2row',
+      category: 'View',
+      title: 'Layout: Two Rows (Split Down)',
+      shortcut: 'Alt+Shift+3',
+      action: () => setSplitLayout('two-rows'),
     },
     {
       id: 'view:explorer',
