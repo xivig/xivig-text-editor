@@ -78,6 +78,10 @@ input, textarea {
   overflow: auto !important;
 }
 
+.cm-content {
+  color: var(--xivig-text) !important;
+}
+
 .cm-gutters {
   background-color: var(--xivig-editor) !important;
   color: var(--xivig-text-dim) !important;
@@ -87,11 +91,11 @@ input, textarea {
 
 .cm-activeLineGutter {
   color: var(--xivig-text) !important;
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  background-color: var(--xivig-surface-hover) !important;
 }
 
 .cm-activeLine {
-  background-color: rgba(255, 255, 255, 0.03) !important;
+  background-color: var(--xivig-surface-hover) !important;
 }
 
 .cm-cursor {
@@ -100,7 +104,7 @@ input, textarea {
 }
 
 .cm-selectionBackground, ::selection {
-  background-color: rgba(108, 140, 255, 0.3) !important;
+  background-color: var(--xivig-selection, rgba(108, 140, 255, 0.3)) !important;
 }
 
 /* Bracket matching indicator */

@@ -71,3 +71,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 }));
+
+// Initial DOM variable hydration
+applySettingsToDOM(defaultSettings);

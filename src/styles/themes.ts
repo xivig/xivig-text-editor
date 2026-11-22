@@ -67,11 +67,11 @@ export const themes: Record<ThemeId, ThemeColors> = {
       accent: '#e6db74',
       accentHover: '#f8f8f2',
       text: '#f8f8f2',
-      textMuted: '#a6e22e',
+      textMuted: '#90908a',
       textDim: '#75715e',
       border: '#3e3d32',
       borderSubtle: '#2f302b',
-      selection: 'rgba(73, 72, 62, 0.6)',
+      selection: 'rgba(73, 72, 62, 0.75)',
     },
   },
   'dracula': {
@@ -91,8 +91,8 @@ export const themes: Record<ThemeId, ThemeColors> = {
       accent: '#bd93f9',
       accentHover: '#ff79c6',
       text: '#f8f8f2',
-      textMuted: '#6272a4',
-      textDim: '#44475a',
+      textMuted: '#9a9bb8',
+      textDim: '#6272a4',
       border: '#44475a',
       borderSubtle: '#343746',
       selection: 'rgba(68, 71, 90, 0.65)',
@@ -138,12 +138,12 @@ export const themes: Record<ThemeId, ThemeColors> = {
       statusbar: '#e4dcce',
       accent: '#268bd2',
       accentHover: '#2aa198',
-      text: '#657b83',
-      textMuted: '#93a1a1',
-      textDim: '#b58900',
-      border: '#d33682',
-      borderSubtle: '#d9d2c2',
-      selection: 'rgba(238, 232, 213, 0.9)',
+      text: '#073642',
+      textMuted: '#657b83',
+      textDim: '#93a1a1',
+      border: '#d3cfc5',
+      borderSubtle: '#e8e2d2',
+      selection: 'rgba(38, 139, 210, 0.22)',
     },
   },
 };
@@ -163,9 +163,14 @@ export function applyThemeToCssVariables(themeId: ThemeId): void {
   root.style.setProperty('--xivig-statusbar', theme.colors.statusbar);
   root.style.setProperty('--xivig-accent', theme.colors.accent);
   root.style.setProperty('--xivig-accent-hover', theme.colors.accentHover);
+  root.style.setProperty('--xivig-accent-active', theme.colors.selection);
   root.style.setProperty('--xivig-text', theme.colors.text);
   root.style.setProperty('--xivig-text-muted', theme.colors.textMuted);
   root.style.setProperty('--xivig-text-dim', theme.colors.textDim);
   root.style.setProperty('--xivig-border', theme.colors.border);
   root.style.setProperty('--xivig-border-subtle', theme.colors.borderSubtle);
+  root.style.setProperty('--xivig-selection', theme.colors.selection);
+
+  root.style.colorScheme = theme.isDark ? 'dark' : 'light';
+  root.setAttribute('data-theme', theme.id);
 }

@@ -11,7 +11,7 @@ import {
   highlightActiveLine,
   keymap,
 } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Compartment } from '@codemirror/state';
 import {
   foldGutter,
   foldKeymap,
@@ -35,7 +35,8 @@ import {
 } from '@codemirror/autocomplete';
 
 import { useEditorStore } from '../../stores/editorStore';
-import { xivigSyntaxTheme } from './xivigTheme';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { getEditorTheme } from './editorThemes';
 import { getLanguageExtension } from './languageSupport';
 import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
@@ -51,6 +52,16 @@ interface EditorProps {
 export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+
+  const theme = useSettingsStore((state) => state.settings.theme);
+  const lineNumbersEnabled = useSettingsStore((state) => state.settings.lineNumbers);
+  const wordWrapEnabled = useSettingsStore((state) => state.settings.wordWrap);
+  const tabSize = useSettingsStore((state) => state.settings.tabSize);
+
+  const themeCompartmentRef = useRef<Compartment>(new Compartment());
+  const lineNumbersCompartmentRef = useRef<Compartment>(new Compartment());
+  const wordWrapCompartmentRef = useRef<Compartment>(new Compartment());
+  const tabSizeCompartmentRef = useRef<Compartment>(new Compartment());
 
   const activeDoc = useEditorStore((state) =>
     pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
@@ -84,8 +95,16 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     const startState = EditorState.create({
       doc: activeDoc.content,
       extensions: [
-        lineNumbers(),
-        highlightActiveLineGutter(),
+        themeCompartmentRef.current.of(getEditorTheme(theme)),
+        lineNumbersCompartmentRef.current.of(
+          lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []
+        ),
+        wordWrapCompartmentRef.current.of(
+          wordWrapEnabled ? EditorView.lineWrapping : []
+        ),
+        tabSizeCompartmentRef.current.of(
+          EditorState.tabSize.of(tabSize)
+        ),
         highlightSpecialChars(),
         history(),
         codeFolding(),
@@ -104,7 +123,6 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         crosshairCursor(),
         highlightActiveLine(),
         highlightSelectionMatches(),
-        xivigSyntaxTheme,
         langExtension,
         keymap.of([
           ...sublimeKeybindings,
@@ -151,6 +169,48 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       setActiveEditorView(null);
     };
   }, [activeDocumentId]);
+
+  // Dynamically reconfigure theme when user switches themes in Settings
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: themeCompartmentRef.current.reconfigure(getEditorTheme(theme)),
+      });
+    }
+  }, [theme]);
+
+  // Dynamically reconfigure line numbers
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: lineNumbersCompartmentRef.current.reconfigure(
+          lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []
+        ),
+      });
+    }
+  }, [lineNumbersEnabled]);
+
+  // Dynamically reconfigure word wrap
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: wordWrapCompartmentRef.current.reconfigure(
+          wordWrapEnabled ? EditorView.lineWrapping : []
+        ),
+      });
+    }
+  }, [wordWrapEnabled]);
+
+  // Dynamically reconfigure tab size
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: tabSizeCompartmentRef.current.reconfigure(
+          EditorState.tabSize.of(tabSize)
+        ),
+      });
+    }
+  }, [tabSize]);
 
   if (activeDoc?.id === 'settings') {
     return <SettingsView />;

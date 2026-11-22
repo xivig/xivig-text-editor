@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { EditorView } from '@codemirror/view';
 import { useUIStore } from '../../stores/uiStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { themes } from '../../styles/themes';
 
 interface MinimapProps {
   view: EditorView | null;
@@ -9,6 +11,7 @@ interface MinimapProps {
 
 export const Minimap: React.FC<MinimapProps> = ({ view, content }) => {
   const isMinimapOpen = useUIStore((state) => state.isMinimapOpen);
+  const themeId = useSettingsStore((state) => state.settings.theme);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [sliderTop, setSliderTop] = useState(0);
@@ -23,6 +26,7 @@ export const Minimap: React.FC<MinimapProps> = ({ view, content }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const isDark = themes[themeId]?.isDark ?? true;
     const rect = containerRef.current.getBoundingClientRect();
     const width = rect.width || 80;
     const height = rect.height || 400;
@@ -55,20 +59,32 @@ export const Minimap: React.FC<MinimapProps> = ({ view, content }) => {
       const lineWidth = Math.min(trimmedLen * 1.8, width - startX - 8);
       const y = i * lineHeight + 2;
 
-      // Syntax hue tinting based on keywords/symbols
-      if (line.includes('function') || line.includes('const') || line.includes('let') || line.includes('import')) {
-        ctx.fillStyle = 'rgba(97, 175, 239, 0.45)'; // blue
-      } else if (line.includes('{') || line.includes('}') || line.includes('class')) {
-        ctx.fillStyle = 'rgba(224, 108, 117, 0.45)'; // reddish
-      } else if (line.includes('//') || line.includes('/*')) {
-        ctx.fillStyle = 'rgba(127, 132, 142, 0.35)'; // gray
+      // Syntax hue tinting based on keywords/symbols and dark/light theme
+      if (isDark) {
+        if (line.includes('function') || line.includes('const') || line.includes('let') || line.includes('import')) {
+          ctx.fillStyle = 'rgba(97, 175, 239, 0.45)'; // blue
+        } else if (line.includes('{') || line.includes('}') || line.includes('class')) {
+          ctx.fillStyle = 'rgba(224, 108, 117, 0.45)'; // reddish
+        } else if (line.includes('//') || line.includes('/*')) {
+          ctx.fillStyle = 'rgba(127, 132, 142, 0.35)'; // gray
+        } else {
+          ctx.fillStyle = 'rgba(229, 231, 235, 0.28)'; // text
+        }
       } else {
-        ctx.fillStyle = 'rgba(229, 231, 235, 0.28)'; // text
+        if (line.includes('function') || line.includes('const') || line.includes('let') || line.includes('import')) {
+          ctx.fillStyle = 'rgba(38, 139, 210, 0.55)'; // solarized blue
+        } else if (line.includes('{') || line.includes('}') || line.includes('class')) {
+          ctx.fillStyle = 'rgba(211, 54, 130, 0.55)'; // solarized magenta
+        } else if (line.includes('//') || line.includes('/*')) {
+          ctx.fillStyle = 'rgba(147, 161, 161, 0.5)'; // solarized gray
+        } else {
+          ctx.fillStyle = 'rgba(7, 54, 66, 0.4)'; // solarized base02 text
+        }
       }
 
       ctx.fillRect(startX, y, Math.max(lineWidth, 4), 1.6);
     }
-  }, [isMinimapOpen, content]);
+  }, [isMinimapOpen, content, themeId]);
 
   // Track editor scroll position and update viewport slider
   useEffect(() => {

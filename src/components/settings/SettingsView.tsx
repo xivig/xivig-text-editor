@@ -393,6 +393,6 @@ const swatchStyle: React.CSSProperties = {
   width: '24px',
   height: '24px',
   borderRadius: '50%',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
+  border: '1px solid var(--xivig-border)',
   display: 'inline-block',
 };
