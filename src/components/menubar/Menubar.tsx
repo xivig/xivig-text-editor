@@ -287,11 +287,11 @@ export const Menubar: React.FC = () => {
     Help: [
       {
         label: 'Documentation',
-        action: () => window.open('https://github.com/phcode-dev/phoenix', '_blank'),
+        action: () => window.open('https://github.com/xivig/xivig-text-editor', '_blank'),
       },
       {
         label: 'Report a Bug',
-        action: () => window.open('https://github.com/phcode-dev/phoenix/issues', '_blank'),
+        action: () => window.open('https://github.com/xivig/xivig-text-editor/issues', '_blank'),
       },
       {
         label: 'Twitter',
@@ -310,20 +310,20 @@ export const Menubar: React.FC = () => {
       { divider: true, label: '' },
       {
         label: 'Remove License',
-        action: () => alert('License Information:\nActive License: Phoenix Pro (Community & Pro Edition)'),
+        action: () => alert('License Information:\nActive License: Xivig Community License'),
       },
       { divider: true, label: '' },
       {
         label: 'Check for Updates...',
-        action: () => alert('Check for Updates:\nYou are running the latest version of Phoenix Code (v5.5 build 5.5.11-23832).'),
+        action: () => alert('Check for Updates:\nYou are running the latest version of Xivig Text Editor (Release 1.0).'),
       },
       {
         label: 'Changelog...',
-        action: () => window.open('https://github.com/phcode-dev/phoenix/releases', '_blank'),
+        action: () => window.open('https://github.com/xivig/xivig-text-editor/releases', '_blank'),
       },
       { divider: true, label: '' },
       {
-        label: 'About Phoenix Code',
+        label: 'About Xivig Text Editor',
         action: openAboutModal,
       },
     ],

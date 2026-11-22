@@ -276,7 +276,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'help:about',
       category: 'Help',
-      title: 'About Phoenix Code',
+      title: 'About Xivig Text Editor',
       action: openAboutModal,
     },
     {
