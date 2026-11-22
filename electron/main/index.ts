@@ -231,7 +231,9 @@ ipcMain.handle('file:create', async (_, { targetPath, isDirectory }: { targetPat
     if (isDirectory) {
       await fs.mkdir(targetPath, { recursive: true });
     } else {
-      await fs.writeFile(targetPath, '', { flag: 'wx' }); // fail if already exists
+      const parentDir = path.dirname(targetPath);
+      await fs.mkdir(parentDir, { recursive: true });
+      await fs.writeFile(targetPath, '', { flag: 'w' });
     }
     return { success: true };
   } catch (error: any) {

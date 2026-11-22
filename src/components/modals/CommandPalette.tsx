@@ -5,6 +5,12 @@ import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
+import {
+  extractHtmlLinks,
+  resolveLinkPath,
+  checkFileExists,
+  createAndOpenLinkedFile,
+} from '../editor/htmlLinkedFiles';
 
 interface CommandItem {
   id: string;
@@ -171,6 +177,26 @@ export const CommandPalette: React.FC = () => {
       title: 'Emmet: Wrap with Abbreviation',
       shortcut: 'Ctrl+Alt+W',
       action: openWrapWithAbbreviation,
+    },
+    {
+      id: 'html:create-linked-css',
+      category: 'HTML',
+      title: 'HTML: Create Missing Linked Stylesheet (CSS)',
+      action: async () => {
+        if (!activeDoc) return;
+        const links = extractHtmlLinks(activeDoc.content);
+        const currentPath = activeDoc.path || null;
+        const workspaceRoot = useFileStore.getState().currentFolderPath || null;
+
+        for (const link of links) {
+          const resolved = resolveLinkPath(link.url, currentPath, workspaceRoot);
+          const exists = await checkFileExists(resolved);
+          if (!exists) {
+            await createAndOpenLinkedFile(link.url, currentPath, workspaceRoot);
+            break;
+          }
+        }
+      },
     },
     {
       id: 'pref:settings',

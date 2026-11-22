@@ -42,6 +42,7 @@ import { setActiveEditorView } from './editorViewRegistry';
 import { sublimeKeybindings } from './sublimeKeymap';
 import { getCustomSnippetSource } from './snippets';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
+import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import logoUrl from '../../assets/logo.png';
@@ -128,6 +129,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         crosshairCursor(),
         highlightActiveLine(),
         highlightSelectionMatches(),
+        htmlLinkedFilesTooltip,
         langExtension,
         keymap.of([
           {

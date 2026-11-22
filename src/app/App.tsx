@@ -5,6 +5,7 @@ import { ActivityBar } from '../components/activitybar/ActivityBar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { TabBar } from '../components/tabs/TabBar';
 import { Editor } from '../components/editor/Editor';
+import { LinkedFileBanner } from '../components/editor/LinkedFileBanner';
 import { StatusBar } from '../components/statusbar/StatusBar';
 import { BottomPanel } from '../components/terminal/BottomPanel';
 import { CommandPalette } from '../components/modals/CommandPalette';
@@ -303,6 +304,7 @@ export const App: React.FC = () => {
         {splitLayout === 'single' ? (
           <main style={editorAreaStyle}>
             <TabBar pane="primary" />
+            <LinkedFileBanner />
             <div style={editorSurfaceStyle}>
               <SearchPanel />
               <Editor pane="primary" />
@@ -313,6 +315,7 @@ export const App: React.FC = () => {
             {/* Primary Column */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
               <TabBar pane="primary" />
+              <LinkedFileBanner />
               <div style={editorSurfaceStyle}>
                 <SearchPanel />
                 <Editor pane="primary" />
@@ -331,6 +334,7 @@ export const App: React.FC = () => {
             {/* Top Row */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', borderBottom: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
               <TabBar pane="primary" />
+              <LinkedFileBanner />
               <div style={editorSurfaceStyle}>
                 <SearchPanel />
                 <Editor pane="primary" />
