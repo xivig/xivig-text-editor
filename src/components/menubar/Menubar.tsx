@@ -7,6 +7,7 @@ import { useBuildStore } from '../../stores/buildStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
+import { beautifyActiveEditor } from '../../utils/beautify';
 
 interface MenuItem {
   label: string;
@@ -188,6 +189,37 @@ export const Menubar: React.FC = () => {
         label: 'Emmet: Wrap with Abbreviation...',
         shortcut: 'Ctrl+Alt+W',
         action: () => useUIStore.getState().openWrapWithAbbreviation(),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Beautify Code (Brackets Beautify)',
+        shortcut: 'Ctrl+Alt+B',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) beautifyActiveEditor(view);
+        },
+      },
+      {
+        label: 'Color Picker (Brackets Quick Edit)',
+        shortcut: 'Ctrl+Alt+C',
+        action: () => {
+          const view = getActiveEditorView();
+          let colorStr = '#6c8cff';
+          let range: { from: number; to: number } | null = null;
+          if (view) {
+            const sel = view.state.selection.main;
+            if (!sel.empty) {
+              colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
+              range = { from: sel.from, to: sel.to };
+            }
+          }
+          useUIStore.getState().openColorPicker(colorStr, range || undefined);
+        },
+      },
+      {
+        label: 'Insert Lorem Ipsum... (Brackets)',
+        shortcut: 'Ctrl+Alt+L',
+        action: () => useUIStore.getState().openLoremIpsumModal(),
       },
     ],
     Selection: [

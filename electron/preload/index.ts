@@ -14,6 +14,10 @@ const xivigAPI = {
     ipcRenderer.invoke('file:delete', targetPath),
   renameFileOrFolder: (oldPath: string, newPath: string) =>
     ipcRenderer.invoke('file:rename', { oldPath, newPath }),
+  duplicateFile: (sourcePath: string, targetPath: string) =>
+    ipcRenderer.invoke('file:duplicate', { sourcePath, targetPath }),
+  revealInExplorer: (targetPath: string) =>
+    ipcRenderer.invoke('file:revealInExplorer', targetPath),
 
   // Window operations
   minimizeWindow: () => ipcRenderer.send('window:minimize'),

@@ -12,6 +12,10 @@ interface UIState {
   isKeymapModalOpen: boolean;
   isBuildSystemModalOpen: boolean;
   isWrapWithAbbreviationOpen: boolean;
+  isColorPickerOpen: boolean;
+  colorPickerInitialColor: string;
+  colorPickerRange: { from: number; to: number } | null;
+  isLoremIpsumOpen: boolean;
   isDistractionFree: boolean;
   quickOpenInitialMode: string;
 
@@ -45,6 +49,12 @@ interface UIState {
   openWrapWithAbbreviation: () => void;
   closeWrapWithAbbreviation: () => void;
 
+  openColorPicker: (initialColor?: string, range?: { from: number; to: number } | null) => void;
+  closeColorPicker: () => void;
+
+  openLoremIpsumModal: () => void;
+  closeLoremIpsumModal: () => void;
+
   toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
   setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
@@ -59,6 +69,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   isKeymapModalOpen: false,
   isBuildSystemModalOpen: false,
   isWrapWithAbbreviationOpen: false,
+  isColorPickerOpen: false,
+  colorPickerInitialColor: '#6c8cff',
+  colorPickerRange: null,
+  isLoremIpsumOpen: false,
   isDistractionFree: false,
   quickOpenInitialMode: '',
   isBottomPanelOpen: false,
@@ -74,6 +88,18 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   openWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: true }),
   closeWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: false }),
+
+  openColorPicker: (initialColor = '#6c8cff', range = null) =>
+    set({
+      isColorPickerOpen: true,
+      colorPickerInitialColor: initialColor,
+      colorPickerRange: range,
+    }),
+  closeColorPicker: () =>
+    set({ isColorPickerOpen: false, colorPickerRange: null }),
+
+  openLoremIpsumModal: () => set({ isLoremIpsumOpen: true }),
+  closeLoremIpsumModal: () => set({ isLoremIpsumOpen: false }),
 
   openKeymapModal: () => set({ isKeymapModalOpen: true }),
   closeKeymapModal: () => set({ isKeymapModalOpen: false }),

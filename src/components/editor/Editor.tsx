@@ -48,6 +48,7 @@ import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } fr
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
+import { beautifyActiveEditor } from '../../utils/beautify';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import logoUrl from '../../assets/logo.png';
@@ -152,6 +153,18 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           {
             key: 'Ctrl-e',
             run: (v) => expandEmmetCommand(v, detectEmmetSyntax(activeDoc.name || activeDoc.language)),
+          },
+          {
+            key: 'Ctrl-Alt-b',
+            run: beautifyActiveEditor,
+          },
+          {
+            key: 'Alt-Shift-f',
+            run: beautifyActiveEditor,
+          },
+          {
+            key: 'Ctrl-Shift-h',
+            run: beautifyActiveEditor,
           },
           ...sublimeKeybindings,
           ...closeBracketsKeymap,

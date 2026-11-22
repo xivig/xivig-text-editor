@@ -9,6 +9,7 @@ import { useExtensionStore } from '../../stores/extensionStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { goToDefinition } from '../editor/codeIntelligence';
+import { beautifyActiveEditor } from '../../utils/beautify';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
   extractHtmlLinks,
@@ -398,6 +399,44 @@ export const CommandPalette: React.FC = () => {
           goToDefinition(view);
         }
       },
+    },
+    {
+      id: 'format:beautify',
+      category: 'Format',
+      title: 'Beautify Code (Brackets Beautify: HTML/CSS/JS)',
+      shortcut: 'Ctrl+Alt+B',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          beautifyActiveEditor(view);
+        }
+      },
+    },
+    {
+      id: 'edit:color-picker',
+      category: 'Edit',
+      title: 'Brackets Color Picker (Quick Edit)',
+      shortcut: 'Ctrl+Alt+C',
+      action: () => {
+        const view = getActiveEditorView();
+        let colorStr = '#6c8cff';
+        let range: { from: number; to: number } | null = null;
+        if (view) {
+          const sel = view.state.selection.main;
+          if (!sel.empty) {
+            colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
+            range = { from: sel.from, to: sel.to };
+          }
+        }
+        useUIStore.getState().openColorPicker(colorStr, range || undefined);
+      },
+    },
+    {
+      id: 'edit:lorem-ipsum',
+      category: 'Edit',
+      title: 'Insert Lorem Ipsum... (Brackets)',
+      shortcut: 'Ctrl+Alt+L',
+      action: () => useUIStore.getState().openLoremIpsumModal(),
     },
     {
       id: 'lang:select',

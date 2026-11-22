@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import {
@@ -285,6 +285,24 @@ ipcMain.handle('file:delete', async (_, targetPath: string) => {
 ipcMain.handle('file:rename', async (_, { oldPath, newPath }: { oldPath: string; newPath: string }) => {
   try {
     await fs.rename(oldPath, newPath);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('file:duplicate', async (_, { sourcePath, targetPath }: { sourcePath: string; targetPath: string }) => {
+  try {
+    await fs.copyFile(sourcePath, targetPath);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('file:revealInExplorer', async (_, targetPath: string) => {
+  try {
+    shell.showItemInFolder(targetPath);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

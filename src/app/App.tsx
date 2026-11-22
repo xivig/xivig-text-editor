@@ -17,6 +17,8 @@ import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModa
 import { KeymapModal } from '../components/modals/KeymapModal';
 import { WrapWithAbbreviationModal } from '../components/modals/WrapWithAbbreviationModal';
 import { BuildSystemModal } from '../components/modals/BuildSystemModal';
+import { BracketsColorPickerModal } from '../components/modals/BracketsColorPickerModal';
+import { LoremIpsumModal } from '../components/modals/LoremIpsumModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
@@ -40,6 +42,7 @@ import { switchSiblingFile } from '../utils/fileSwitcher';
 import { deleteToLineEnd, deleteToLineStart } from '@codemirror/commands';
 import { unfoldAll } from '@codemirror/language';
 import { findNext, findPrevious } from '@codemirror/search';
+import { beautifyActiveEditor } from '../utils/beautify';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -570,6 +573,26 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         openWrapWithAbbreviation();
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view) beautifyActiveEditor(view);
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        let colorStr = '#6c8cff';
+        let range: { from: number; to: number } | null = null;
+        if (view) {
+          const sel = view.state.selection.main;
+          if (!sel.empty) {
+            colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
+            range = { from: sel.from, to: sel.to };
+          }
+        }
+        useUIStore.getState().openColorPicker(colorStr, range || undefined);
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        useUIStore.getState().openLoremIpsumModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         if (activeDoc) {
@@ -711,6 +734,8 @@ export const App: React.FC = () => {
       <KeymapModal />
       <WrapWithAbbreviationModal />
       <BuildSystemModal />
+      <BracketsColorPickerModal />
+      <LoremIpsumModal />
     </div>
   );
 };

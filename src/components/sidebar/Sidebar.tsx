@@ -18,6 +18,7 @@ import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon, FolderIcon } from '../common/FileIcon';
 import { ExtensionsView } from '../extensions/ExtensionsView';
+import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
 
 export const Sidebar: React.FC = () => {
   const isSidebarOpen = useFileStore((state) => state.isSidebarOpen);
@@ -46,6 +47,9 @@ export const Sidebar: React.FC = () => {
   const [promptInput, setPromptInput] = useState<string>('');
   const [commitMessage, setCommitMessage] = useState('');
   const [isCommitting, setIsCommitting] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: ContextMenuTarget } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<ContextMenuTarget | null>(null);
+  const [renameInput, setRenameInput] = useState('');
 
   if (!isSidebarOpen) return null;
 
@@ -122,6 +126,21 @@ export const Sidebar: React.FC = () => {
     }
   };
 
+  const handleRenameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renameTarget || !renameInput.trim() || !window.xivig?.renameFileOrFolder) return;
+    const parentDir = renameTarget.path.replace(/[/\\][^/\\]+$/, '');
+    const newPath = `${parentDir}/${renameInput.trim()}`;
+    const res = await window.xivig.renameFileOrFolder(renameTarget.path, newPath);
+    if (res.success) {
+      setRenameTarget(null);
+      setRenameInput('');
+      await refreshCurrentFolder();
+    } else {
+      alert(`Rename failed: ${res.error}`);
+    }
+  };
+
   const handleFileClick = async (item: FileItem) => {
     if (item.isDirectory) {
       toggleFolderExpanded(item.path);
@@ -172,6 +191,15 @@ export const Sidebar: React.FC = () => {
         <div key={item.path} className="tree-row-wrapper" style={{ position: 'relative' }}>
           <div
             onClick={() => handleFileClick(item)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContextMenu({
+                x: e.clientX,
+                y: e.clientY,
+                target: { name: item.name, path: item.path, isDirectory: item.isDirectory },
+              });
+            }}
             style={{
               ...treeItemStyle,
               paddingLeft: `${paddingLeft}px`,
@@ -560,6 +588,101 @@ export const Sidebar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <FileContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          target={contextMenu.target}
+          onClose={() => setContextMenu(null)}
+          onRename={(target) => {
+            setRenameTarget(target);
+            setRenameInput(target.name);
+          }}
+        />
+      )}
+
+      {/* Rename Prompt Modal */}
+      {renameTarget && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setRenameTarget(null)}
+        >
+          <form
+            onSubmit={handleRenameSubmit}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#202228',
+              border: '1px solid #363945',
+              borderRadius: '6px',
+              padding: '16px',
+              width: '320px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>Rename File</span>
+              <button type="button" onClick={() => setRenameTarget(null)} style={{ color: '#888' }}>
+                <X size={14} />
+              </button>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={renameInput}
+              onChange={(e) => setRenameInput(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: '#17191f',
+                border: '1px solid #3c404d',
+                borderRadius: '4px',
+                padding: '6px 10px',
+                color: '#fff',
+                fontSize: '12px',
+                marginBottom: '12px',
+                outline: 'none',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setRenameTarget(null)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  color: '#aaa',
+                  fontSize: '12px',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: '4px',
+                  backgroundColor: 'var(--xivig-accent)',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                Rename
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </aside>
   );
 };

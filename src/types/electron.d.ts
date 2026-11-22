@@ -48,6 +48,8 @@ export interface XivigAPI {
   createFileOrFolder: (targetPath: string, isDirectory: boolean) => Promise<{ success: boolean; error?: string }>;
   deleteFileOrFolder: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
   renameFileOrFolder: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>;
+  duplicateFile: (sourcePath: string, targetPath: string) => Promise<{ success: boolean; error?: string }>;
+  revealInExplorer: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
 
   // Window controls
   minimizeWindow: () => void;

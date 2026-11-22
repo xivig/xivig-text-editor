@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen } from 'lucide-react';
 import { useEditorStore, SplitLayout } from '../../stores/editorStore';
 import { FileIcon } from '../common/FileIcon';
+import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
 
 interface TabBarProps {
   pane?: 'primary' | 'secondary';
@@ -29,6 +30,8 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
   );
   const isMarkdown = activeDoc?.language === 'markdown' || activeDoc?.name.endsWith('.md');
 
+  const [contextMenu, setContextMenu] = React.useState<{ x: number; y: number; target: ContextMenuTarget } | null>(null);
+
   const handleToggleSplit = (layout: SplitLayout) => {
     if (splitLayout === layout) {
       setSplitLayout('single');
@@ -50,6 +53,17 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
             <div
               key={doc.id}
               onClick={() => setActiveDocument(doc.id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (doc.path) {
+                  setContextMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    target: { name: doc.name, path: doc.path },
+                  });
+                }
+              }}
               onAuxClick={(e) => {
                 if (e.button === 1) {
                   e.preventDefault();
@@ -170,6 +184,15 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
             </button>
           )}
         </div>
+      )}
+
+      {contextMenu && (
+        <FileContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          target={contextMenu.target}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );

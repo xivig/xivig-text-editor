@@ -196,6 +196,49 @@ export const markdownSnippets: Completion[] = [
   }),
 ];
 
+export const loremSnippets: Completion[] = [
+  snippetCompletion(
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+    {
+      label: 'lorem',
+      detail: 'Lorem Ipsum Paragraph (Brackets)',
+      type: 'text',
+    }
+  ),
+  snippetCompletion(
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    {
+      label: 'lorem_s',
+      detail: 'Lorem Ipsum Sentence',
+      type: 'text',
+    }
+  ),
+  snippetCompletion(
+    '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>',
+    {
+      label: 'lorem_p',
+      detail: 'HTML <p> Lorem Paragraph',
+      type: 'text',
+    }
+  ),
+  snippetCompletion(
+    '<li>Lorem ipsum dolor sit amet.</li>\n<li>Consectetur adipiscing elit.</li>\n<li>Sed do eiusmod tempor incididunt.</li>',
+    {
+      label: 'lorem_li',
+      detail: 'HTML <li> Lorem List Items',
+      type: 'text',
+    }
+  ),
+  snippetCompletion(
+    'Lorem ipsum dolor sit amet.',
+    {
+      label: 'lorem_w',
+      detail: '5 Lorem Words',
+      type: 'text',
+    }
+  ),
+];
+
 export function getCustomSnippetSource(languageName: string) {
   const lang = languageName.toLowerCase();
 
@@ -219,7 +262,11 @@ export function getCustomSnippetSource(languageName: string) {
       options = markdownSnippets;
     }
 
-    if (options.length === 0) return null;
+    if (options.length === 0) {
+      options = loremSnippets;
+    } else {
+      options = [...options, ...loremSnippets];
+    }
 
     return {
       from: word.from,
