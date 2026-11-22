@@ -3,6 +3,7 @@ import { Search, Command, Check } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
@@ -259,6 +260,27 @@ export const CommandPalette: React.FC = () => {
       title: 'Layout: Two Rows (Split Down)',
       shortcut: 'Alt+Shift+3',
       action: () => setSplitLayout('two-rows'),
+    },
+    {
+      id: 'view:zoom-in',
+      category: 'View',
+      title: 'Zoom In (Enlarge Text)',
+      shortcut: 'Ctrl+=',
+      action: () => useSettingsStore.getState().zoomIn(),
+    },
+    {
+      id: 'view:zoom-out',
+      category: 'View',
+      title: 'Zoom Out (Shrink Text)',
+      shortcut: 'Ctrl+-',
+      action: () => useSettingsStore.getState().zoomOut(),
+    },
+    {
+      id: 'view:reset-zoom',
+      category: 'View',
+      title: 'Reset Zoom (Default Text Size)',
+      shortcut: 'Ctrl+0',
+      action: () => useSettingsStore.getState().resetZoom(),
     },
     {
       id: 'view:explorer',

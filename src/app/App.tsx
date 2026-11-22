@@ -138,6 +138,23 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+  // Ctrl + Mouse Wheel zoom in / zoom out
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          useSettingsStore.getState().zoomIn();
+        } else if (e.deltaY > 0) {
+          useSettingsStore.getState().zoomOut();
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -201,6 +218,15 @@ export const App: React.FC = () => {
           language: 'settings',
           path: null,
         });
+      } else if (isCtrlOrMeta && (e.key === '=' || e.key === '+' || e.code === 'NumpadAdd')) {
+        e.preventDefault();
+        useSettingsStore.getState().zoomIn();
+      } else if (isCtrlOrMeta && (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract')) {
+        e.preventDefault();
+        useSettingsStore.getState().zoomOut();
+      } else if (isCtrlOrMeta && (e.key === '0' || e.code === 'Numpad0')) {
+        e.preventDefault();
+        useSettingsStore.getState().resetZoom();
       } else if (isCtrlOrMeta && (e.key === '`' || e.key === '~')) {
         e.preventDefault();
         toggleBottomPanel('terminal');

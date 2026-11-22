@@ -17,6 +17,9 @@ interface SettingsState {
   settings: UserSettings;
   updateSettings: (partial: Partial<UserSettings>) => void;
   loadSettings: () => Promise<void>;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -50,6 +53,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (window.xivig?.setSetting) {
       window.xivig.setSetting('user_settings', JSON.stringify(updated));
     }
+  },
+
+  zoomIn: () => {
+    const current = get().settings.fontSize;
+    const next = Math.min(36, current + 1);
+    get().updateSettings({ fontSize: next });
+  },
+
+  zoomOut: () => {
+    const current = get().settings.fontSize;
+    const next = Math.max(9, current - 1);
+    get().updateSettings({ fontSize: next });
+  },
+
+  resetZoom: () => {
+    get().updateSettings({ fontSize: defaultSettings.fontSize });
   },
 
   loadSettings: async () => {

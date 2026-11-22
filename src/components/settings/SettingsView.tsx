@@ -83,8 +83,8 @@ export const SettingsView: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input
                   type="range"
-                  min="11"
-                  max="26"
+                  min="9"
+                  max="36"
                   value={settings.fontSize}
                   onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
                   style={{ width: '120px' }}

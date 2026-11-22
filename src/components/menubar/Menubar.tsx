@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 
@@ -208,6 +209,10 @@ export const Menubar: React.FC = () => {
       { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },
       { label: 'Layout: 2 Columns', shortcut: 'Alt+Shift+2', action: () => setSplitLayout('two-columns') },
       { label: 'Layout: 2 Rows', shortcut: 'Alt+Shift+3', action: () => setSplitLayout('two-rows') },
+      { divider: true, label: '' },
+      { label: 'Zoom In', shortcut: 'Ctrl+=', action: () => useSettingsStore.getState().zoomIn() },
+      { label: 'Zoom Out', shortcut: 'Ctrl+-', action: () => useSettingsStore.getState().zoomOut() },
+      { label: 'Reset Zoom', shortcut: 'Ctrl+0', action: () => useSettingsStore.getState().resetZoom() },
       { divider: true, label: '' },
       { label: 'Toggle Full Screen', shortcut: 'F11' },
     ],

@@ -3,6 +3,7 @@ import { GitBranch, AlertCircle } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
@@ -14,6 +15,8 @@ export const StatusBar: React.FC = () => {
   const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
   const col = activeDoc?.cursor.col || 1;
+  const fontSize = useSettingsStore((state) => state.settings.fontSize);
+  const resetZoom = useSettingsStore((state) => state.resetZoom);
 
   return (
     <footer style={statusBarStyle}>
@@ -36,6 +39,13 @@ export const StatusBar: React.FC = () => {
         </div>
         <div style={itemStyle}>
           <span>Spaces: 2</span>
+        </div>
+        <div
+          onClick={() => resetZoom()}
+          style={itemStyle}
+          title={`Editor font size: ${fontSize}px. Click to reset zoom (Ctrl+0)`}
+        >
+          <span>{fontSize}px</span>
         </div>
         <div style={itemStyle}>
           <span>UTF-8</span>
