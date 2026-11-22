@@ -1,0 +1,192 @@
+import React, { useEffect, useRef } from 'react';
+import {
+  EditorView,
+  lineNumbers,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  drawSelection,
+  dropCursor,
+  rectangularSelection,
+  crosshairCursor,
+  highlightActiveLine,
+  keymap,
+} from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import {
+  foldGutter,
+  foldKeymap,
+  indentOnInput,
+  bracketMatching,
+} from '@codemirror/language';
+import {
+  history,
+  defaultKeymap,
+  historyKeymap,
+  indentWithTab,
+} from '@codemirror/commands';
+import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from '@codemirror/autocomplete';
+
+import { useEditorStore } from '../../stores/editorStore';
+import { xivigSyntaxTheme } from './xivigTheme';
+import { getLanguageExtension } from './languageSupport';
+
+export const Editor: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+
+  const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const activeDocumentId = useEditorStore((state) => state.activeDocumentId);
+  const updateDocumentContent = useEditorStore((state) => state.updateDocumentContent);
+  const updateCursor = useEditorStore((state) => state.updateCursor);
+
+  // Maintain active document ID in ref for updateListener
+  const docIdRef = useRef(activeDocumentId);
+  docIdRef.current = activeDocumentId;
+
+  // Initialize or recreate Editor when active document changes
+  useEffect(() => {
+    if (!containerRef.current || !activeDoc) {
+      if (viewRef.current) {
+        viewRef.current.destroy();
+        viewRef.current = null;
+      }
+      return;
+    }
+
+    // Destroy existing view
+    if (viewRef.current) {
+      viewRef.current.destroy();
+    }
+
+    const langExtension = getLanguageExtension(activeDoc.name || activeDoc.language);
+
+    const startState = EditorState.create({
+      doc: activeDoc.content,
+      extensions: [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightSpecialChars(),
+        history(),
+        foldGutter(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        indentOnInput(),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion(),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightActiveLine(),
+        highlightSelectionMatches(),
+        xivigSyntaxTheme,
+        langExtension,
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...completionKeymap,
+          indentWithTab,
+        ]),
+        EditorView.updateListener.of((update) => {
+          if (!docIdRef.current) return;
+
+          // Track cursor position
+          if (update.selectionSet || update.docChanged) {
+            const head = update.state.selection.main.head;
+            const line = update.state.doc.lineAt(head);
+            const lineNum = line.number;
+            const colNum = head - line.from + 1;
+            updateCursor(docIdRef.current, lineNum, colNum);
+          }
+
+          // Track content changes
+          if (update.docChanged) {
+            const newContent = update.state.doc.toString();
+            updateDocumentContent(docIdRef.current, newContent);
+          }
+        }),
+      ],
+    });
+
+    const view = new EditorView({
+      state: startState,
+      parent: containerRef.current,
+    });
+
+    viewRef.current = view;
+
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+  }, [activeDocumentId]);
+
+  if (!activeDoc) {
+    return (
+      <div style={emptyContainerStyle}>
+        <div style={emptyContentStyle}>
+          <div style={{ fontSize: '32px', marginBottom: '16px' }}>⚡</div>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--xivig-text)', marginBottom: '8px' }}>
+            No Open Documents
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--xivig-text-muted)', marginBottom: '20px' }}>
+            Open a file, folder, or create a new file to start editing.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button
+              onClick={() => useEditorStore.getState().createNewDocument()}
+              style={actionButtonStyle}
+            >
+              New File (Ctrl+N)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    />
+  );
+};
+
+const emptyContainerStyle: React.CSSProperties = {
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'var(--xivig-editor)',
+};
+
+const emptyContentStyle: React.CSSProperties = {
+  textAlign: 'center',
+  maxWidth: '400px',
+  padding: '32px',
+};
+
+const actionButtonStyle: React.CSSProperties = {
+  backgroundColor: 'var(--xivig-accent)',
+  color: '#ffffff',
+  padding: '8px 16px',
+  borderRadius: '4px',
+  fontWeight: 500,
+  fontSize: '13px',
+};
