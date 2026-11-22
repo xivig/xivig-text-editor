@@ -104,6 +104,10 @@ const shortcuts: KeyShortcut[] = [
   { category: 'Zoom & View', command: 'Reset Zoom (Default 14px)', keys: 'Ctrl + 0' },
   { category: 'Zoom & View', command: 'Zoom with Mouse Wheel', keys: 'Ctrl + Mouse Wheel' },
 
+  // HTML & XML
+  { category: 'HTML & XML', command: 'Auto Rename Tag (Sync Opening & Closing Tag)', keys: 'Automatic on Tag Edit' },
+  { category: 'HTML & XML', command: 'Close Tag', keys: 'Alt + .' },
+
   // Emmet
   { category: 'Emmet', command: 'Expand Abbreviation', keys: 'Tab / Ctrl + E' },
   { category: 'Emmet', command: 'Wrap with Abbreviation', keys: 'Ctrl + Alt + W' },
