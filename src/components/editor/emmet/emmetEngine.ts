@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view';
 import { CompletionContext, CompletionResult, snippet } from '@codemirror/autocomplete';
 import { expandHtmlAbbreviation } from './emmetHtml';
 import { expandCssAbbreviation } from './emmetCss';
+import { generateWords, generateSentences, generateParagraphs } from '../../../utils/loremIpsum';
 
 export type EmmetSyntax = 'html' | 'css' | 'jsx';
 
@@ -131,6 +132,28 @@ export function expandEmmet(
   indentSpaces = 2
 ): string | null {
   if (!abbr) return null;
+
+  // Standalone Lorem Ipsum shortcuts across any file or syntax
+  const loremMatch = abbr.match(/^(?:lorem|lipsum)([0-9]+)?$/i);
+  if (loremMatch && !abbr.includes('>') && !abbr.includes('+') && !abbr.includes('*') && !abbr.includes('^')) {
+    const count = loremMatch[1] ? parseInt(loremMatch[1], 10) : 30;
+    return generateWords(count, true);
+  }
+  if (abbr === 'lorem_p' || /^lorem_p([0-9]+)?$/i.test(abbr)) {
+    const pMatch = abbr.match(/^lorem_p([0-9]+)?$/i);
+    const count = pMatch && pMatch[1] ? parseInt(pMatch[1], 10) : 1;
+    return generateParagraphs(count, true, true);
+  }
+  if (abbr === 'lorem_s' || /^lorem_s([0-9]+)?$/i.test(abbr)) {
+    const sMatch = abbr.match(/^lorem_s([0-9]+)?$/i);
+    const count = sMatch && sMatch[1] ? parseInt(sMatch[1], 10) : 1;
+    return generateSentences(count, true);
+  }
+  if (abbr === 'lorem_w' || /^lorem_w([0-9]+)?$/i.test(abbr)) {
+    const wMatch = abbr.match(/^lorem_w([0-9]+)?$/i);
+    const count = wMatch && wMatch[1] ? parseInt(wMatch[1], 10) : 5;
+    return generateWords(count, true);
+  }
 
   if (syntax === 'css') {
     return expandCssAbbreviation(abbr);

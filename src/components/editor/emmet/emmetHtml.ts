@@ -1,3 +1,5 @@
+import { generateWords } from '../../../utils/loremIpsum';
+
 export interface EmmetNode {
   tag: string;
   id?: string;
@@ -7,6 +9,8 @@ export interface EmmetNode {
   count: number;
   children: EmmetNode[];
   parent?: EmmetNode;
+  isLorem?: boolean;
+  loremCount?: number;
 }
 
 export const selfClosingTags = new Set([
@@ -223,6 +227,11 @@ export function parseHtmlAbbreviation(abbr: string): EmmetNode[] {
       tag = 'div';
     }
 
+    // Check if tag is lorem or lipsum
+    const loremMatch = (tag || '').match(/^(?:lorem|lipsum)([0-9]+)?$/i);
+    const isLorem = Boolean(loremMatch);
+    const loremCount = loremMatch && loremMatch[1] ? parseInt(loremMatch[1], 10) : 30;
+
     return {
       tag: tag || 'div',
       id,
@@ -231,6 +240,8 @@ export function parseHtmlAbbreviation(abbr: string): EmmetNode[] {
       text,
       count,
       children: [],
+      isLorem,
+      loremCount,
     };
   }
 
@@ -313,6 +324,17 @@ export function renderHtmlTree(
   function renderNode(node: EmmetNode, level: number, itemIndex = 0): string {
     const curIndent = indentStr.repeat(level);
 
+    if (node.isLorem) {
+      const count = node.loremCount || 30;
+      const words = generateWords(count, true);
+      const iterations = node.count || 1;
+      const list: string[] = [];
+      for (let rep = 0; rep < iterations; rep++) {
+        list.push(`${curIndent}${words}`);
+      }
+      return list.join('\n');
+    }
+
     if (node.tag === 'html-boilerplate') {
       return htmlTagPresets['!'].snippet!;
     }
@@ -380,6 +402,12 @@ export function renderHtmlTree(
           const placeholder = `\${${tabStopCounter.current++}}`;
           results.push(`${curIndent}<${appliedTag}${attrStr}>${placeholder}</${appliedTag}>`);
         }
+      } else if (node.children.length === 1 && node.children[0].isLorem) {
+        // Direct lorem child inside tag: e.g. p>lorem or p*3>lorem10
+        const loremChild = node.children[0];
+        const count = loremChild.loremCount || 30;
+        const words = generateWords(count, true);
+        results.push(`${curIndent}<${appliedTag}${attrStr}>${words}</${appliedTag}>`);
       } else {
         const childrenStr = node.children
           .map((child) => renderNode(child, level + 1, idx))

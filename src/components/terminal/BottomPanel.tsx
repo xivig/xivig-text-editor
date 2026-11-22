@@ -57,6 +57,28 @@ export const BottomPanel: React.FC = () => {
   const [collapsedFiles, setCollapsedFiles] = useState<Record<string, boolean>>({});
   const [problemFilter, setProblemFilter] = useState<'all' | 'errors' | 'warnings'>('all');
 
+  // Group diagnostics by file (Keep hooks at the very top of component)
+  const filteredDiagnostics = React.useMemo(() => {
+    return allDiagnostics.filter((d) => {
+      if (problemFilter === 'errors') return d.severity === 'error';
+      if (problemFilter === 'warnings') return d.severity === 'warning';
+      return true;
+    });
+  }, [allDiagnostics, problemFilter]);
+
+  const groupedProblems = React.useMemo(() => {
+    return filteredDiagnostics.reduce<Record<string, DiagnosticItem[]>>((acc, d) => {
+      const key = d.fileName || 'Untitled';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(d);
+      return acc;
+    }, {});
+  }, [filteredDiagnostics]);
+
+  const currentBuildTarget = React.useMemo(() => {
+    return activeTarget || detectDefaultTarget();
+  }, [activeTarget, detectDefaultTarget]);
+
   // Auto-scroll output to bottom
   useEffect(() => {
     if (activeTab === 'output') {
@@ -151,24 +173,6 @@ export const BottomPanel: React.FC = () => {
     window.xivig?.terminalInit?.(currentFolderPath || undefined);
   };
 
-  // Group diagnostics by file
-  const filteredDiagnostics = React.useMemo(() => {
-    return allDiagnostics.filter((d) => {
-      if (problemFilter === 'errors') return d.severity === 'error';
-      if (problemFilter === 'warnings') return d.severity === 'warning';
-      return true;
-    });
-  }, [allDiagnostics, problemFilter]);
-
-  const groupedProblems = React.useMemo(() => {
-    return filteredDiagnostics.reduce<Record<string, DiagnosticItem[]>>((acc, d) => {
-      const key = d.fileName || 'Untitled';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(d);
-      return acc;
-    }, {});
-  }, [filteredDiagnostics]);
-
   const handleJumpToProblem = (p: DiagnosticItem) => {
     const editorStore = useEditorStore.getState();
     const doc = editorStore.documents.find((d) => d.id === p.docId || d.path === p.filePath);
@@ -184,10 +188,6 @@ export const BottomPanel: React.FC = () => {
       [fileName]: !prev[fileName],
     }));
   };
-
-  const currentBuildTarget = React.useMemo(() => {
-    return activeTarget || detectDefaultTarget();
-  }, [activeTarget, detectDefaultTarget]);
 
   return (
     <div style={{ ...panelContainerStyle, height: panelHeight }}>

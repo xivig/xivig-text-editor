@@ -32,6 +32,7 @@ import {
   completeAnyWord,
   closeBrackets,
   closeBracketsKeymap,
+  acceptCompletion,
 } from '@codemirror/autocomplete';
 
 import { useEditorStore } from '../../stores/editorStore';
@@ -148,7 +149,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         keymap.of([
           {
             key: 'Tab',
-            run: (v) => expandEmmetCommand(v, detectEmmetSyntax(activeDoc.name || activeDoc.language)),
+            run: (v) => {
+              if (acceptCompletion(v)) return true;
+              return expandEmmetCommand(v, detectEmmetSyntax(activeDoc.name || activeDoc.language));
+            },
           },
           {
             key: 'Ctrl-e',
