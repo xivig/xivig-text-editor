@@ -1,5 +1,7 @@
 # About Xivig Text Editor ⚡
 
+> **⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect developer tooling.**
+
 ### Application Information
 - **Application Name**: Xivig Text Editor
 - **Release Version**: Release 1.0 (Build 1.0.0)

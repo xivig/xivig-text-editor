@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Fast, lightweight, keyboard-first desktop text and code editor inspired by Sublime Text and Phoenix Code.</strong>
+  <strong>⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect developer tooling.</strong>
 </p>
 
 <p align="center">
