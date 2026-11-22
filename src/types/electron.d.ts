@@ -56,6 +56,7 @@ export interface XivigAPI {
   maximizeWindow: () => void;
   closeWindow: () => void;
   isMaximized: () => Promise<boolean>;
+  openNewWindow?: () => Promise<{ success: boolean; error?: string }>;
 
   // Database & Session
   saveSession: (session: SavedSession) => Promise<boolean>;

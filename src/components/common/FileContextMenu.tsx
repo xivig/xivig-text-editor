@@ -1,14 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Copy,
-  FileText,
-  Files,
-  FolderOpen,
-  Edit2,
-  Trash2,
-} from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
+import { useUIStore } from '../../stores/uiStore';
+import { useBuildStore } from '../../stores/buildStore';
 
 export interface ContextMenuTarget {
   name: string;
@@ -22,6 +16,8 @@ interface FileContextMenuProps {
   target: ContextMenuTarget;
   onClose: () => void;
   onRename?: (target: ContextMenuTarget) => void;
+  onNewFile?: (dir: string) => void;
+  onNewFolder?: (dir: string) => void;
 }
 
 export const FileContextMenu: React.FC<FileContextMenuProps> = ({
@@ -30,6 +26,8 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   target,
   onClose,
   onRename,
+  onNewFile,
+  onNewFolder,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const currentFolderPath = useFileStore((state) => state.currentFolderPath);
@@ -60,7 +58,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   // Adjust menu position so it stays within viewport
   const adjustedPosition = React.useMemo(() => {
     const menuWidth = 190;
-    const menuHeight = 230;
+    const menuHeight = 500;
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
@@ -68,22 +66,180 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     let posY = y;
 
     if (posX + menuWidth > screenWidth) {
-      posX = screenWidth - menuWidth - 8;
+      posX = Math.max(8, screenWidth - menuWidth - 8);
     }
     if (posY + menuHeight > screenHeight) {
-      posY = screenHeight - menuHeight - 8;
+      posY = Math.max(8, screenHeight - menuHeight - 8);
     }
 
     return { top: posY, left: posX };
   }, [x, y]);
 
-  // 1. Copy Filename
-  const handleCopyFilename = () => {
+  const getTargetDir = () => {
+    return target.isDirectory ? target.path : target.path.replace(/[/\\][^/\\]+$/, '');
+  };
+
+  // 1. New File...
+  const handleNewFile = async () => {
+    onClose();
+    const dir = getTargetDir();
+    if (onNewFile) {
+      onNewFile(dir);
+      return;
+    }
+    const fileName = window.prompt('Enter new file name:');
+    if (fileName && fileName.trim() && window.xivig?.createFileOrFolder) {
+      const targetPath = `${dir}/${fileName.trim()}`;
+      const res = await window.xivig.createFileOrFolder(targetPath, false);
+      if (res.success) {
+        await refreshCurrentFolder();
+        openDocument({
+          path: targetPath,
+          name: fileName.trim(),
+          content: '',
+          language: fileName.trim(),
+        });
+      } else {
+        alert(`Failed to create file: ${res.error}`);
+      }
+    }
+  };
+
+  // 2. New Folder...
+  const handleNewFolder = async () => {
+    onClose();
+    const dir = getTargetDir();
+    if (onNewFolder) {
+      onNewFolder(dir);
+      return;
+    }
+    const folderName = window.prompt('Enter new folder name:');
+    if (folderName && folderName.trim() && window.xivig?.createFileOrFolder) {
+      const targetPath = `${dir}/${folderName.trim()}`;
+      const res = await window.xivig.createFileOrFolder(targetPath, true);
+      if (res.success) {
+        await refreshCurrentFolder();
+      } else {
+        alert(`Failed to create folder: ${res.error}`);
+      }
+    }
+  };
+
+  // 3. Edit to Right
+  const handleEditToRight = async () => {
+    onClose();
+    if (target.isDirectory) return;
+
+    let doc = useEditorStore.getState().documents.find((d) => d.path === target.path);
+    if (!doc && window.xivig?.readFile) {
+      const readRes = await window.xivig.readFile(target.path);
+      if (readRes.success && readRes.content !== undefined) {
+        openDocument({
+          path: target.path,
+          name: target.name,
+          content: readRes.content,
+          language: target.name,
+        });
+        doc = useEditorStore.getState().documents.find((d) => d.path === target.path);
+      }
+    }
+
+    if (doc) {
+      useEditorStore.getState().setSplitLayout('two-columns');
+      useEditorStore.getState().setSecondaryDocument(doc.id);
+      useEditorStore.getState().setActivePane('secondary');
+    }
+  };
+
+  // 4. Open / Run
+  const handleOpenOrRun = async () => {
+    onClose();
+    if (target.isDirectory) return;
+
+    // Open file in primary editor if not opened
+    let doc = useEditorStore.getState().documents.find((d) => d.path === target.path);
+    if (!doc && window.xivig?.readFile) {
+      const readRes = await window.xivig.readFile(target.path);
+      if (readRes.success && readRes.content !== undefined) {
+        openDocument({
+          path: target.path,
+          name: target.name,
+          content: readRes.content,
+          language: target.name,
+        });
+      }
+    } else if (doc) {
+      useEditorStore.getState().setActiveDocument(doc.id);
+    }
+
+    const lower = target.name.toLowerCase();
+    if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+      useEditorStore.getState().togglePreview('live-web');
+    } else {
+      useBuildStore.getState().executeBuild();
+    }
+  };
+
+  // 5. Open In New Window
+  const handleOpenInNewWindow = () => {
+    onClose();
+    if (window.xivig?.openNewWindow) {
+      window.xivig.openNewWindow();
+    } else {
+      window.open(window.location.href, '_blank');
+    }
+  };
+
+  // 6. Find & Replace...
+  const handleFindAndReplace = () => {
+    onClose();
+    if (!target.isDirectory) {
+      const doc = useEditorStore.getState().documents.find((d) => d.path === target.path);
+      if (doc) {
+        useEditorStore.getState().setActiveDocument(doc.id);
+      }
+    }
+    useUIStore.getState().openSearchPanel('replace');
+  };
+
+  // 7. Find Files Named...
+  const handleFindFilesNamed = () => {
+    onClose();
+    useUIStore.getState().openQuickOpenWithMode('file');
+  };
+
+  // 8. Cut
+  const handleCut = () => {
+    navigator.clipboard.writeText(target.path);
+    onClose();
+  };
+
+  // 9. Copy
+  const handleCopy = async () => {
+    onClose();
+    if (!target.isDirectory && window.xivig?.readFile) {
+      const readRes = await window.xivig.readFile(target.path);
+      if (readRes.success && readRes.content !== undefined) {
+        navigator.clipboard.writeText(readRes.content);
+        return;
+      }
+    }
+    navigator.clipboard.writeText(target.path);
+  };
+
+  // 10. Copy Name
+  const handleCopyName = () => {
     navigator.clipboard.writeText(target.name);
     onClose();
   };
 
-  // 2. Copy Relative Path
+  // 11. Copy Path
+  const handleCopyPath = () => {
+    navigator.clipboard.writeText(target.path);
+    onClose();
+  };
+
+  // 12. Copy Relative Path
   const handleCopyRelativePath = () => {
     let rel = target.path;
     if (currentFolderPath) {
@@ -97,18 +253,11 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     onClose();
   };
 
-  // 3. Copy Absolute Path
-  const handleCopyAbsolutePath = () => {
-    navigator.clipboard.writeText(target.path);
-    onClose();
-  };
-
-  // 4. Duplicate...
+  // 13. Duplicate...
   const handleDuplicate = async () => {
     onClose();
     if (!window.xivig?.duplicateFile || target.isDirectory) return;
 
-    // Generate duplicate filename: e.g. "name.ext" -> "name copy.ext" or "name copy 2.ext"
     const lastDotIndex = target.name.lastIndexOf('.');
     let baseName = target.name;
     let ext = '';
@@ -125,7 +274,6 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     if (res.success) {
       await refreshCurrentFolder();
 
-      // Open the duplicated file in editor
       if (window.xivig?.readFile) {
         const readRes = await window.xivig.readFile(newPath);
         if (readRes.success && readRes.content !== undefined) {
@@ -142,7 +290,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
   };
 
-  // 5. Delete
+  // 14. Delete
   const handleDelete = async () => {
     onClose();
     const confirmed = confirm(`Are you sure you want to delete "${target.name}"?`);
@@ -158,10 +306,18 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
   };
 
-  // 6. Reveal in Explorer
+  // 15. Reveal in Explorer
   const handleReveal = () => {
     onClose();
     window.xivig?.revealInExplorer?.(target.path);
+  };
+
+  const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.backgroundColor = '#2c303c';
+  };
+
+  const onUnhover = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.backgroundColor = 'transparent';
   };
 
   return (
@@ -175,55 +331,88 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         backgroundColor: '#202228',
         border: '1px solid #363945',
         borderRadius: '6px',
-        padding: '4px 0',
-        minWidth: '180px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+        padding: '5px 0',
+        minWidth: '190px',
+        maxHeight: 'calc(100vh - 20px)',
+        overflowY: 'auto',
+        boxShadow: '0 10px 28px rgba(0, 0, 0, 0.55)',
         fontSize: '12px',
         color: '#e5e7eb',
         userSelect: 'none',
         fontFamily: 'var(--xivig-font-ui, system-ui, sans-serif)',
       }}
     >
-      <div
-        onClick={handleCopyFilename}
-        style={menuItemStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        <span>Copy Filename</span>
+      {/* Group 1: New File / Folder */}
+      <div onClick={handleNewFile} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>New File...</span>
+      </div>
+      <div onClick={handleNewFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>New Folder...</span>
       </div>
 
-      <div
-        onClick={handleCopyRelativePath}
-        style={menuItemStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
+      <div style={menuDividerStyle} />
+
+      {/* Group 2: Edit to Right */}
+      {!target.isDirectory && (
+        <div onClick={handleEditToRight} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+          <span>Edit to Right</span>
+        </div>
+      )}
+
+      {!target.isDirectory && <div style={menuDividerStyle} />}
+
+      {/* Group 3: Open / Run & Open In New Window */}
+      {!target.isDirectory && (
+        <div onClick={handleOpenOrRun} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+          <span>Open / Run</span>
+        </div>
+      )}
+      <div onClick={handleOpenInNewWindow} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Open In New Window</span>
+      </div>
+
+      <div style={menuDividerStyle} />
+
+      {/* Group 4: Find & Replace / Find Files Named */}
+      <div onClick={handleFindAndReplace} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Find &amp; Replace...</span>
+      </div>
+      <div onClick={handleFindFilesNamed} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Find Files Named...</span>
+      </div>
+
+      <div style={menuDividerStyle} />
+
+      {/* Group 5: Cut / Copy */}
+      <div onClick={handleCut} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Cut</span>
+      </div>
+      <div onClick={handleCopy} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Copy</span>
+      </div>
+
+      <div style={menuDividerStyle} />
+
+      {/* Group 6: Copy Name / Copy Path / Copy Relative Path / Duplicate */}
+      <div onClick={handleCopyName} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Copy Name</span>
+      </div>
+      <div onClick={handleCopyPath} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+        <span>Copy Path</span>
+      </div>
+      <div onClick={handleCopyRelativePath} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
         <span>Copy Relative Path</span>
       </div>
 
-      <div
-        onClick={handleCopyAbsolutePath}
-        style={menuItemStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        <span>Copy Absolute Path</span>
-      </div>
-
       {!target.isDirectory && (
-        <div
-          onClick={handleDuplicate}
-          style={menuItemStyle}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
+        <div onClick={handleDuplicate} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
           <span>Duplicate...</span>
         </div>
       )}
 
       <div style={menuDividerStyle} />
 
+      {/* Group 7: Rename / Reveal */}
       {onRename && (
         <div
           onClick={() => {
@@ -231,29 +420,25 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
             onRename(target);
           }}
           style={menuItemStyle}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          onMouseEnter={onHover}
+          onMouseLeave={onUnhover}
         >
           <span>Rename...</span>
         </div>
       )}
 
-      <div
-        onClick={handleReveal}
-        style={menuItemStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d313d')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
+      <div onClick={handleReveal} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
         <span>Reveal in File Explorer</span>
       </div>
 
       <div style={menuDividerStyle} />
 
+      {/* Group 8: Delete */}
       <div
         onClick={handleDelete}
         style={{ ...menuItemStyle, color: '#ef6464' }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#382024')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        onMouseLeave={onUnhover}
       >
         <span>Delete</span>
       </div>
@@ -264,14 +449,15 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 const menuItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  padding: '6px 14px',
+  padding: '6px 16px',
   cursor: 'pointer',
   transition: 'background-color 0.1s ease',
   fontSize: '12px',
+  lineHeight: 1.4,
 };
 
 const menuDividerStyle: React.CSSProperties = {
   height: '1px',
-  backgroundColor: '#30343f',
+  backgroundColor: '#2e313b',
   margin: '4px 0',
 };

@@ -24,6 +24,7 @@ const xivigAPI = {
   maximizeWindow: () => ipcRenderer.send('window:maximize'),
   closeWindow: () => ipcRenderer.send('window:close'),
   isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+  openNewWindow: () => ipcRenderer.invoke('window:openNew'),
 
   // Database & Session operations
   saveSession: (session: any) => ipcRenderer.invoke('session:save', session),

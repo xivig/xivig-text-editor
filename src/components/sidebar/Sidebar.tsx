@@ -600,6 +600,16 @@ export const Sidebar: React.FC = () => {
             setRenameTarget(target);
             setRenameInput(target.name);
           }}
+          onNewFile={(dir) => {
+            setPromptType('file');
+            setPromptTargetDir(dir);
+            setIsPromptOpen(true);
+          }}
+          onNewFolder={(dir) => {
+            setPromptType('folder');
+            setPromptTargetDir(dir);
+            setIsPromptOpen(true);
+          }}
         />
       )}
 

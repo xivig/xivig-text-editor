@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   EditorView,
   lineNumbers,
@@ -52,6 +52,7 @@ import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } f
 import { beautifyActiveEditor } from '../../utils/beautify';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
+import { FileContextMenu } from '../common/FileContextMenu';
 import logoUrl from '../../assets/logo.png';
 
 interface EditorProps {
@@ -61,6 +62,7 @@ interface EditorProps {
 export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const theme = useSettingsStore((state) => state.settings.theme);
   const lineNumbersEnabled = useSettingsStore((state) => state.settings.lineNumbers);
@@ -295,6 +297,12 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         setActivePane(pane);
         if (viewRef.current) setActiveEditorView(viewRef.current);
       }}
+      onContextMenu={(e) => {
+        if (activeDoc) {
+          e.preventDefault();
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        }
+      }}
       style={{ width: '100%', height: '100%', display: 'flex', overflow: 'hidden' }}
     >
       <div
@@ -307,6 +315,19 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         }}
       />
       <Minimap view={viewRef.current} content={activeDoc.content} />
+
+      {contextMenu && activeDoc && (
+        <FileContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          target={{
+            name: activeDoc.name,
+            path: activeDoc.path || activeDoc.name,
+            isDirectory: false,
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 };

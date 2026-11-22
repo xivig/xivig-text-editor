@@ -140,6 +140,11 @@ ipcMain.handle('window:isMaximized', () => {
   return win?.isMaximized() ?? false;
 });
 
+ipcMain.handle('window:openNew', async () => {
+  createWindow();
+  return { success: true };
+});
+
 // File dialogs & System operations
 ipcMain.handle('dialog:openFile', async () => {
   if (!win) return { canceled: true };
