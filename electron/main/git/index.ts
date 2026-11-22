@@ -1,7 +1,9 @@
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import path from 'node:path';
+import fs from 'node:fs';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface GitFileChange {
   path: string;
@@ -16,17 +18,19 @@ export interface GitStatusResult {
 }
 
 export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
-  if (!cwd) {
+  if (!cwd || typeof cwd !== 'string' || !fs.existsSync(cwd)) {
     return { isRepo: false, branch: '', changes: [] };
   }
 
+  const safeCwd = path.resolve(cwd);
+
   try {
     // Check current branch
-    const { stdout: branchOut } = await execAsync('git branch --show-current', { cwd });
+    const { stdout: branchOut } = await execFileAsync('git', ['branch', '--show-current'], { cwd: safeCwd });
     const branch = branchOut.trim() || 'detached';
 
     // Check porcelain status
-    const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd });
+    const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], { cwd: safeCwd });
     const lines = statusOut.split('\n').filter(Boolean);
 
     const changes: GitFileChange[] = lines.map((line) => {
@@ -58,7 +62,7 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
       branch,
       changes,
     };
-  } catch (err) {
+  } catch {
     return {
       isRepo: false,
       branch: '',
@@ -67,14 +71,25 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
   }
 }
 
-export async function commitChanges(cwd: string, message: string): Promise<{ success: boolean; output?: string; error?: string }> {
-  if (!cwd || !message.trim()) {
-    return { success: false, error: 'Directory or commit message missing' };
+export async function commitChanges(
+  cwd: string,
+  message: string
+): Promise<{ success: boolean; output?: string; error?: string }> {
+  if (!cwd || typeof cwd !== 'string' || !fs.existsSync(cwd)) {
+    return { success: false, error: 'Valid working directory is required' };
+  }
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return { success: false, error: 'Commit message is required' };
   }
 
+  const safeCwd = path.resolve(cwd);
+
   try {
-    const escapedMsg = message.replace(/"/g, '\\"');
-    const { stdout } = await execAsync(`git add -A && git commit -m "${escapedMsg}"`, { cwd });
+    // Stage all changes safely without constructing shell strings
+    await execFileAsync('git', ['add', '-A'], { cwd: safeCwd });
+
+    // Commit changes with message passed directly as an argument array item (no shell interpolation)
+    const { stdout } = await execFileAsync('git', ['commit', '-m', message], { cwd: safeCwd });
     return { success: true, output: stdout.trim() };
   } catch (err: any) {
     return { success: false, error: err.message };

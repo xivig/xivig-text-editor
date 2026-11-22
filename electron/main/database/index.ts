@@ -55,13 +55,20 @@ function loadStore(): void {
   }
 }
 
-function persistStore(): void {
+function persistStore(): boolean {
+  if (!fallbackFile) return false;
   try {
-    const tmp = `${fallbackFile}.tmp`;
+    const parentDir = path.dirname(fallbackFile);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
+    const tmp = `${fallbackFile}.tmp.${Date.now()}`;
     fs.writeFileSync(tmp, JSON.stringify(inMemoryStore, null, 2), 'utf-8');
     fs.renameSync(tmp, fallbackFile);
+    return true;
   } catch (err) {
     console.error('[Xivig Store] Failed to persist store file:', err);
+    return false;
   }
 }
 
@@ -82,8 +89,7 @@ export function initDatabase(): void {
 
 export function saveSession(session: SavedSession): boolean {
   inMemoryStore.session = session;
-  persistStore();
-  return true;
+  return persistStore();
 }
 
 export function restoreSession(): SavedSession | null {
@@ -128,9 +134,9 @@ export function getRecentWorkspaces(limit = 10): RecentItem[] {
   return inMemoryStore.workspaces.slice(0, limit);
 }
 
-export function setSetting(key: string, value: string): void {
+export function setSetting(key: string, value: string): boolean {
   inMemoryStore.settings[key] = value;
-  persistStore();
+  return persistStore();
 }
 
 export function getSetting(key: string): string | null {

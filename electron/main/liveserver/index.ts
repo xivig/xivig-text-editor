@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import crypto from 'node:crypto';
 import { BrowserWindow, shell } from 'electron';
 
 export interface LiveServerStatus {
@@ -58,6 +59,7 @@ const LIVE_RELOAD_INJECTION = `
 let currentServer: http.Server | null = null;
 let currentPort = 5500;
 let currentRoot = '';
+let currentSessionToken = '';
 const sseClients = new Set<http.ServerResponse>();
 
 function escapeHtml(str: string): string {
@@ -105,9 +107,18 @@ export async function startLiveServer(
     return { success: false, port: 0, url: '', error: 'Invalid root directory path' };
   }
 
-  currentRoot = fs.statSync(rootDirectory).isDirectory()
-    ? rootDirectory
-    : path.dirname(rootDirectory);
+  let canonicalRoot: string;
+  try {
+    const resolvedPath = path.resolve(rootDirectory);
+    const stat = fs.statSync(resolvedPath);
+    const targetDir = stat.isDirectory() ? resolvedPath : path.dirname(resolvedPath);
+    canonicalRoot = fs.realpathSync(targetDir);
+  } catch (err: any) {
+    return { success: false, port: 0, url: '', error: `Cannot resolve root directory: ${err.message}` };
+  }
+
+  currentRoot = canonicalRoot;
+  currentSessionToken = crypto.randomBytes(16).toString('hex');
 
   let attemptPort = preferredPort;
   const maxPort = preferredPort + 20;
@@ -118,13 +129,28 @@ export async function startLiveServer(
         const parsedUrl = url.parse(req.url || '/', true);
         const pathname = decodeURIComponent(parsedUrl.pathname || '/');
 
+        // Security headers
+        const securityHeaders = {
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'SAMEORIGIN',
+          'Access-Control-Allow-Origin': `http://127.0.0.1:${portToTry}`,
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        };
+
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204, securityHeaders);
+          res.end();
+          return;
+        }
+
         // 1. SSE Live reload endpoint
         if (pathname === '/__xivig_live_reload') {
           res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             Connection: 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
+            ...securityHeaders,
           });
           res.write('data: connected\n\n');
           sseClients.add(res);
@@ -135,35 +161,55 @@ export async function startLiveServer(
           return;
         }
 
-        // 2. Resolve requested file path against currentRoot and prevent path traversal
-        const normalizedRoot = path.resolve(currentRoot);
+        // 2. Strict directory boundary and symlink escape validation
         const cleanPath = path.normalize(pathname).replace(/^([a-zA-Z]:|[/\\])+/, '');
-        let safePath = path.resolve(normalizedRoot, cleanPath);
+        let targetCandidate = path.resolve(canonicalRoot, cleanPath);
 
-        if (safePath !== normalizedRoot && !safePath.startsWith(normalizedRoot + path.sep)) {
-          res.writeHead(403, {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'X-Content-Type-Options': 'nosniff',
-            'X-Frame-Options': 'SAMEORIGIN',
-          });
-          res.end('403 Forbidden: Access outside workspace root is not allowed.');
+        // Check if path is syntactically inside canonicalRoot
+        const relativeSyntax = path.relative(canonicalRoot, targetCandidate);
+        if (relativeSyntax.startsWith('..') || path.isAbsolute(relativeSyntax)) {
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('403 Forbidden: Path traversal attempt blocked.');
           return;
         }
 
-        // If directory, try index.html
+        // Resolve realpath if file exists to block symlink traversal
+        let safePath = targetCandidate;
+        if (fs.existsSync(targetCandidate)) {
+          try {
+            const canonicalTarget = fs.realpathSync(targetCandidate);
+            const relativeCanonical = path.relative(canonicalRoot, canonicalTarget);
+            if (relativeCanonical.startsWith('..') || path.isAbsolute(relativeCanonical)) {
+              res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+              res.end('403 Forbidden: Symlink destination outside workspace.');
+              return;
+            }
+            safePath = canonicalTarget;
+          } catch {
+            res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('403 Forbidden: Unable to verify realpath.');
+            return;
+          }
+        }
+
+        // If directory, search for index.html inside it
         if (fs.existsSync(safePath) && fs.statSync(safePath).isDirectory()) {
-          const indexFile = path.join(safePath, 'index.html');
-          if (fs.existsSync(indexFile)) {
-            safePath = indexFile;
+          const indexCandidate = path.join(safePath, 'index.html');
+          if (fs.existsSync(indexCandidate)) {
+            try {
+              const canonicalIndex = fs.realpathSync(indexCandidate);
+              const relativeIndex = path.relative(canonicalRoot, canonicalIndex);
+              if (!relativeIndex.startsWith('..') && !path.isAbsolute(relativeIndex)) {
+                safePath = canonicalIndex;
+              }
+            } catch {
+              // Ignore resolution error
+            }
           }
         }
 
         if (!fs.existsSync(safePath) || fs.statSync(safePath).isDirectory()) {
-          res.writeHead(404, {
-            'Content-Type': 'text/html; charset=utf-8',
-            'X-Content-Type-Options': 'nosniff',
-            'X-Frame-Options': 'SAMEORIGIN',
-          });
+          res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', ...securityHeaders });
           res.end(`
             <!DOCTYPE html>
             <html>
@@ -171,7 +217,7 @@ export async function startLiveServer(
               <body style="font-family: system-ui, sans-serif; background: #17191f; color: #e5e7eb; padding: 40px;">
                 <h2 style="color: #ef6464;">404 Not Found</h2>
                 <p>Cannot find: <code>${escapeHtml(pathname)}</code></p>
-                <p style="color: #9299a8;">Serving from: <code>${escapeHtml(currentRoot)}</code></p>
+                <p style="color: #9299a8;">Serving from: <code>${escapeHtml(canonicalRoot)}</code></p>
               </body>
             </html>
           `);
@@ -196,13 +242,12 @@ export async function startLiveServer(
             res.writeHead(200, {
               'Content-Type': contentType,
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'X-Content-Type-Options': 'nosniff',
-              'X-Frame-Options': 'SAMEORIGIN',
+              ...securityHeaders,
             });
             res.end(html);
-          } catch (err: any) {
-            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
-            res.end(`500 Internal Server Error`);
+          } catch {
+            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('500 Internal Server Error');
           }
           return;
         }
@@ -213,14 +258,13 @@ export async function startLiveServer(
           res.writeHead(200, {
             'Content-Type': contentType,
             'Content-Length': stat.size,
-            'Access-Control-Allow-Origin': '*',
-            'X-Content-Type-Options': 'nosniff',
+            ...securityHeaders,
           });
           const stream = fs.createReadStream(safePath);
           stream.pipe(res);
-        } catch (err: any) {
-          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
-          res.end(`500 Error`);
+        } catch {
+          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('500 Error');
         }
       });
 
@@ -273,8 +317,9 @@ export async function stopLiveServer(win: BrowserWindow | null = null): Promise<
 
 export function openLiveServerInBrowser(subPath = ''): void {
   if (currentServer) {
-    const targetUrl = subPath
-      ? `http://127.0.0.1:${currentPort}/${subPath.replace(/^\//, '')}`
+    const cleanSub = subPath ? subPath.replace(/^\/+/, '') : '';
+    const targetUrl = cleanSub
+      ? `http://127.0.0.1:${currentPort}/${cleanSub}`
       : `http://127.0.0.1:${currentPort}`;
     shell.openExternal(targetUrl);
   }

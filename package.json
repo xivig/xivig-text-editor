@@ -5,6 +5,7 @@
   "private": true,
   "description": "⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect design tooling.",
   "author": "Bandhu",
+  "license": "MIT",
   "homepage": "https://github.com/xivig/xivig-text-editor",
   "repository": {
     "type": "git",
@@ -15,6 +16,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "typecheck:node": "tsc --project tsconfig.node.json --noEmit",
     "start": "electron .",
     "pack": "electron-builder --dir",
     "package": "npm run build && electron-builder",
