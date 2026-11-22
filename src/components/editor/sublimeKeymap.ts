@@ -11,8 +11,6 @@ import {
   moveLineUp,
   deleteLine,
   selectLine,
-  toggleComment,
-  toggleBlockComment,
   addCursorAbove,
   addCursorBelow,
   undoSelection,
@@ -43,6 +41,7 @@ import {
   clearBookmarks,
   selectAllBookmarks,
 } from './bookmarks';
+import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 
 // Saved mark position for Ctrl+K Ctrl+Space (Sublime mark buffer)
 let savedMarkPosition: number | null = null;
@@ -426,8 +425,9 @@ export const sublimeKeybindings: readonly KeyBinding[] = [
   { key: 'Mod-[', run: indentLess, preventDefault: true },
 
   // --- Comments ---
-  { key: 'Mod-/', run: toggleComment, preventDefault: true },
-  { key: 'Mod-Shift-/', run: toggleBlockComment, preventDefault: true },
+  { key: 'Mod-/', run: (v) => smartToggleLineComment(v), preventDefault: true },
+  { key: 'Mod-Shift-/', run: (v) => smartToggleBlockComment(v), preventDefault: true },
+  { key: 'Alt-Shift-a', run: (v) => smartToggleBlockComment(v), preventDefault: true },
 
   // --- Code Folding ---
   { key: 'Mod-Shift-[', run: foldCode, preventDefault: true },

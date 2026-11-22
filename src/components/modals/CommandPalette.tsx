@@ -10,6 +10,7 @@ import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { goToDefinition } from '../editor/codeIntelligence';
 import { beautifyActiveEditor } from '../../utils/beautify';
+import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
   extractHtmlLinks,
@@ -410,13 +411,41 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'format:beautify',
       category: 'Format',
-      title: 'Beautify Code',
+      title: 'Format Document (Beautify Code)',
       shortcut: 'Ctrl+Alt+B',
       action: () => {
         const view = getActiveEditorView();
         if (view) {
           beautifyActiveEditor(view);
         }
+      },
+    },
+    {
+      id: 'view:toggle-ligatures',
+      category: 'Preferences',
+      title: 'Preferences: Toggle Font Ligatures',
+      action: () => {
+        useSettingsStore.getState().toggleFontLigatures();
+      },
+    },
+    {
+      id: 'edit:toggle-comment',
+      category: 'Edit',
+      title: 'Toggle Line Comment',
+      shortcut: 'Ctrl+/',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) smartToggleLineComment(view);
+      },
+    },
+    {
+      id: 'edit:toggle-block-comment',
+      category: 'Edit',
+      title: 'Toggle Block Comment',
+      shortcut: 'Ctrl+Shift+/',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) smartToggleBlockComment(view);
       },
     },
     {

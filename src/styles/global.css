@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "./variables.css";
 
 *, *::before, *::after {
@@ -65,6 +66,9 @@ input, textarea {
   font-family: var(--xivig-font-mono) !important;
   font-size: var(--xivig-font-size-code) !important;
   line-height: var(--xivig-line-height-code) !important;
+  font-variant-ligatures: var(--xivig-font-ligatures, contextual) !important;
+  font-feature-settings: var(--xivig-font-features, "liga" 1, "calt" 1) !important;
+  text-rendering: optimizeLegibility !important;
   background-color: var(--xivig-editor) !important;
   color: var(--xivig-text) !important;
 }
@@ -75,11 +79,20 @@ input, textarea {
 
 .cm-scroller {
   font-family: inherit !important;
+  font-variant-ligatures: inherit !important;
+  font-feature-settings: inherit !important;
   overflow: auto !important;
 }
 
 .cm-content {
   color: var(--xivig-text) !important;
+  font-variant-ligatures: inherit !important;
+  font-feature-settings: inherit !important;
+}
+
+.cm-line {
+  font-variant-ligatures: inherit !important;
+  font-feature-settings: inherit !important;
 }
 
 .cm-gutters {

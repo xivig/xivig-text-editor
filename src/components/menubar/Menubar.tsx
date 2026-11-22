@@ -8,6 +8,7 @@ import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import { beautifyActiveEditor } from '../../utils/beautify';
+import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 
 interface MenuItem {
   label: string;
@@ -193,13 +194,30 @@ export const Menubar: React.FC = () => {
       },
       { divider: true, label: '' },
       {
-        label: 'Beautify Code',
+        label: 'Format Document',
         shortcut: 'Ctrl+Alt+B',
         action: () => {
           const view = getActiveEditorView();
           if (view) beautifyActiveEditor(view);
         },
       },
+      {
+        label: 'Toggle Line Comment',
+        shortcut: 'Ctrl+/',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) smartToggleLineComment(view);
+        },
+      },
+      {
+        label: 'Toggle Block Comment',
+        shortcut: 'Ctrl+Shift+/',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) smartToggleBlockComment(view);
+        },
+      },
+      { divider: true, label: '' },
       {
         label: 'Color Picker',
         shortcut: 'Ctrl+Alt+C',
@@ -232,7 +250,22 @@ export const Menubar: React.FC = () => {
       { label: 'Move Line Down', shortcut: 'Alt+Down' },
       { label: 'Move Line Up', shortcut: 'Alt+Up' },
       { divider: true, label: '' },
-      { label: 'Toggle Line Comment', shortcut: 'Ctrl+/' },
+      {
+        label: 'Toggle Line Comment',
+        shortcut: 'Ctrl+/',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) smartToggleLineComment(view);
+        },
+      },
+      {
+        label: 'Toggle Block Comment',
+        shortcut: 'Ctrl+Shift+/',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) smartToggleBlockComment(view);
+        },
+      },
       { label: 'Delete Line', shortcut: 'Ctrl+Shift+K' },
     ],
     View: [
@@ -250,6 +283,7 @@ export const Menubar: React.FC = () => {
       { label: 'Toggle Problems Panel', action: () => toggleBottomPanel('problems') },
       { label: 'Toggle Output Panel', action: () => toggleBottomPanel('output') },
       { label: 'Toggle Minimap', action: toggleMinimap },
+      { label: 'Toggle Font Ligatures', action: () => useSettingsStore.getState().toggleFontLigatures() },
       { label: 'Extensions', shortcut: 'Ctrl+Shift+X', action: () => setActiveSidebarView('extensions') },
       { divider: true, label: '' },
       { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },

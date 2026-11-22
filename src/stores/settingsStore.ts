@@ -11,6 +11,7 @@ export interface UserSettings {
   minimap: boolean;
   theme: ThemeId;
   autoSave: boolean;
+  fontLigatures: boolean;
 }
 
 interface SettingsState {
@@ -20,6 +21,7 @@ interface SettingsState {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  toggleFontLigatures: () => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -32,6 +34,7 @@ const defaultSettings: UserSettings = {
   minimap: true,
   theme: 'xivig-dark',
   autoSave: true,
+  fontLigatures: true,
 };
 
 function applySettingsToDOM(settings: UserSettings) {
@@ -39,6 +42,13 @@ function applySettingsToDOM(settings: UserSettings) {
   root.style.setProperty('--xivig-font-size-code', `${settings.fontSize}px`);
   root.style.setProperty('--xivig-font-mono', settings.fontFamily);
   root.style.setProperty('--xivig-line-height-code', `${settings.lineHeight}`);
+  if (settings.fontLigatures !== false) {
+    root.style.setProperty('--xivig-font-ligatures', 'contextual');
+    root.style.setProperty('--xivig-font-features', '"liga" 1, "calt" 1');
+  } else {
+    root.style.setProperty('--xivig-font-ligatures', 'none');
+    root.style.setProperty('--xivig-font-features', '"liga" 0, "calt" 0');
+  }
   applyThemeToCssVariables(settings.theme);
 }
 
@@ -69,6 +79,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   resetZoom: () => {
     get().updateSettings({ fontSize: defaultSettings.fontSize });
+  },
+
+  toggleFontLigatures: () => {
+    const current = get().settings.fontLigatures !== false;
+    get().updateSettings({ fontLigatures: !current });
   },
 
   loadSettings: async () => {

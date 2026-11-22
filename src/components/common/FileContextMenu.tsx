@@ -3,6 +3,9 @@ import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useBuildStore } from '../../stores/buildStore';
+import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { beautifyActiveEditor } from '../../utils/beautify';
+import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 
 export interface ContextMenuTarget {
   name: string;
@@ -190,6 +193,51 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
   };
 
+  // Code Formatting & Block/Line Comments
+  const handleFormatDocument = async () => {
+    onClose();
+    if (target.isDirectory) return;
+    const activeDoc = useEditorStore.getState().getActiveDocument();
+    if (!activeDoc || (activeDoc.path !== target.path && activeDoc.name !== target.name)) {
+      let doc = useEditorStore.getState().documents.find((d) => d.path === target.path);
+      if (!doc && window.xivig?.readFile) {
+        const readRes = await window.xivig.readFile(target.path);
+        if (readRes.success && readRes.content !== undefined) {
+          openDocument({
+            path: target.path,
+            name: target.name,
+            content: readRes.content,
+            language: target.name,
+          });
+        }
+      } else if (doc) {
+        useEditorStore.getState().setActiveDocument(doc.id);
+      }
+    }
+    setTimeout(() => {
+      const view = getActiveEditorView();
+      if (view) {
+        beautifyActiveEditor(view);
+      }
+    }, 60);
+  };
+
+  const handleToggleLineComment = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) {
+      smartToggleLineComment(view, target.name);
+    }
+  };
+
+  const handleToggleBlockComment = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) {
+      smartToggleBlockComment(view, target.name);
+    }
+  };
+
   // 6. Find & Replace...
   const handleFindAndReplace = () => {
     onClose();
@@ -373,6 +421,25 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
       <div style={menuDividerStyle} />
 
+      {/* Code Formatting & Comments for Files */}
+      {!target.isDirectory && (
+        <>
+          <div onClick={handleFormatDocument} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Format Document</span>
+            <span style={shortcutStyle}>Ctrl+Alt+B</span>
+          </div>
+          <div onClick={handleToggleLineComment} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Toggle Line Comment</span>
+            <span style={shortcutStyle}>Ctrl+/</span>
+          </div>
+          <div onClick={handleToggleBlockComment} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Toggle Block Comment</span>
+            <span style={shortcutStyle}>Ctrl+Shift+/</span>
+          </div>
+          <div style={menuDividerStyle} />
+        </>
+      )}
+
       {/* Group 4: Find & Replace / Find Files Named */}
       <div onClick={handleFindAndReplace} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
         <span>Find &amp; Replace...</span>
@@ -449,11 +516,18 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 const menuItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   padding: '6px 16px',
   cursor: 'pointer',
   transition: 'background-color 0.1s ease',
   fontSize: '12px',
   lineHeight: 1.4,
+};
+
+const shortcutStyle: React.CSSProperties = {
+  marginLeft: '16px',
+  color: '#8b92a2',
+  fontSize: '11px',
 };
 
 const menuDividerStyle: React.CSSProperties = {

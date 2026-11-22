@@ -33,6 +33,8 @@
   --xivig-font-size-sm: 11px;
   --xivig-font-size-code: 14px;
   --xivig-line-height-code: 1.6;
+  --xivig-font-ligatures: contextual;
+  --xivig-font-features: "liga" 1, "calt" 1;
 
   /* Dimensions */
   --xivig-titlebar-height: 36px;

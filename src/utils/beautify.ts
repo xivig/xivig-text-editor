@@ -57,7 +57,7 @@ export function beautifyCode(code: string, languageOrFilename: string, customOpt
         return beautify.js(code, options as any);
     }
   } catch (error) {
-    console.warn('[Brackets Beautify] Format failed, returning raw code:', error);
+    console.warn('[Xivig Beautify] Format failed, returning raw code:', error);
     return code;
   }
 }

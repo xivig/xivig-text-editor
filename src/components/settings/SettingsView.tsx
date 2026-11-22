@@ -13,9 +13,9 @@ import { useSettingsStore, UserSettings } from '../../stores/settingsStore';
 import { themes, ThemeId } from '../../styles/themes';
 
 const fontOptions = [
-  { label: 'Fira Code', value: "'Fira Code', 'Cascadia Code', Consolas, monospace" },
-  { label: 'Cascadia Code', value: "'Cascadia Code', Consolas, Menlo, monospace" },
-  { label: 'JetBrains Mono', value: "'JetBrains Mono', 'Fira Code', monospace" },
+  { label: 'Fira Code (Ligatures)', value: "'Fira Code', 'Cascadia Code', Consolas, monospace" },
+  { label: 'JetBrains Mono (Ligatures)', value: "'JetBrains Mono', 'Fira Code', monospace" },
+  { label: 'Cascadia Code (Ligatures)', value: "'Cascadia Code', Consolas, Menlo, monospace" },
   { label: 'Consolas', value: "Consolas, 'Courier New', monospace" },
   { label: 'System Monospace', value: "monospace" },
 ];
@@ -165,6 +165,20 @@ export const SettingsView: React.FC = () => {
                 type="checkbox"
                 checked={settings.wordWrap}
                 onChange={(e) => updateSettings({ wordWrap: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+            </div>
+
+            {/* Font Ligatures Toggle */}
+            <div style={settingRowStyle}>
+              <div>
+                <label style={settingLabelStyle}>Font Ligatures</label>
+                <p style={settingDescStyle}>Enables or disables font programming ligatures (e.g. =&gt;, ===, !=, &lt;=, &lt;!--).</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.fontLigatures !== false}
+                onChange={(e) => updateSettings({ fontLigatures: e.target.checked })}
                 style={{ width: '18px', height: '18px', cursor: 'pointer' }}
               />
             </div>
