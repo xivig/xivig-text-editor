@@ -23,9 +23,10 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
   const isPreviewOpen = useEditorStore((state) => state.isPreviewOpen);
   const previewMode = useEditorStore((state) => state.previewMode);
   const togglePreview = useEditorStore((state) => state.togglePreview);
-  const getActiveDocument = useEditorStore((state) => state.getActiveDocument);
 
-  const activeDoc = getActiveDocument();
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === (pane === 'secondary' ? state.secondaryDocumentId : state.activeDocumentId))
+  );
   const isMarkdown = activeDoc?.language === 'markdown' || activeDoc?.name.endsWith('.md');
 
   const handleToggleSplit = (layout: SplitLayout) => {

@@ -25,9 +25,17 @@ interface ConsoleLog {
 }
 
 export const LivePreviewPane: React.FC = () => {
-  const { getActiveDocument, closePreview } = useEditorStore();
-  const { isRunning, port, url, startServer, openInBrowser } = useLiveServerStore();
-  const { currentFolderPath } = useFileStore();
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
+  const closePreview = useEditorStore((state) => state.closePreview);
+
+  const isRunning = useLiveServerStore((state) => state.isRunning);
+  const port = useLiveServerStore((state) => state.port);
+  const url = useLiveServerStore((state) => state.url);
+  const startServer = useLiveServerStore((state) => state.startServer);
+  const openInBrowser = useLiveServerStore((state) => state.openInBrowser);
+  const currentFolderPath = useFileStore((state) => state.currentFolderPath);
 
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('responsive');
   const [useServerUrl, setUseServerUrl] = useState<boolean>(false);
@@ -36,7 +44,6 @@ export const LivePreviewPane: React.FC = () => {
   const [logs, setLogs] = useState<ConsoleLog[]>([]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const activeDoc = getActiveDocument();
 
   // If live server turns on and user was viewing an HTML file, encourage server mode option
   useEffect(() => {

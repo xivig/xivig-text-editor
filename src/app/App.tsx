@@ -44,7 +44,9 @@ import { findNext, findPrevious } from '@codemirror/search';
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
-  const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
   const setRestoredSession = useEditorStore((state) => state.setRestoredSession);

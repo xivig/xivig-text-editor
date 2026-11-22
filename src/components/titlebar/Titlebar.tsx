@@ -6,7 +6,9 @@ import logoUrl from '../../assets/logo.png';
 
 export const Titlebar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
-  const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
   const currentFolderName = useFileStore((state) => state.currentFolderName);
 
   useEffect(() => {

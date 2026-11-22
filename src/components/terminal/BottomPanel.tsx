@@ -35,9 +35,9 @@ export const BottomPanel: React.FC = () => {
   const currentFolderPath = useFileStore((state) => state.currentFolderPath);
 
   // Diagnostics store
-  const allDiagnostics = useDiagnosticsStore((state) => state.getAllDiagnostics());
-  const totalErrors = useDiagnosticsStore((state) => state.getTotalErrors());
-  const totalWarnings = useDiagnosticsStore((state) => state.getTotalWarnings());
+  const allDiagnostics = useDiagnosticsStore((state) => state.allDiagnostics);
+  const totalErrors = useDiagnosticsStore((state) => state.totalErrors);
+  const totalWarnings = useDiagnosticsStore((state) => state.totalWarnings);
 
   // Build store
   const isRunning = useBuildStore((state) => state.isRunning);
@@ -152,18 +152,22 @@ export const BottomPanel: React.FC = () => {
   };
 
   // Group diagnostics by file
-  const filteredDiagnostics = allDiagnostics.filter((d) => {
-    if (problemFilter === 'errors') return d.severity === 'error';
-    if (problemFilter === 'warnings') return d.severity === 'warning';
-    return true;
-  });
+  const filteredDiagnostics = React.useMemo(() => {
+    return allDiagnostics.filter((d) => {
+      if (problemFilter === 'errors') return d.severity === 'error';
+      if (problemFilter === 'warnings') return d.severity === 'warning';
+      return true;
+    });
+  }, [allDiagnostics, problemFilter]);
 
-  const groupedProblems = filteredDiagnostics.reduce<Record<string, DiagnosticItem[]>>((acc, d) => {
-    const key = d.fileName || 'Untitled';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(d);
-    return acc;
-  }, {});
+  const groupedProblems = React.useMemo(() => {
+    return filteredDiagnostics.reduce<Record<string, DiagnosticItem[]>>((acc, d) => {
+      const key = d.fileName || 'Untitled';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(d);
+      return acc;
+    }, {});
+  }, [filteredDiagnostics]);
 
   const handleJumpToProblem = (p: DiagnosticItem) => {
     const editorStore = useEditorStore.getState();
@@ -181,7 +185,9 @@ export const BottomPanel: React.FC = () => {
     }));
   };
 
-  const currentBuildTarget = activeTarget || detectDefaultTarget();
+  const currentBuildTarget = React.useMemo(() => {
+    return activeTarget || detectDefaultTarget();
+  }, [activeTarget, detectDefaultTarget]);
 
   return (
     <div style={{ ...panelContainerStyle, height: panelHeight }}>

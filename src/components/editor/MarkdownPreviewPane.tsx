@@ -3,9 +3,11 @@ import { X, Copy, Check, BookOpen } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 
 export const MarkdownPreviewPane: React.FC = () => {
-  const { getActiveDocument, closePreview } = useEditorStore();
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
+  const closePreview = useEditorStore((state) => state.closePreview);
   const [copied, setCopied] = useState(false);
-  const activeDoc = getActiveDocument();
 
   const markdownContent = activeDoc?.content || '';
 

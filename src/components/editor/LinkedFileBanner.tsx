@@ -12,7 +12,9 @@ import {
 import { FileIcon } from '../common/FileIcon';
 
 export const LinkedFileBanner: React.FC = () => {
-  const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
   const workspaceRoot = useFileStore((state) => state.currentFolderPath);
 
   const [missingLinks, setMissingLinks] = useState<HtmlLink[]>([]);

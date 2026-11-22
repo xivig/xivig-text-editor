@@ -9,14 +9,16 @@ import { useLiveServerStore } from '../../stores/liveServerStore';
 import { detectLanguageName } from '../editor/languageSupport';
 
 export const StatusBar: React.FC = () => {
-  const activeDoc = useEditorStore((state) => state.getActiveDocument());
+  const activeDoc = useEditorStore((state) =>
+    state.documents.find((d) => d.id === state.activeDocumentId)
+  );
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const gitBranch = useFileStore((state) => state.gitBranch);
   const isGitRepo = useFileStore((state) => state.isGitRepo);
 
-  const totalErrors = useDiagnosticsStore((state) => state.getTotalErrors());
-  const totalWarnings = useDiagnosticsStore((state) => state.getTotalWarnings());
+  const totalErrors = useDiagnosticsStore((state) => state.totalErrors);
+  const totalWarnings = useDiagnosticsStore((state) => state.totalWarnings);
 
   const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
