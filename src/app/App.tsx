@@ -12,6 +12,7 @@ import { QuickOpen } from '../components/modals/QuickOpen';
 import { SearchPanel } from '../components/search/SearchPanel';
 import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModal';
 import { KeymapModal } from '../components/modals/KeymapModal';
+import { WrapWithAbbreviationModal } from '../components/modals/WrapWithAbbreviationModal';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
@@ -44,6 +45,8 @@ export const App: React.FC = () => {
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const closeKeymapModal = useUIStore((state) => state.closeKeymapModal);
+  const openWrapWithAbbreviation = useUIStore((state) => state.openWrapWithAbbreviation);
+  const closeWrapWithAbbreviation = useUIStore((state) => state.closeWrapWithAbbreviation);
 
   const chordRef = React.useRef<string | null>(null);
   const chordTimeoutRef = React.useRef<any>(null);
@@ -146,6 +149,7 @@ export const App: React.FC = () => {
         closeSearchPanel();
         closeLanguageSelector();
         closeKeymapModal();
+        closeWrapWithAbbreviation();
         chordRef.current = null;
         return;
       }
@@ -242,6 +246,9 @@ export const App: React.FC = () => {
         if (!res.canceled && res.filePath) {
           markDocumentSaved(activeDoc.id, res.filePath);
         }
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        openWrapWithAbbreviation();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         if (activeDoc) {
@@ -350,6 +357,7 @@ export const App: React.FC = () => {
       <QuickOpen />
       <LanguageSelectorModal />
       <KeymapModal />
+      <WrapWithAbbreviationModal />
     </div>
   );
 };

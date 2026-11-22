@@ -10,6 +10,7 @@ interface UIState {
   isBottomPanelOpen: boolean;
   activeBottomTab: 'terminal' | 'output' | 'problems';
   isKeymapModalOpen: boolean;
+  isWrapWithAbbreviationOpen: boolean;
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -31,6 +32,9 @@ interface UIState {
   openKeymapModal: () => void;
   closeKeymapModal: () => void;
 
+  openWrapWithAbbreviation: () => void;
+  closeWrapWithAbbreviation: () => void;
+
   toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
   setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
 }
@@ -43,8 +47,12 @@ export const useUIStore = create<UIState>((set, get) => ({
   isMinimapOpen: true,
   isLanguageSelectorOpen: false,
   isKeymapModalOpen: false,
+  isWrapWithAbbreviationOpen: false,
   isBottomPanelOpen: false,
   activeBottomTab: 'terminal',
+
+  openWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: true }),
+  closeWrapWithAbbreviation: () => set({ isWrapWithAbbreviationOpen: false }),
 
   openKeymapModal: () => set({ isKeymapModalOpen: true }),
   closeKeymapModal: () => set({ isKeymapModalOpen: false }),

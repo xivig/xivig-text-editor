@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
+import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 
 interface MenuItem {
   label: string;
@@ -166,6 +168,22 @@ export const Menubar: React.FC = () => {
       { divider: true, label: '' },
       { label: 'Find', shortcut: 'Ctrl+F', action: () => openSearchPanel('find') },
       { label: 'Replace', shortcut: 'Ctrl+H', action: () => openSearchPanel('replace') },
+      { divider: true, label: '' },
+      {
+        label: 'Emmet: Expand Abbreviation',
+        shortcut: 'Tab / Ctrl+E',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view && activeDoc) {
+            expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
+          }
+        },
+      },
+      {
+        label: 'Emmet: Wrap with Abbreviation...',
+        shortcut: 'Ctrl+Alt+W',
+        action: () => useUIStore.getState().openWrapWithAbbreviation(),
+      },
     ],
     Selection: [
       { label: 'Select All', shortcut: 'Ctrl+A' },

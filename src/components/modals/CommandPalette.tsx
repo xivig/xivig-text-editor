@@ -3,6 +3,8 @@ import { Search, Command, Check } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
+import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 
 interface CommandItem {
   id: string;
@@ -21,6 +23,7 @@ export const CommandPalette: React.FC = () => {
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
+  const openWrapWithAbbreviation = useUIStore((state) => state.openWrapWithAbbreviation);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
@@ -149,6 +152,25 @@ export const CommandPalette: React.FC = () => {
       title: 'Replace in Document',
       shortcut: 'Ctrl+H',
       action: () => openSearchPanel('replace'),
+    },
+    {
+      id: 'emmet:expand',
+      category: 'Emmet',
+      title: 'Emmet: Expand Abbreviation',
+      shortcut: 'Tab / Ctrl+E',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view && activeDoc) {
+          expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
+        }
+      },
+    },
+    {
+      id: 'emmet:wrap',
+      category: 'Emmet',
+      title: 'Emmet: Wrap with Abbreviation',
+      shortcut: 'Ctrl+Alt+W',
+      action: openWrapWithAbbreviation,
     },
     {
       id: 'pref:settings',

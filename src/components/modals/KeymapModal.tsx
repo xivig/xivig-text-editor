@@ -60,6 +60,10 @@ const shortcuts: KeyShortcut[] = [
   { category: 'Code Folding', command: 'Unfold Code Block', keys: 'Ctrl + Shift + ]' },
   { category: 'Code Folding', command: 'Fold All Blocks', keys: 'Ctrl + Alt + [' },
   { category: 'Code Folding', command: 'Unfold All Blocks', keys: 'Ctrl + Alt + ]' },
+
+  // Emmet
+  { category: 'Emmet', command: 'Expand Abbreviation', keys: 'Tab / Ctrl + E' },
+  { category: 'Emmet', command: 'Wrap with Abbreviation', keys: 'Ctrl + Alt + W' },
 ];
 
 export const KeymapModal: React.FC = () => {
