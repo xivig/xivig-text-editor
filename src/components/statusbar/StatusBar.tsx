@@ -1,5 +1,5 @@
-import React from 'react';
-import { GitBranch, AlertCircle, AlertTriangle, Radio } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { GitBranch, AlertCircle, AlertTriangle, Radio, Check } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -7,11 +7,13 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useDiagnosticsStore } from '../../stores/diagnosticsStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { detectLanguageName } from '../editor/languageSupport';
+import { getActiveEditorView } from '../editor/editorViewRegistry';
 
 export const StatusBar: React.FC = () => {
   const activeDoc = useEditorStore((state) =>
     state.documents.find((d) => d.id === state.activeDocumentId)
   );
+  const updateDocumentContent = useEditorStore((state) => state.updateDocumentContent);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const gitBranch = useFileStore((state) => state.gitBranch);
@@ -24,12 +26,55 @@ export const StatusBar: React.FC = () => {
   const line = activeDoc?.cursor.line || 1;
   const col = activeDoc?.cursor.col || 1;
   const fontSize = useSettingsStore((state) => state.settings.fontSize);
+  const tabSize = useSettingsStore((state) => state.settings.tabSize);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
   const resetZoom = useSettingsStore((state) => state.resetZoom);
 
   const { isRunning: isLiveRunning, port: livePort, toggleServer: toggleLiveServer, openInBrowser: openLiveBrowser } = useLiveServerStore();
 
+  const [indentMenuOpen, setIndentMenuOpen] = useState(false);
+  const [encodingMenuOpen, setEncodingMenuOpen] = useState(false);
+  const [selectedEncoding, setSelectedEncoding] = useState('UTF-8');
+
+  const indentContainerRef = useRef<HTMLDivElement>(null);
+  const encodingContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (indentContainerRef.current && !indentContainerRef.current.contains(e.target as Node)) {
+        setIndentMenuOpen(false);
+      }
+      if (encodingContainerRef.current && !encodingContainerRef.current.contains(e.target as Node)) {
+        setEncodingMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Line ending detection & conversion
+  const isCRLF = activeDoc?.content?.includes('\r\n') ?? false;
+  const lineEnding = isCRLF ? 'CRLF' : 'LF';
+
+  const toggleLineEnding = () => {
+    if (!activeDoc) return;
+    const newContent = isCRLF
+      ? activeDoc.content.replace(/\r\n/g, '\n')
+      : activeDoc.content.replace(/\r?\n/g, '\r\n');
+
+    const view = getActiveEditorView();
+    if (view) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: newContent },
+      });
+    } else {
+      updateDocumentContent(activeDoc.id, newContent);
+    }
+  };
+
   return (
-    <footer style={statusBarStyle}>
+    <footer style={statusBarStyle} role="status" aria-label="Editor Status Bar">
       {/* Left items */}
       <div style={sectionStyle}>
         <div style={itemStyle} title={isGitRepo ? `Git branch: ${gitBranch}` : 'Not a Git repository'}>
@@ -81,28 +126,90 @@ export const StatusBar: React.FC = () => {
           <Radio size={12} style={{ marginRight: '4px' }} className={isLiveRunning ? 'animate-pulse' : ''} />
           <span>{isLiveRunning ? `Port: ${livePort}` : 'Go Live'}</span>
         </div>
-        <div style={itemStyle}>
+
+        <div style={itemStyle} title="Current line and column">
           <span>Ln {line}, Col {col}</span>
         </div>
-        <div style={itemStyle}>
-          <span>Spaces: 2</span>
+
+        {/* Indentation selector */}
+        <div ref={indentContainerRef} style={{ position: 'relative' }}>
+          <div
+            onClick={() => setIndentMenuOpen((prev) => !prev)}
+            style={interactiveItemStyle}
+            title={`Indentation: Spaces: ${tabSize}. Click to configure indentation.`}
+          >
+            <span>Spaces: {tabSize}</span>
+          </div>
+          {indentMenuOpen && (
+            <div style={popoverStyle}>
+              <div style={popoverHeaderStyle}>Indentation Size</div>
+              {[2, 4, 8].map((size) => (
+                <div
+                  key={size}
+                  onClick={() => {
+                    updateSettings({ tabSize: size });
+                    setIndentMenuOpen(false);
+                  }}
+                  style={popoverItemStyle(tabSize === size)}
+                >
+                  <span>Spaces: {size}</span>
+                  {tabSize === size && <Check size={12} />}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
         <div
           onClick={() => resetZoom()}
-          style={itemStyle}
+          style={interactiveItemStyle}
           title={`Editor font size: ${fontSize}px. Click to reset zoom (Ctrl+0)`}
         >
           <span>{fontSize}px</span>
         </div>
-        <div style={itemStyle}>
-          <span>UTF-8</span>
+
+        {/* Encoding selector */}
+        <div ref={encodingContainerRef} style={{ position: 'relative' }}>
+          <div
+            onClick={() => setEncodingMenuOpen((prev) => !prev)}
+            style={interactiveItemStyle}
+            title={`File Encoding: ${selectedEncoding}. Click to change.`}
+          >
+            <span>{selectedEncoding}</span>
+          </div>
+          {encodingMenuOpen && (
+            <div style={{ ...popoverStyle, right: 0 }}>
+              <div style={popoverHeaderStyle}>File Encoding</div>
+              {['UTF-8', 'UTF-8 with BOM', 'UTF-16 LE', 'Windows 1252'].map((enc) => (
+                <div
+                  key={enc}
+                  onClick={() => {
+                    setSelectedEncoding(enc);
+                    setEncodingMenuOpen(false);
+                  }}
+                  style={popoverItemStyle(selectedEncoding === enc)}
+                >
+                  <span>{enc}</span>
+                  {selectedEncoding === enc && <Check size={12} />}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div style={itemStyle}>
-          <span>LF</span>
+
+        {/* Line ending toggle */}
+        <div
+          onClick={toggleLineEnding}
+          style={interactiveItemStyle}
+          title={`Line Ending: ${lineEnding}. Click to convert buffer to ${isCRLF ? 'LF' : 'CRLF'}.`}
+        >
+          <span>{lineEnding}</span>
         </div>
+
+        {/* Language selector */}
         <div
           onClick={openLanguageSelector}
-          style={{ ...itemStyle, color: 'var(--xivig-accent)', fontWeight: 500 }}
+          style={{ ...interactiveItemStyle, color: 'var(--xivig-accent)', fontWeight: 500 }}
           title="Select Language Mode (Click to change)"
         >
           <span>{languageName}</span>
@@ -123,6 +230,7 @@ const statusBarStyle: React.CSSProperties = {
   fontSize: 'var(--xivig-font-size-sm)',
   color: 'var(--xivig-text-muted)',
   userSelect: 'none',
+  position: 'relative',
 };
 
 const sectionStyle: React.CSSProperties = {
@@ -134,5 +242,50 @@ const sectionStyle: React.CSSProperties = {
 const itemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  cursor: 'pointer',
 };
+
+const interactiveItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  padding: '2px 4px',
+  borderRadius: '3px',
+  transition: 'background-color 0.15s ease',
+};
+
+const popoverStyle: React.CSSProperties = {
+  position: 'absolute',
+  bottom: 'calc(100% + 6px)',
+  left: 0,
+  backgroundColor: 'var(--xivig-surface)',
+  border: '1px solid var(--xivig-border)',
+  borderRadius: '6px',
+  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+  padding: '4px',
+  zIndex: 1000,
+  minWidth: '140px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2px',
+};
+
+const popoverHeaderStyle: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  color: 'var(--xivig-text-dim)',
+  padding: '4px 8px 2px',
+};
+
+const popoverItemStyle = (isSelected: boolean): React.CSSProperties => ({
+  padding: '6px 8px',
+  fontSize: '11px',
+  color: isSelected ? 'var(--xivig-accent)' : 'var(--xivig-text)',
+  backgroundColor: isSelected ? 'rgba(78, 201, 176, 0.12)' : 'transparent',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+});

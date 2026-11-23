@@ -35,6 +35,7 @@ export const CommandPalette: React.FC = () => {
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const openAboutModal = useUIStore((state) => state.openAboutModal);
+  const openUpdateCheckModal = useUIStore((state) => state.openUpdateCheckModal);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const openKeymapModal = useUIStore((state) => state.openKeymapModal);
   const openBuildSystemModal = useUIStore((state) => state.openBuildSystemModal);
@@ -279,6 +280,12 @@ export const CommandPalette: React.FC = () => {
       category: 'Help',
       title: 'About Xivig Text Editor',
       action: openAboutModal,
+    },
+    {
+      id: 'help:update',
+      category: 'Help',
+      title: 'Help: Check for Updates...',
+      action: openUpdateCheckModal,
     },
     {
       id: 'view:sidebar',

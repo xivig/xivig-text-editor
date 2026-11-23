@@ -47,6 +47,14 @@ const xivigAPI = {
   // Git operations
   getGitStatus: (cwd: string) => ipcRenderer.invoke('git:status', cwd),
   commitGit: (cwd: string, message: string) => ipcRenderer.invoke('git:commit', { cwd, message }),
+  stageGitFile: (cwd: string, filePath: string) => ipcRenderer.invoke('git:stage', { cwd, filePath }),
+  unstageGitFile: (cwd: string, filePath: string) => ipcRenderer.invoke('git:unstage', { cwd, filePath }),
+  stageAllGit: (cwd: string) => ipcRenderer.invoke('git:stageAll', cwd),
+  unstageAllGit: (cwd: string) => ipcRenderer.invoke('git:unstageAll', cwd),
+  discardGitChanges: (cwd: string, filePath: string) => ipcRenderer.invoke('git:discard', { cwd, filePath }),
+  getGitDiff: (cwd: string, filePath?: string, staged?: boolean) =>
+    ipcRenderer.invoke('git:diff', { cwd, filePath, staged }),
+  closeWorkspace: (folderPath?: string) => ipcRenderer.invoke('workspace:close', folderPath),
 
   // Build System & Task Runner
   buildRun: (options: { command: string; args?: string[]; cwd?: string }) =>
@@ -96,6 +104,17 @@ const xivigAPI = {
     ipcRenderer.on('workspace:files-changed', handler);
     return () => {
       ipcRenderer.removeListener('workspace:files-changed', handler);
+    };
+  },
+
+  // Update Notification
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  openReleasePage: (url?: string) => ipcRenderer.invoke('updater:openRelease', url),
+  onUpdateAvailable: (callback: (info: any) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('updater:available', handler);
+    return () => {
+      ipcRenderer.removeListener('updater:available', handler);
     };
   },
 

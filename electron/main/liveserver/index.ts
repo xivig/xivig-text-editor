@@ -4,12 +4,22 @@ import path from 'node:path';
 import url from 'node:url';
 import crypto from 'node:crypto';
 import { BrowserWindow, shell } from 'electron';
+import { assertPathAuthorized } from '../security';
 
 export interface LiveServerStatus {
   isRunning: boolean;
   port: number;
   url: string;
   rootPath: string;
+}
+
+interface LiveServerInstance {
+  server: http.Server;
+  port: number;
+  url: string;
+  rootPath: string;
+  sessionToken: string;
+  sseClients: Set<http.ServerResponse>;
 }
 
 const MIME_TYPES: Record<string, string> = {
@@ -36,12 +46,28 @@ const MIME_TYPES: Record<string, string> = {
   '.wav': 'audio/wav',
 };
 
-const LIVE_RELOAD_INJECTION = `
+// Sensitive file patterns forbidden from being served
+const SENSITIVE_FILE_PATTERNS = [
+  /(^|[/\\])\.env(\.|$)/i,
+  /(^|[/\\])\.git([/\\]|$)/i,
+  /(^|[/\\])\.gitignore$/i,
+  /(^|[/\\])id_rsa/i,
+  /(^|[/\\])id_ed25519/i,
+  /\.(pem|key|p12|pfx|kdbx|sql)$/i,
+  /(^|[/\\])node_modules([/\\]|$)/i,
+];
+
+function isSensitivePath(filePath: string): boolean {
+  return SENSITIVE_FILE_PATTERNS.some((pattern) => pattern.test(filePath));
+}
+
+function getReloadScript(sessionToken: string): string {
+  return `
 <!-- Injected by Xivig Live Server -->
 <script>
 (function() {
   try {
-    const src = new EventSource('/__xivig_live_reload');
+    const src = new EventSource('/__xivig_live_reload?token=${encodeURIComponent(sessionToken)}');
     src.onmessage = function(e) {
       if (e.data === 'reload') {
         console.log('[Xivig Live Server] Change detected, reloading...');
@@ -55,12 +81,7 @@ const LIVE_RELOAD_INJECTION = `
 })();
 </script>
 `;
-
-let currentServer: http.Server | null = null;
-let currentPort = 5500;
-let currentRoot = '';
-let currentSessionToken = '';
-const sseClients = new Set<http.ServerResponse>();
+}
 
 function escapeHtml(str: string): string {
   return str.replace(/[&<>"']/g, (m) => {
@@ -75,22 +96,51 @@ function escapeHtml(str: string): string {
   });
 }
 
-export function getLiveServerStatus(): LiveServerStatus {
+const serversByWindow = new Map<number, LiveServerInstance>();
+
+export function getLiveServerStatus(winId?: number): LiveServerStatus {
+  if (winId !== undefined) {
+    const instance = serversByWindow.get(winId);
+    if (instance) {
+      return {
+        isRunning: true,
+        port: instance.port,
+        url: instance.url,
+        rootPath: instance.rootPath,
+      };
+    }
+  }
+  // Fallback to first active server
+  const first = serversByWindow.values().next().value;
+  if (first) {
+    return {
+      isRunning: true,
+      port: first.port,
+      url: first.url,
+      rootPath: first.rootPath,
+    };
+  }
   return {
-    isRunning: currentServer !== null,
-    port: currentPort,
-    url: currentServer ? `http://127.0.0.1:${currentPort}` : '',
-    rootPath: currentRoot,
+    isRunning: false,
+    port: 0,
+    url: '',
+    rootPath: '',
   };
 }
 
-export function triggerLiveReload(): void {
-  if (sseClients.size === 0) return;
-  for (const client of sseClients) {
-    try {
-      client.write('data: reload\n\n');
-    } catch {
-      sseClients.delete(client);
+export function triggerLiveReload(winId?: number): void {
+  const instances = winId !== undefined && serversByWindow.has(winId)
+    ? [serversByWindow.get(winId)!]
+    : Array.from(serversByWindow.values());
+
+  for (const instance of instances) {
+    if (instance.sseClients.size === 0) continue;
+    for (const client of instance.sseClients) {
+      try {
+        client.write('data: reload\n\n');
+      } catch {
+        instance.sseClients.delete(client);
+      }
     }
   }
 }
@@ -100,7 +150,11 @@ export async function startLiveServer(
   preferredPort = 5500,
   win: BrowserWindow | null = null
 ): Promise<{ success: boolean; port: number; url: string; error?: string }> {
-  // Stop existing server if running
+  if (!win || win.isDestroyed()) {
+    return { success: false, port: 0, url: '', error: 'Active window required' };
+  }
+
+  const winId = win.id;
   await stopLiveServer(win);
 
   if (!rootDirectory || !fs.existsSync(rootDirectory)) {
@@ -110,6 +164,7 @@ export async function startLiveServer(
   let canonicalRoot: string;
   try {
     const resolvedPath = path.resolve(rootDirectory);
+    assertPathAuthorized(resolvedPath, 'liveserver:start');
     const stat = fs.statSync(resolvedPath);
     const targetDir = stat.isDirectory() ? resolvedPath : path.dirname(resolvedPath);
     canonicalRoot = fs.realpathSync(targetDir);
@@ -117,19 +172,28 @@ export async function startLiveServer(
     return { success: false, port: 0, url: '', error: `Cannot resolve root directory: ${err.message}` };
   }
 
-  currentRoot = canonicalRoot;
-  currentSessionToken = crypto.randomBytes(16).toString('hex');
+  const sessionToken = crypto.randomBytes(24).toString('hex');
+  const sseClients = new Set<http.ServerResponse>();
 
   let attemptPort = preferredPort;
-  const maxPort = preferredPort + 20;
+  const maxPort = preferredPort + 30;
 
   const tryStartServer = (portToTry: number): Promise<{ success: boolean; port: number; url: string; error?: string }> => {
     return new Promise((resolve) => {
       const server = http.createServer((req, res) => {
+        // Enforce maximum header & URL limits
         const parsedUrl = url.parse(req.url || '/', true);
-        const pathname = decodeURIComponent(parsedUrl.pathname || '/');
 
-        // Security headers
+        // Safe URL decoding to protect against malformed URL encoding attacks
+        let pathname = '/';
+        try {
+          pathname = decodeURIComponent(parsedUrl.pathname || '/');
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('400 Bad Request: Malformed URI encoding.');
+          return;
+        }
+
         const securityHeaders = {
           'X-Content-Type-Options': 'nosniff',
           'X-Frame-Options': 'SAMEORIGIN',
@@ -144,8 +208,21 @@ export async function startLiveServer(
           return;
         }
 
-        // 1. SSE Live reload endpoint
+        // 1. SSE Live reload endpoint with mandatory session token validation
         if (pathname === '/__xivig_live_reload') {
+          const clientToken = parsedUrl.query.token;
+          if (!clientToken || clientToken !== sessionToken) {
+            res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('401 Unauthorized: Invalid or missing live reload session token.');
+            return;
+          }
+
+          if (sseClients.size >= 30) {
+            res.writeHead(429, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('429 Too Many Requests: Live server client limit reached.');
+            return;
+          }
+
           res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
@@ -161,19 +238,24 @@ export async function startLiveServer(
           return;
         }
 
-        // 2. Strict directory boundary and symlink escape validation
-        const cleanPath = path.normalize(pathname).replace(/^([a-zA-Z]:|[/\\])+/, '');
-        let targetCandidate = path.resolve(canonicalRoot, cleanPath);
-
-        // Check if path is syntactically inside canonicalRoot
-        const relativeSyntax = path.relative(canonicalRoot, targetCandidate);
-        if (relativeSyntax.startsWith('..') || path.isAbsolute(relativeSyntax)) {
+        // 2. Sensitive file access restriction
+        if (isSensitivePath(pathname)) {
           res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
-          res.end('403 Forbidden: Path traversal attempt blocked.');
+          res.end('403 Forbidden: Access to sensitive project files is restricted.');
           return;
         }
 
-        // Resolve realpath if file exists to block symlink traversal
+        // 3. Strict directory boundary and symlink escape validation
+        const cleanPath = path.normalize(pathname).replace(/^([a-zA-Z]:|[/\\])+/, '');
+        const targetCandidate = path.resolve(canonicalRoot, cleanPath);
+
+        const relativeSyntax = path.relative(canonicalRoot, targetCandidate);
+        if (relativeSyntax.startsWith('..') || path.isAbsolute(relativeSyntax)) {
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('403 Forbidden: Directory traversal attempt blocked.');
+          return;
+        }
+
         let safePath = targetCandidate;
         if (fs.existsSync(targetCandidate)) {
           try {
@@ -182,6 +264,11 @@ export async function startLiveServer(
             if (relativeCanonical.startsWith('..') || path.isAbsolute(relativeCanonical)) {
               res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
               res.end('403 Forbidden: Symlink destination outside workspace.');
+              return;
+            }
+            if (isSensitivePath(relativeCanonical)) {
+              res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+              res.end('403 Forbidden: Access to sensitive file is restricted.');
               return;
             }
             safePath = canonicalTarget;
@@ -227,16 +314,17 @@ export async function startLiveServer(
         const ext = path.extname(safePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-        // For HTML files, inject the live reload snippet
+        // For HTML files, inject the live reload snippet with authenticating session token
         if (ext === '.html' || ext === '.htm') {
           try {
             let html = fs.readFileSync(safePath, 'utf-8');
+            const reloadSnippet = getReloadScript(sessionToken);
             if (html.includes('</body>')) {
-              html = html.replace('</body>', `${LIVE_RELOAD_INJECTION}</body>`);
+              html = html.replace('</body>', `${reloadSnippet}</body>`);
             } else if (html.includes('</html>')) {
-              html = html.replace('</html>', `${LIVE_RELOAD_INJECTION}</html>`);
+              html = html.replace('</html>', `${reloadSnippet}</html>`);
             } else {
-              html += LIVE_RELOAD_INJECTION;
+              html += reloadSnippet;
             }
 
             res.writeHead(200, {
@@ -277,15 +365,21 @@ export async function startLiveServer(
       });
 
       server.listen(portToTry, '127.0.0.1', () => {
-        currentServer = server;
-        currentPort = portToTry;
-        const liveUrl = `http://127.0.0.1:${currentPort}`;
+        const liveUrl = `http://127.0.0.1:${portToTry}`;
+        serversByWindow.set(winId, {
+          server,
+          port: portToTry,
+          url: liveUrl,
+          rootPath: canonicalRoot,
+          sessionToken,
+          sseClients,
+        });
 
         if (win && !win.isDestroyed()) {
-          win.webContents.send('liveserver:changed', getLiveServerStatus());
+          win.webContents.send('liveserver:changed', getLiveServerStatus(winId));
         }
 
-        resolve({ success: true, port: currentPort, url: liveUrl });
+        resolve({ success: true, port: portToTry, url: liveUrl });
       });
     });
   };
@@ -294,33 +388,47 @@ export async function startLiveServer(
 }
 
 export async function stopLiveServer(win: BrowserWindow | null = null): Promise<boolean> {
-  if (currentServer) {
-    for (const client of sseClients) {
-      try {
-        client.end();
-      } catch {}
+  if (!win) {
+    let stoppedAny = false;
+    for (const [id, instance] of serversByWindow) {
+      for (const client of instance.sseClients) {
+        try { client.end(); } catch {}
+      }
+      instance.sseClients.clear();
+      await new Promise<void>((resolve) => instance.server.close(() => resolve()));
+      stoppedAny = true;
     }
-    sseClients.clear();
+    serversByWindow.clear();
+    return stoppedAny;
+  }
+
+  const instance = serversByWindow.get(win.id);
+  if (instance) {
+    for (const client of instance.sseClients) {
+      try { client.end(); } catch {}
+    }
+    instance.sseClients.clear();
 
     await new Promise<void>((resolve) => {
-      currentServer?.close(() => resolve());
-      currentServer = null;
+      instance.server.close(() => resolve());
     });
 
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('liveserver:changed', getLiveServerStatus());
+    serversByWindow.delete(win.id);
+
+    if (!win.isDestroyed()) {
+      win.webContents.send('liveserver:changed', getLiveServerStatus(win.id));
     }
     return true;
   }
+
   return false;
 }
 
-export function openLiveServerInBrowser(subPath = ''): void {
-  if (currentServer) {
+export function openLiveServerInBrowser(winId?: number, subPath = ''): void {
+  const status = getLiveServerStatus(winId);
+  if (status.isRunning && status.url) {
     const cleanSub = subPath ? subPath.replace(/^\/+/, '') : '';
-    const targetUrl = cleanSub
-      ? `http://127.0.0.1:${currentPort}/${cleanSub}`
-      : `http://127.0.0.1:${currentPort}`;
+    const targetUrl = cleanSub ? `${status.url}/${cleanSub}` : status.url;
     shell.openExternal(targetUrl);
   }
 }

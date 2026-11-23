@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js (Node 24 LTS baseline)
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
 
       - name: Install Linux Build Dependencies
@@ -37,6 +37,18 @@ jobs:
       - name: Install NPM Dependencies
         run: npm ci
 
+      - name: Dependency Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Renderer TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: Electron & Node TypeScript Typecheck
+        run: npm run typecheck:node
+
+      - name: Automated Unit Tests
+        run: npm test
+
       - name: Build Web & Electron Distribution
         run: npm run build
 
@@ -44,24 +56,31 @@ jobs:
         if: runner.os == 'Windows'
         run: npx electron-builder --win --x64
 
-      - name: Package Linux Binaries (AppImage & DEB)
+      - name: Package Linux Binaries (AppImage, DEB, tar.gz, zip)
         if: runner.os == 'Linux'
         run: npx electron-builder --linux --x64
 
-      - name: Package macOS Binaries (DMG & ZIP)
+      - name: Package macOS Binaries (DMG, ZIP, Universal)
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac --x64 --arm64
+        run: npx electron-builder --mac --x64 --arm64 --universal
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload Release Binaries
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@c062e496a77d5494191c9489fef39ff4e2b0270a # v2.2.1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             release/*.exe
             release/*.AppImage
             release/*.deb
-            release/*.dmg
+            release/*.tar.gz
             release/*.zip
+            release/*.dmg
             release/*.blockmap
           draft: false
           prerelease: false

@@ -16,6 +16,7 @@ interface EditorState {
   closedDocumentsHistory: EditorDocument[];
   isPreviewOpen: boolean;
   previewMode: PreviewMode;
+  externalConflictDocId: string | null;
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
   closeDocument: (id: string) => void;
@@ -39,6 +40,9 @@ interface EditorState {
   togglePreview: (mode?: PreviewMode) => void;
   openPreview: (mode?: PreviewMode) => void;
   closePreview: () => void;
+  handleExternalFileChange: (filePath: string) => Promise<void>;
+  reloadDocumentFromDisk: (docId: string) => Promise<void>;
+  dismissConflict: (docId: string) => void;
 }
 
 let saveDebounceTimer: NodeJS.Timeout | null = null;
@@ -79,7 +83,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: 'welcome-tab',
       path: null,
       name: 'Welcome.md',
-      content: `# Xivig Editor\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Keyboard Shortcuts\n* **Ctrl + Shift + P**: Command Palette\n* **Ctrl + P**: Quick Open File\n* **Ctrl + F**: Find / Search\n* **Ctrl + H**: Replace\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n* **Ctrl + B**: Toggle Sidebar\n\n### 🛠️ Architecture:\n* **Electron 34** + **Node.js**\n* **SQLite & Session Persistence**\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Multi-cursor, syntax highlighting & transactions)\n* **Vite** (Ultra-fast HMR)\n* **Zustand** (UI & Document State)\n\n*Start editing or open a folder to explore your project!*`,
+      content: `# Xivig Editor\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Keyboard Shortcuts\n* **Ctrl + Shift + P**: Command Palette\n* **Ctrl + P**: Quick Open File\n* **Ctrl + F**: Find / Search\n* **Ctrl + H**: Replace\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n* **Ctrl + B**: Toggle Sidebar\n\n### 🛠️ Architecture:\n* **Electron 45** + **Node.js**\n* **SQLite & Session Persistence**\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Multi-cursor, syntax highlighting & transactions)\n* **Vite** (Ultra-fast HMR)\n* **Zustand** (UI & Document State)\n\n*Start editing or open a folder to explore your project!*`,
       language: 'markdown',
       isDirty: false,
       cursor: { line: 1, col: 1 },
@@ -93,6 +97,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   closedDocumentsHistory: [],
   isPreviewOpen: false,
   previewMode: 'live-web',
+  externalConflictDocId: null,
 
   persistSessionDebounced: triggerAutoSave,
 
@@ -330,5 +335,51 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   closePreview: () => {
     set({ isPreviewOpen: false });
+  },
+
+  handleExternalFileChange: async (filePath) => {
+    const normTarget = filePath.replace(/\\/g, '/').toLowerCase();
+    const doc = get().documents.find(
+      (d) => d.path && d.path.replace(/\\/g, '/').toLowerCase() === normTarget
+    );
+    if (!doc) return;
+
+    if (!doc.isDirty) {
+      // Clean buffer: silently sync with latest disk changes
+      if (window.xivig?.readFile && doc.path) {
+        const res = await window.xivig.readFile(doc.path);
+        if (res.success && res.content !== undefined && res.content !== doc.content) {
+          set((state) => ({
+            documents: state.documents.map((d) =>
+              d.id === doc.id ? { ...d, content: res.content! } : d
+            ),
+          }));
+        }
+      }
+    } else {
+      // Dirty buffer: record conflict to warn user and prevent accidental overwrite
+      set({ externalConflictDocId: doc.id });
+    }
+  },
+
+  reloadDocumentFromDisk: async (docId) => {
+    const doc = get().documents.find((d) => d.id === docId);
+    if (!doc || !doc.path || !window.xivig?.readFile) return;
+
+    const res = await window.xivig.readFile(doc.path);
+    if (res.success && res.content !== undefined) {
+      set((state) => ({
+        externalConflictDocId: state.externalConflictDocId === docId ? null : state.externalConflictDocId,
+        documents: state.documents.map((d) =>
+          d.id === docId ? { ...d, content: res.content!, isDirty: false } : d
+        ),
+      }));
+    }
+  },
+
+  dismissConflict: (docId) => {
+    set((state) => ({
+      externalConflictDocId: state.externalConflictDocId === docId ? null : state.externalConflictDocId,
+    }));
   },
 }));

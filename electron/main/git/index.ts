@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
+import { assertPathAuthorized } from '../security';
 
 const execFileAsync = promisify(execFile);
 
@@ -23,6 +24,11 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
   }
 
   const safeCwd = path.resolve(cwd);
+  try {
+    assertPathAuthorized(safeCwd, 'git:status');
+  } catch {
+    return { isRepo: false, branch: '', changes: [] };
+  }
 
   try {
     // Check current branch
@@ -71,6 +77,87 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
   }
 }
 
+export async function stageFile(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:stageFile');
+
+  try {
+    await execFileAsync('git', ['add', '--', filePath], { cwd: safeCwd });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function unstageFile(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:unstageFile');
+
+  try {
+    await execFileAsync('git', ['restore', '--staged', '--', filePath], { cwd: safeCwd });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function stageAll(cwd: string): Promise<{ success: boolean; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:stageAll');
+
+  try {
+    await execFileAsync('git', ['add', '-A'], { cwd: safeCwd });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function unstageAll(cwd: string): Promise<{ success: boolean; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:unstageAll');
+
+  try {
+    await execFileAsync('git', ['restore', '--staged', '.'], { cwd: safeCwd });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function discardChanges(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:discardChanges');
+
+  try {
+    await execFileAsync('git', ['restore', '--', filePath], { cwd: safeCwd });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getGitDiff(
+  cwd: string,
+  filePath?: string,
+  staged = false
+): Promise<{ success: boolean; diff?: string; error?: string }> {
+  const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:diff');
+
+  try {
+    const args = ['diff'];
+    if (staged) args.push('--cached');
+    if (filePath) {
+      args.push('--', filePath);
+    }
+    const { stdout } = await execFileAsync('git', args, { cwd: safeCwd });
+    return { success: true, diff: stdout };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function commitChanges(
   cwd: string,
   message: string
@@ -83,13 +170,28 @@ export async function commitChanges(
   }
 
   const safeCwd = path.resolve(cwd);
+  assertPathAuthorized(safeCwd, 'git:commit');
 
   try {
-    // Stage all changes safely without constructing shell strings
-    await execFileAsync('git', ['add', '-A'], { cwd: safeCwd });
+    // Check if there are staged changes; if not, do NOT silently commit everything.
+    // git diff --cached --quiet exits with 1 if there are staged changes, 0 if clean.
+    let hasStaged = false;
+    try {
+      await execFileAsync('git', ['diff', '--cached', '--quiet'], { cwd: safeCwd });
+      hasStaged = false;
+    } catch {
+      hasStaged = true;
+    }
 
-    // Commit changes with message passed directly as an argument array item (no shell interpolation)
-    const { stdout } = await execFileAsync('git', ['commit', '-m', message], { cwd: safeCwd });
+    if (!hasStaged) {
+      return {
+        success: false,
+        error: 'No changes are staged for commit. Please stage your files first before committing.',
+      };
+    }
+
+    // Commit already staged files with message passed directly as an argument array item (no shell interpolation)
+    const { stdout } = await execFileAsync('git', ['commit', '-m', message.trim()], { cwd: safeCwd });
     return { success: true, output: stdout.trim() };
   } catch (err: any) {
     return { success: false, error: err.message };

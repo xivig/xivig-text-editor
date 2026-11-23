@@ -2,9 +2,10 @@ import { spawn, ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import { BrowserWindow } from 'electron';
+import { assertPathAuthorized } from '../security';
 
-let activeBuildProcess: ChildProcess | null = null;
-let buildStartTime: number = 0;
+// Per-window tracking to avoid global singleton collision
+const activeProcessesByWindow = new Map<number, { process: ChildProcess; startTime: number }>();
 
 export interface RunBuildOptions {
   command: string;
@@ -12,16 +13,51 @@ export interface RunBuildOptions {
   cwd?: string;
 }
 
+/**
+ * Validates that command components do not contain dangerous shell metacharacters.
+ */
+function validateCommandTokens(tokens: string[]): void {
+  const dangerousPattern = /[|&;`$<>]/;
+  for (const token of tokens) {
+    if (dangerousPattern.test(token)) {
+      throw new Error(`Security Exception: Command contains forbidden shell metacharacter: "${token}"`);
+    }
+  }
+}
+
+/**
+ * Resolves the executable path on Windows safely without invoking shell interpretation.
+ */
+function resolveWindowsBinary(command: string): string {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return command;
+
+  const ext = path.extname(command).toLowerCase();
+  if (ext === '.exe' || ext === '.cmd' || ext === '.bat') {
+    return command;
+  }
+
+  // Common tool mappings on Windows
+  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm', 'tsc']);
+  if (knownCmdTools.has(command.toLowerCase())) {
+    return `${command}.cmd`;
+  }
+
+  return command;
+}
+
 export function runBuildProcess(
   options: RunBuildOptions,
   win: BrowserWindow | null
 ): { success: boolean; error?: string } {
-  // If an existing build is running, terminate its full process tree first
-  stopBuildProcess();
-
   if (!win || win.isDestroyed()) {
     return { success: false, error: 'No active window available for build execution' };
   }
+
+  const winId = win.id;
+
+  // Stop any currently running build task in THIS window
+  stopBuildProcess(win);
 
   const { command, args = [], cwd = process.cwd() } = options;
 
@@ -44,10 +80,29 @@ export function runBuildProcess(
     return { success: false, error: `Failed to inspect working directory: ${err.message}` };
   }
 
-  buildStartTime = Date.now();
+  // 2. Strict workspace authorization check
+  try {
+    assertPathAuthorized(safeCwd, 'build:run');
+  } catch (secErr: any) {
+    return { success: false, error: secErr.message };
+  }
+
+  // 3. Parse and validate command tokens
+  const tokens = command.trim().split(/\s+/);
+  const mainBinary = tokens[0];
+  const initialArgs = tokens.slice(1);
+  const finalArgs = [...initialArgs, ...args];
 
   try {
-    // Notify renderer that build has started with full details
+    validateCommandTokens([mainBinary, ...finalArgs]);
+  } catch (valErr: any) {
+    return { success: false, error: valErr.message };
+  }
+
+  const startTime = Date.now();
+
+  try {
+    // Notify renderer that build has started
     if (!win.isDestroyed()) {
       win.webContents.send('build:start', {
         command: command.trim(),
@@ -58,26 +113,26 @@ export function runBuildProcess(
     }
 
     const isWin = process.platform === 'win32';
+    const targetBinary = resolveWindowsBinary(mainBinary);
 
-    // Parse command components
-    const tokens = command.trim().split(/\s+/);
-    const mainBinary = tokens[0];
-    const initialArgs = tokens.slice(1);
-    const finalArgs = [...initialArgs, ...args];
+    // Secure execution:
+    // Always pass binary and arguments as discrete array items with shell: false.
+    // Avoid cmd.exe string concatenation and windowsVerbatimArguments vulnerabilities.
+    let proc: ChildProcess;
 
-    // Prefer direct execution without shell where possible; on Windows use cmd wrapper with explicit argument isolation
-    if (isWin) {
-      const fullCmdString = [mainBinary, ...finalArgs].map((a) => (a.includes(' ') ? `"${a}"` : a)).join(' ');
-      activeBuildProcess = spawn('cmd.exe', ['/d', '/s', '/c', fullCmdString], {
+    if (isWin && (targetBinary.endsWith('.cmd') || targetBinary.endsWith('.bat'))) {
+      // For Windows batch/cmd wrappers, pass arguments as discrete array entries to cmd.exe
+      proc = spawn('cmd.exe', ['/d', '/c', targetBinary, ...finalArgs], {
         cwd: safeCwd,
         env: {
           ...process.env,
           FORCE_COLOR: '1',
         },
-        windowsVerbatimArguments: true,
+        shell: false,
       });
     } else {
-      activeBuildProcess = spawn(mainBinary, finalArgs, {
+      // Direct binary execution with shell: false
+      proc = spawn(targetBinary, finalArgs, {
         cwd: safeCwd,
         env: {
           ...process.env,
@@ -87,7 +142,9 @@ export function runBuildProcess(
       });
     }
 
-    activeBuildProcess.stdout?.on('data', (chunk: Buffer) => {
+    activeProcessesByWindow.set(winId, { process: proc, startTime });
+
+    proc.stdout?.on('data', (chunk: Buffer) => {
       if (!win.isDestroyed()) {
         win.webContents.send('build:data', {
           type: 'stdout',
@@ -96,7 +153,7 @@ export function runBuildProcess(
       }
     });
 
-    activeBuildProcess.stderr?.on('data', (chunk: Buffer) => {
+    proc.stderr?.on('data', (chunk: Buffer) => {
       if (!win.isDestroyed()) {
         win.webContents.send('build:data', {
           type: 'stderr',
@@ -105,61 +162,62 @@ export function runBuildProcess(
       }
     });
 
-    activeBuildProcess.on('close', (code: number | null) => {
-      const durationMs = Date.now() - buildStartTime;
+    proc.on('error', (err: Error) => {
       if (!win.isDestroyed()) {
-        win.webContents.send('build:done', {
-          exitCode: code ?? 0,
-          durationMs,
+        win.webContents.send('build:error', {
+          error: `Failed to launch build process [${targetBinary}]: ${err.message}`,
         });
       }
-      activeBuildProcess = null;
+      activeProcessesByWindow.delete(winId);
     });
 
-    activeBuildProcess.on('error', (err: Error) => {
-      const durationMs = Date.now() - buildStartTime;
+    proc.on('close', (code: number | null) => {
+      const duration = Math.round((Date.now() - startTime) / 1000);
       if (!win.isDestroyed()) {
-        win.webContents.send('build:data', {
-          type: 'stderr',
-          text: `\r\nBuild Error: ${err.message}\r\n`,
-        });
-        win.webContents.send('build:done', {
-          exitCode: 1,
-          durationMs,
+        win.webContents.send('build:exit', {
+          code: code ?? 0,
+          duration,
         });
       }
-      activeBuildProcess = null;
+      activeProcessesByWindow.delete(winId);
     });
 
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    activeProcessesByWindow.delete(winId);
+    return { success: false, error: `Execution exception: ${err.message}` };
   }
 }
 
-/**
- * Terminates the active build process and all its child processes in the process tree.
- */
-export function stopBuildProcess(): boolean {
-  if (activeBuildProcess && activeBuildProcess.pid) {
-    const pid = activeBuildProcess.pid;
-    try {
-      if (process.platform === 'win32') {
-        // Force kill entire process tree on Windows
-        spawn('taskkill', ['/pid', pid.toString(), '/T', '/F']);
-      } else {
-        // Kill process group on POSIX
-        try {
-          process.kill(-pid, 'SIGKILL');
-        } catch {
-          activeBuildProcess.kill('SIGKILL');
-        }
-      }
-    } catch {
-      // Ignore cleanup error
+export function stopBuildProcess(win: BrowserWindow | null): boolean {
+  if (!win) return false;
+  const entry = activeProcessesByWindow.get(win.id);
+  if (!entry) return false;
+
+  const { process: proc } = entry;
+  try {
+    if (process.platform === 'win32' && proc.pid) {
+      // Clean process tree termination on Windows
+      spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { shell: false });
+    } else {
+      proc.kill('SIGTERM');
     }
-    activeBuildProcess = null;
-    return true;
+  } catch {
+    // Ignore error
   }
-  return false;
+  activeProcessesByWindow.delete(win.id);
+  return true;
+}
+
+export function stopAllBuildProcesses(): void {
+  for (const [winId, entry] of activeProcessesByWindow) {
+    try {
+      if (process.platform === 'win32' && entry.process.pid) {
+        spawn('taskkill', ['/pid', String(entry.process.pid), '/T', '/F'], { shell: false });
+      } else {
+        entry.process.kill('SIGKILL');
+      }
+    } catch {}
+  }
+  activeProcessesByWindow.clear();
 }

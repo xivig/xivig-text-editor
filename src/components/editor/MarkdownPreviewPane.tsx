@@ -30,6 +30,14 @@ export const MarkdownPreviewPane: React.FC = () => {
     // Normalize line endings
     md = md.replace(/\r\n/g, '\n');
 
+    // Security: Sanitize dangerous tags and attributes from raw input
+    md = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    md = md.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+    md = md.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
+    md = md.replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '');
+    md = md.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+    md = md.replace(/javascript:/gi, '');
+
     // Code blocks with syntax container
     md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
       const escapedCode = code

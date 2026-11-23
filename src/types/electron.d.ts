@@ -37,6 +37,18 @@ export interface GitStatusResult {
   changes: GitFileChange[];
 }
 
+export interface UpdateCheckResult {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  publishedAt?: string;
+  downloadUrl?: string;
+  htmlUrl?: string;
+  error?: string;
+}
+
 export interface XivigAPI {
   // File operations
   openFileDialog: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
@@ -73,6 +85,13 @@ export interface XivigAPI {
   // Git
   getGitStatus: (cwd: string) => Promise<GitStatusResult>;
   commitGit: (cwd: string, message: string) => Promise<{ success: boolean; output?: string; error?: string }>;
+  stageGitFile?: (cwd: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
+  unstageGitFile?: (cwd: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
+  stageAllGit?: (cwd: string) => Promise<{ success: boolean; error?: string }>;
+  unstageAllGit?: (cwd: string) => Promise<{ success: boolean; error?: string }>;
+  discardGitChanges?: (cwd: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
+  getGitDiff?: (cwd: string, filePath?: string, staged?: boolean) => Promise<{ success: boolean; diff?: string; error?: string }>;
+  closeWorkspace?: (folderPath?: string) => Promise<boolean>;
 
   // Workspace Watcher
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => () => void;
@@ -91,6 +110,11 @@ export interface XivigAPI {
   liveServerOpenBrowser: (subPath?: string) => Promise<boolean>;
   liveServerTriggerReload: () => Promise<boolean>;
   onLiveServerChanged: (callback: (data: { isRunning: boolean; port: number; url: string; rootPath: string }) => void) => () => void;
+
+  // Update Notification
+  checkForUpdates?: () => Promise<UpdateCheckResult>;
+  openReleasePage?: (url?: string) => Promise<boolean>;
+  onUpdateAvailable?: (callback: (info: UpdateCheckResult) => void) => () => void;
 
   // System info
   platform: string;

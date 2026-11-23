@@ -1,6 +1,6 @@
 {
   "name": "xivig-text-editor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "productName": "Xivig Text Editor",
   "private": true,
   "description": "⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect design tooling.",
@@ -14,7 +14,8 @@
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit && vite build",
+    "test": "vitest run",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:node": "tsc --project tsconfig.node.json --noEmit",
@@ -73,6 +74,18 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Development",
@@ -84,17 +97,26 @@
           "target": "dmg",
           "arch": [
             "x64",
-            "arm64"
+            "arm64",
+            "universal"
           ]
         },
         {
           "target": "zip",
           "arch": [
             "x64",
-            "arm64"
+            "arm64",
+            "universal"
           ]
         }
       ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": {
+        "teamId": "${env.APPLE_TEAM_ID}"
+      },
       "category": "public.app-category.developer-tools",
       "icon": "public/logo.png"
     }
@@ -131,11 +153,16 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^34.2.0",
+    "electron": "^45.4.1",
     "electron-builder": "^26.18.0",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vite-plugin-electron": "^0.29.0",
-    "vite-plugin-electron-renderer": "^0.14.6"
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^5.1.1"
+  },
+  "overrides": {
+    "minimatch": "^11.0.9",
+    "glob": "^14.0.6"
   }
 }

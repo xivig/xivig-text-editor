@@ -12,12 +12,16 @@ import {
   Clock,
   Trash2,
   X,
+  Plus,
+  Minus,
+  RotateCcw,
 } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon, FolderIcon } from '../common/FileIcon';
 import { ExtensionsView } from '../extensions/ExtensionsView';
+import { ProjectSearchView } from '../search/ProjectSearchView';
 import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
 
 export const Sidebar: React.FC = () => {
@@ -36,6 +40,11 @@ export const Sidebar: React.FC = () => {
   const isGitRepo = useFileStore((state) => state.isGitRepo);
   const commitGitChanges = useFileStore((state) => state.commitGitChanges);
   const loadGitStatus = useFileStore((state) => state.loadGitStatus);
+  const stageGitFile = useFileStore((state) => state.stageGitFile);
+  const unstageGitFile = useFileStore((state) => state.unstageGitFile);
+  const stageAllGit = useFileStore((state) => state.stageAllGit);
+  const unstageAllGit = useFileStore((state) => state.unstageAllGit);
+  const discardGitFile = useFileStore((state) => state.discardGitFile);
 
   const openDocument = useEditorStore((state) => state.openDocument);
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -420,18 +429,7 @@ export const Sidebar: React.FC = () => {
           </>
         )}
 
-        {activeView === 'search' && (
-          <div style={{ padding: '12px' }}>
-            <input
-              type="text"
-              placeholder="Search in files..."
-              style={{ width: '100%', marginBottom: '8px' }}
-            />
-            <p style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>
-              Project-wide regex search engine will activate in Phase D.
-            </p>
-          </div>
-        )}
+        {activeView === 'search' && <ProjectSearchView />}
 
         {activeView === 'git' && (
           <div style={{ padding: '12px' }}>
@@ -463,7 +461,7 @@ export const Sidebar: React.FC = () => {
                     rows={3}
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
-                    placeholder="Message (Ctrl+Enter to commit)"
+                    placeholder="Message (Ctrl+Enter to commit staged changes)"
                     style={{
                       width: '100%',
                       resize: 'none',
@@ -471,90 +469,209 @@ export const Sidebar: React.FC = () => {
                       marginBottom: '8px',
                     }}
                   />
-                  <button
-                    type="submit"
-                    disabled={isCommitting || !commitMessage.trim() || gitChanges.length === 0}
-                    style={{
-                      width: '100%',
-                      padding: '6px 12px',
-                      backgroundColor:
-                        gitChanges.length > 0 && commitMessage.trim()
-                          ? 'var(--xivig-accent)'
-                          : 'rgba(108, 140, 255, 0.3)',
-                      color: '#ffffff',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: gitChanges.length > 0 && commitMessage.trim() ? 'pointer' : 'not-allowed',
-                    }}
-                  >
-                    {isCommitting ? 'Committing...' : 'Commit Changes'}
-                  </button>
+                  {(() => {
+                    const stagedCount = gitChanges.filter((c) => c.staged).length;
+                    const canCommit = stagedCount > 0 && Boolean(commitMessage.trim());
+                    return (
+                      <button
+                        type="submit"
+                        disabled={isCommitting || !canCommit}
+                        style={{
+                          width: '100%',
+                          padding: '6px 12px',
+                          backgroundColor: canCommit ? 'var(--xivig-accent)' : 'rgba(108, 140, 255, 0.25)',
+                          color: '#ffffff',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: canCommit ? 'pointer' : 'not-allowed',
+                        }}
+                      >
+                        {isCommitting
+                          ? 'Committing...'
+                          : stagedCount > 0
+                          ? `Commit Staged (${stagedCount})`
+                          : 'Stage Changes to Commit'}
+                      </button>
+                    );
+                  })()}
                 </form>
 
-                {/* Changes List Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--xivig-text-muted)', textTransform: 'uppercase' }}>
-                    Changes ({gitChanges.length})
-                  </span>
-                  <button onClick={() => loadGitStatus()} style={{ color: 'var(--xivig-text-dim)', padding: '2px' }} title="Refresh Git Status">
-                    <RefreshCw size={12} />
-                  </button>
-                </div>
-
-                {/* Changed Files */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {gitChanges.length > 0 ? (
-                    gitChanges.map((change) => {
-                      const fileName = change.path.split(/[/\\]/).pop() || change.path;
-                      const color = change.status === 'M' ? '#e6ad45' : change.status === 'D' ? '#ef6464' : '#35b779';
-                      const fullPath = currentFolderPath ? `${currentFolderPath}/${change.path}` : change.path;
-
-                      return (
-                        <div
-                          key={change.path}
-                          onClick={async () => {
-                            if (window.xivig?.readFile) {
-                              const res = await window.xivig.readFile(fullPath);
-                              if (res.success && res.content !== undefined) {
-                                openDocument({
-                                  path: fullPath,
-                                  name: fileName,
-                                  content: res.content,
-                                  language: fileName,
-                                });
-                              }
-                            }
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '4px 6px',
-                            borderRadius: '3px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            transition: 'background-color 0.1s',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--xivig-surface-hover)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title={change.path}
+                {/* Staged Changes Section */}
+                {(() => {
+                  const stagedFiles = gitChanges.filter((c) => c.staged);
+                  if (stagedFiles.length === 0) return null;
+                  return (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#35b779', textTransform: 'uppercase' }}>
+                          Staged Changes ({stagedFiles.length})
+                        </span>
+                        <button
+                          onClick={() => unstageAllGit()}
+                          style={{ color: 'var(--xivig-text-dim)', padding: '2px', fontSize: '10px' }}
+                          title="Unstage All Changes"
                         >
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
-                            <span style={{ color: 'var(--xivig-text)', marginRight: '6px' }}>{fileName}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>{change.path}</span>
-                          </div>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color }}>
-                            {change.status === '?' ? 'U' : change.status}
-                          </span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p style={{ fontSize: '12px', color: 'var(--xivig-text-dim)', fontStyle: 'italic', padding: '8px 0' }}>
-                      Working tree clean
-                    </p>
-                  )}
+                          <Minus size={12} />
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {stagedFiles.map((change) => {
+                          const fileName = change.path.split(/[/\\]/).pop() || change.path;
+                          const color = change.status === 'M' ? '#e6ad45' : change.status === 'D' ? '#ef6464' : '#35b779';
+                          const fullPath = currentFolderPath ? `${currentFolderPath}/${change.path}` : change.path;
+
+                          return (
+                            <div
+                              key={`staged-${change.path}`}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '4px 6px',
+                                borderRadius: '3px',
+                                fontSize: '12px',
+                                transition: 'background-color 0.1s',
+                              }}
+                              className="group hover:bg-[#252528]"
+                            >
+                              <div
+                                onClick={async () => {
+                                  if (window.xivig?.readFile) {
+                                    const res = await window.xivig.readFile(fullPath);
+                                    if (res.success && res.content !== undefined) {
+                                      openDocument({
+                                        path: fullPath,
+                                        name: fileName,
+                                        content: res.content,
+                                        language: fileName,
+                                      });
+                                    }
+                                  }
+                                }}
+                                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, cursor: 'pointer' }}
+                                title={change.path}
+                              >
+                                <span style={{ color: 'var(--xivig-text)', marginRight: '6px' }}>{fileName}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>{change.path}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    unstageGitFile(change.path);
+                                  }}
+                                  title="Unstage File"
+                                  style={{ color: 'var(--xivig-text-dim)', padding: '2px' }}
+                                >
+                                  <Minus size={11} />
+                                </button>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>
+                                  {change.status}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Unstaged Changes Section */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--xivig-text-muted)', textTransform: 'uppercase' }}>
+                      Changes ({gitChanges.filter((c) => !c.staged).length})
+                    </span>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button onClick={() => stageAllGit()} style={{ color: 'var(--xivig-text-dim)', padding: '2px' }} title="Stage All Changes">
+                        <Plus size={12} />
+                      </button>
+                      <button onClick={() => loadGitStatus()} style={{ color: 'var(--xivig-text-dim)', padding: '2px' }} title="Refresh Git Status">
+                        <RefreshCw size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Changed Files */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {gitChanges.filter((c) => !c.staged).length > 0 ? (
+                      gitChanges
+                        .filter((c) => !c.staged)
+                        .map((change) => {
+                          const fileName = change.path.split(/[/\\]/).pop() || change.path;
+                          const color = change.status === 'M' ? '#e6ad45' : change.status === 'D' ? '#ef6464' : '#35b779';
+                          const fullPath = currentFolderPath ? `${currentFolderPath}/${change.path}` : change.path;
+
+                          return (
+                            <div
+                              key={`unstaged-${change.path}`}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '4px 6px',
+                                borderRadius: '3px',
+                                fontSize: '12px',
+                                transition: 'background-color 0.1s',
+                              }}
+                              className="group hover:bg-[#252528]"
+                            >
+                              <div
+                                onClick={async () => {
+                                  if (window.xivig?.readFile) {
+                                    const res = await window.xivig.readFile(fullPath);
+                                    if (res.success && res.content !== undefined) {
+                                      openDocument({
+                                        path: fullPath,
+                                        name: fileName,
+                                        content: res.content,
+                                        language: fileName,
+                                      });
+                                    }
+                                  }
+                                }}
+                                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, cursor: 'pointer' }}
+                                title={change.path}
+                              >
+                                <span style={{ color: 'var(--xivig-text)', marginRight: '6px' }}>{fileName}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--xivig-text-dim)' }}>{change.path}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    discardGitFile(change.path);
+                                  }}
+                                  title="Discard Changes"
+                                  style={{ color: '#ef6464', padding: '2px' }}
+                                >
+                                  <RotateCcw size={11} />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    stageGitFile(change.path);
+                                  }}
+                                  title="Stage File"
+                                  style={{ color: 'var(--xivig-accent)', padding: '2px' }}
+                                >
+                                  <Plus size={12} />
+                                </button>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color }}>
+                                  {change.status === '?' ? 'U' : change.status}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                    ) : (
+                      <p style={{ fontSize: '12px', color: 'var(--xivig-text-dim)', fontStyle: 'italic', padding: '8px 0' }}>
+                        {gitChanges.length > 0 ? 'All changes staged' : 'Working tree clean'}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -1,26 +1,43 @@
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
 import { BrowserWindow } from 'electron';
+import { assertPathAuthorized } from '../security';
 
-let currentShell: ChildProcessWithoutNullStreams | null = null;
+const terminalsByWindow = new Map<number, ChildProcessWithoutNullStreams>();
 
-export function initTerminalSession(cwd: string | null, win: BrowserWindow | null): void {
-  stopTerminal();
+export function initTerminalSession(cwd: string | null, win: BrowserWindow | null): boolean {
+  if (!win || win.isDestroyed()) return false;
 
-  if (!win) return;
+  const winId = win.id;
+  stopTerminal(winId);
+
+  let targetCwd = os.homedir();
+  if (cwd) {
+    try {
+      const resolved = path.resolve(cwd);
+      if (fs.existsSync(resolved)) {
+        assertPathAuthorized(resolved, 'terminal:init');
+        targetCwd = resolved;
+      }
+    } catch (err: any) {
+      console.warn(`[Xivig Terminal Win-${winId}] CWD authorization rejected, falling back to home:`, err.message);
+    }
+  }
 
   const shellCmd = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || 'bash');
   const args = process.platform === 'win32' ? ['-NoLogo'] : [];
-  const targetCwd = cwd || os.homedir();
 
   try {
-    currentShell = spawn(shellCmd, args, {
+    const currentShell = spawn(shellCmd, args, {
       cwd: targetCwd,
       env: {
         ...process.env,
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
       },
+      shell: false,
     });
 
     currentShell.stdout.on('data', (data: Buffer) => {
@@ -39,31 +56,53 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
       if (!win.isDestroyed()) {
         win.webContents.send('terminal:data', `\r\n[Process terminated with exit code ${code}]\r\n`);
       }
-      currentShell = null;
+      terminalsByWindow.delete(winId);
     });
 
-    console.log('[Xivig Terminal] Spawned terminal shell in:', targetCwd);
+    terminalsByWindow.set(winId, currentShell);
+    console.log(`[Xivig Terminal Win-${winId}] Spawned terminal shell in:`, targetCwd);
+    return true;
   } catch (err: any) {
-    console.error('[Xivig Terminal] Failed to spawn terminal shell:', err);
+    console.error(`[Xivig Terminal Win-${winId}] Failed to spawn terminal shell:`, err);
     if (!win.isDestroyed()) {
       win.webContents.send('terminal:data', `Failed to start shell: ${err.message}\r\n`);
     }
+    return false;
   }
 }
 
-export function writeToTerminal(data: string): void {
+export function writeToTerminal(winId: number, data: string): void {
+  const currentShell = terminalsByWindow.get(winId);
   if (currentShell && currentShell.stdin.writable) {
     currentShell.stdin.write(data);
   }
 }
 
-export function stopTerminal(): void {
-  if (currentShell) {
-    try {
-      currentShell.kill();
-    } catch {
-      // ignore
+export function stopTerminal(winId?: number): void {
+  if (winId !== undefined) {
+    const currentShell = terminalsByWindow.get(winId);
+    if (currentShell) {
+      try {
+        if (process.platform === 'win32' && currentShell.pid) {
+          spawn('taskkill', ['/pid', String(currentShell.pid), '/T', '/F'], { shell: false });
+        } else {
+          currentShell.kill('SIGTERM');
+        }
+      } catch {
+        // ignore
+      }
+      terminalsByWindow.delete(winId);
     }
-    currentShell = null;
+  } else {
+    for (const [id, shellProc] of terminalsByWindow) {
+      try {
+        if (process.platform === 'win32' && shellProc.pid) {
+          spawn('taskkill', ['/pid', String(shellProc.pid), '/T', '/F'], { shell: false });
+        } else {
+          shellProc.kill('SIGTERM');
+        }
+      } catch {}
+    }
+    terminalsByWindow.clear();
   }
 }

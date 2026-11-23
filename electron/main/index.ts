@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, session } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import {
   initDatabase,
   saveSession,
@@ -15,8 +16,17 @@ import {
 } from './database';
 import { watchWorkspace, stopWatching } from './watcher';
 import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
-import { getGitStatus, commitChanges } from './git';
-import { runBuildProcess, stopBuildProcess } from './build';
+import {
+  getGitStatus,
+  commitChanges,
+  stageFile,
+  unstageFile,
+  stageAll,
+  unstageAll,
+  discardChanges,
+  getGitDiff,
+} from './git';
+import { runBuildProcess, stopBuildProcess, stopAllBuildProcesses } from './build';
 import {
   startLiveServer,
   stopLiveServer,
@@ -24,13 +34,18 @@ import {
   openLiveServerInBrowser,
   triggerLiveReload,
 } from './liveserver';
+import { checkGitHubRelease, openReleaseUrl } from './updater';
 import {
   validateIpcSender,
+  setExpectedRendererDist,
   addApprovedWorkspace,
+  removeApprovedWorkspace,
   addApprovedFile,
   validatePathInput,
   validateContentPayload,
+  isPathAuthorized,
   assertPathAuthorized,
+  assertImmediateDestructiveAuthorization,
   atomicWriteFile,
 } from './security';
 
@@ -114,17 +129,34 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
-  // Security: Prevent top-level window from navigating to untrusted origins
+  // Security: Strict navigation controls preventing arbitrary local or external navigations
   currentWin.webContents.on('will-navigate', (event, navigationUrl) => {
     const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
-    if (isDev && navigationUrl.startsWith(process.env.VITE_DEV_SERVER_URL!)) {
-      return;
+
+    if (isDev) {
+      try {
+        const expectedOrigin = new URL(process.env.VITE_DEV_SERVER_URL!).origin;
+        const targetOrigin = new URL(navigationUrl).origin;
+        if (targetOrigin === expectedOrigin) {
+          return;
+        }
+      } catch {
+        // Fall through to deny
+      }
+    } else {
+      // In production, navigation is strictly limited to the packaged index.html URL
+      try {
+        const expectedHref = pathToFileURL(indexHtml).href;
+        if (navigationUrl === expectedHref) {
+          return;
+        }
+      } catch {
+        // Fall through to deny
+      }
     }
-    if (!isDev && navigationUrl.startsWith('file://')) {
-      return;
-    }
+
     event.preventDefault();
-    if (navigationUrl.startsWith('https:') || navigationUrl.startsWith('http:')) {
+    if (navigationUrl.startsWith('https:') || navigationUrl.startsWith('http:') || navigationUrl.startsWith('mailto:')) {
       shell.openExternal(navigationUrl);
     }
   });
@@ -137,34 +169,52 @@ async function createWindow() {
     currentWin.webContents.send('window-state-changed', { isMaximized: false });
   });
 
+  // Background update check for already installed editor
+  setTimeout(async () => {
+    if (!currentWin.isDestroyed()) {
+      try {
+        const updateInfo = await checkGitHubRelease();
+        if (updateInfo.updateAvailable && !currentWin.isDestroyed()) {
+          currentWin.webContents.send('updater:available', updateInfo);
+        }
+      } catch {
+        // Silently ignore background check errors
+      }
+    }
+  }, 4500);
+
+  // Clean up per-window background services when THIS window closes
   currentWin.on('closed', () => {
+    stopWatching(currentWin.id);
+    stopTerminal(currentWin.id);
+    stopBuildProcess(currentWin);
+    stopLiveServer(currentWin);
+
     openWindows.delete(currentWin);
     if (activeWindow === currentWin) {
       activeWindow = Array.from(openWindows)[0] || null;
-    }
-    // Clean up background daemon services only when all windows have closed
-    if (openWindows.size === 0) {
-      stopWatching();
-      stopTerminal();
-      stopBuildProcess();
-      stopLiveServer();
     }
   });
 }
 
 // App lifecycle
 app.whenReady().then(() => {
+  setExpectedRendererDist(RENDERER_DIST);
   initDatabase();
-  addApprovedWorkspace(process.cwd());
 
-  // Enforce Content-Security-Policy across all application webContents
+  const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
+
+  // Content-Security-Policy enforcement
+  // Production policy eliminates 'unsafe-inline' from script-src to prevent script injection.
+  const cspHeader = isDev
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* ws://localhost:*;"
+    : "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;";
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;"
-        ],
+        'Content-Security-Policy': [cspHeader],
       },
     });
   });
@@ -180,6 +230,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   stopWatching();
+  stopTerminal();
+  stopAllBuildProcesses();
+  stopLiveServer();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -220,7 +273,7 @@ ipcMain.handle('window:openNew', async (event) => {
   return { success: true };
 });
 
-// File dialogs & System operations
+// File dialogs & System operations (Only explicit user selection approves paths)
 ipcMain.handle('dialog:openFile', async (event) => {
   if (!validateIpcSender(event)) return { canceled: true };
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
@@ -265,6 +318,7 @@ ipcMain.handle('dialog:openFolder', async (event) => {
 
   const folderPath = result.filePaths[0];
   try {
+    // Explicit user approval through native folder dialog
     addApprovedWorkspace(folderPath);
     const folderName = path.basename(folderPath) || folderPath;
     addRecentWorkspace(folderPath, folderName);
@@ -290,7 +344,7 @@ ipcMain.handle('file:save', async (event, { filePath, content }: { filePath: str
   try {
     const safePath = validatePathInput(filePath);
     const safeContent = validateContentPayload(content);
-    assertPathAuthorized(safePath, 'file:save');
+    assertImmediateDestructiveAuthorization(safePath, 'file:save');
 
     await atomicWriteFile(safePath, safeContent);
     addApprovedFile(safePath);
@@ -316,6 +370,7 @@ ipcMain.handle('file:saveDialog', async (event, { defaultName, content }: { defa
   }
 
   const safePath = validatePathInput(result.filePath);
+  // Explicit user approval through native save dialog
   addApprovedFile(safePath);
 
   if (content !== undefined) {
@@ -342,7 +397,6 @@ ipcMain.handle('file:read', async (event, filePath: string) => {
     assertPathAuthorized(safePath, 'file:read');
 
     const content = await fs.readFile(safePath, 'utf-8');
-    addApprovedFile(safePath);
     addRecentFile(safePath, path.basename(safePath));
     return { success: true, content };
   } catch (error: any) {
@@ -371,7 +425,7 @@ ipcMain.handle('file:readDir', async (event, dirPath: string) => {
   }
 });
 
-// File Management operations (create, delete, rename)
+// File Management operations (create, delete, rename, duplicate)
 ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targetPath: string; isDirectory: boolean }) => {
   if (!validateIpcSender(event)) {
     return { success: false, error: 'Unauthorized IPC invocation' };
@@ -379,7 +433,7 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
 
   try {
     const safePath = validatePathInput(targetPath);
-    assertPathAuthorized(safePath, 'file:create');
+    assertImmediateDestructiveAuthorization(safePath, 'file:create');
 
     if (isDirectory) {
       await fs.mkdir(safePath, { recursive: true });
@@ -402,7 +456,7 @@ ipcMain.handle('file:delete', async (event, targetPath: string) => {
 
   try {
     const safePath = validatePathInput(targetPath);
-    assertPathAuthorized(safePath, 'file:delete');
+    assertImmediateDestructiveAuthorization(safePath, 'file:delete');
 
     const stat = await fs.stat(safePath);
     if (stat.isDirectory()) {
@@ -424,8 +478,8 @@ ipcMain.handle('file:rename', async (event, { oldPath, newPath }: { oldPath: str
   try {
     const safeOld = validatePathInput(oldPath);
     const safeNew = validatePathInput(newPath);
-    assertPathAuthorized(safeOld, 'file:rename (source)');
-    assertPathAuthorized(safeNew, 'file:rename (destination)');
+    assertImmediateDestructiveAuthorization(safeOld, 'file:rename (source)');
+    assertImmediateDestructiveAuthorization(safeNew, 'file:rename (destination)');
 
     await fs.rename(safeOld, safeNew);
     addApprovedFile(safeNew);
@@ -444,7 +498,7 @@ ipcMain.handle('file:duplicate', async (event, { sourcePath, targetPath }: { sou
     const safeSource = validatePathInput(sourcePath);
     const safeTarget = validatePathInput(targetPath);
     assertPathAuthorized(safeSource, 'file:duplicate (source)');
-    assertPathAuthorized(safeTarget, 'file:duplicate (destination)');
+    assertImmediateDestructiveAuthorization(safeTarget, 'file:duplicate (destination)');
 
     await fs.copyFile(safeSource, safeTarget);
     addApprovedFile(safeTarget);
@@ -475,20 +529,16 @@ ipcMain.handle('session:save', async (event, session: SavedSession) => {
   return saveSession(session);
 });
 
+// Finding 1 fix: Session restoration never automatically grants workspace authorization.
 ipcMain.handle('session:restore', async (event) => {
   if (!validateIpcSender(event)) return null;
   const session = restoreSession();
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
 
-  if (session) {
-    if (session.activeFolder) {
-      addApprovedWorkspace(session.activeFolder);
+  if (session && targetWin) {
+    // Only watch if this path is already an approved workspace
+    if (session.activeFolder && isPathAuthorized(session.activeFolder)) {
       watchWorkspace(session.activeFolder, targetWin);
-    }
-    if (session.documents && Array.isArray(session.documents)) {
-      session.documents.forEach((doc) => {
-        if (doc.path) addApprovedFile(doc.path);
-      });
     }
   }
   return session;
@@ -513,32 +563,79 @@ ipcMain.handle('settings:set', async (event, { key, value }: { key: string; valu
   return true;
 });
 
+// Finding 1 fix: watchWorkspace is strictly separated from addApprovedWorkspace.
 ipcMain.handle('workspace:watch', async (event, folderPath: string) => {
   if (!validateIpcSender(event)) return false;
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
   const safePath = validatePathInput(folderPath);
-  addApprovedWorkspace(safePath);
+
+  // Require path to already be authorized
+  assertPathAuthorized(safePath, 'workspace:watch');
   watchWorkspace(safePath, targetWin);
   return true;
 });
 
-// Terminal IPC
+ipcMain.handle('workspace:close', async (event, folderPath?: string) => {
+  if (!validateIpcSender(event)) return false;
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  if (targetWin) {
+    stopWatching(targetWin.id);
+  }
+  if (folderPath) {
+    removeApprovedWorkspace(folderPath);
+  }
+  return true;
+});
+
+// Terminal IPC (Per-window session management)
 ipcMain.handle('terminal:init', async (event, cwd?: string) => {
   if (!validateIpcSender(event)) return false;
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  initTerminalSession(cwd || null, targetWin);
-  return true;
+  return initTerminalSession(cwd || null, targetWin);
 });
 
 ipcMain.on('terminal:write', (event, data: string) => {
   if (!validateIpcSender(event)) return;
-  writeToTerminal(data);
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  if (targetWin) {
+    writeToTerminal(targetWin.id, data);
+  }
 });
 
-// Git IPC
+// Git IPC (Selective staging, diffing, and safe commit)
 ipcMain.handle('git:status', async (event, cwd: string) => {
   if (!validateIpcSender(event)) return { isRepo: false, branch: '', changes: [] };
   return getGitStatus(cwd);
+});
+
+ipcMain.handle('git:stage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return stageFile(cwd, filePath);
+});
+
+ipcMain.handle('git:unstage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return unstageFile(cwd, filePath);
+});
+
+ipcMain.handle('git:stageAll', async (event, cwd: string) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return stageAll(cwd);
+});
+
+ipcMain.handle('git:unstageAll', async (event, cwd: string) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return unstageAll(cwd);
+});
+
+ipcMain.handle('git:discard', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return discardChanges(cwd, filePath);
+});
+
+ipcMain.handle('git:diff', async (event, { cwd, filePath, staged }: { cwd: string; filePath?: string; staged?: boolean }) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
+  return getGitDiff(cwd, filePath, staged);
 });
 
 ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; message: string }) => {
@@ -546,7 +643,7 @@ ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; mess
   return commitChanges(cwd, message);
 });
 
-// Build System & Task Runner IPC
+// Build System & Task Runner IPC (Per-window tracking & safe Windows execution)
 ipcMain.handle('build:run', async (event, options: { command: string; args?: string[]; cwd?: string }) => {
   if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
@@ -555,10 +652,11 @@ ipcMain.handle('build:run', async (event, options: { command: string; args?: str
 
 ipcMain.handle('build:stop', async (event) => {
   if (!validateIpcSender(event)) return false;
-  return stopBuildProcess();
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  return stopBuildProcess(targetWin);
 });
 
-// Live Server & Live Reload IPC
+// Live Server & Live Reload IPC (Per-window instances, session tokens, sensitive files denylist)
 ipcMain.handle('liveserver:start', async (event, { rootPath, port }: { rootPath: string; port?: number }) => {
   if (!validateIpcSender(event)) return { success: false, port: 0, url: '', error: 'Unauthorized' };
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
@@ -573,17 +671,39 @@ ipcMain.handle('liveserver:stop', async (event) => {
 
 ipcMain.handle('liveserver:status', async (event) => {
   if (!validateIpcSender(event)) return { isRunning: false, port: 0, url: '', rootPath: '' };
-  return getLiveServerStatus();
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  return getLiveServerStatus(targetWin?.id);
 });
 
 ipcMain.handle('liveserver:openBrowser', async (event, subPath?: string) => {
   if (!validateIpcSender(event)) return false;
-  openLiveServerInBrowser(subPath);
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  openLiveServerInBrowser(targetWin?.id, subPath);
   return true;
 });
 
 ipcMain.handle('liveserver:triggerReload', async (event) => {
   if (!validateIpcSender(event)) return false;
-  triggerLiveReload();
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  triggerLiveReload(targetWin?.id);
+  return true;
+});
+
+// Update Notification IPC (Check releases and safe browser navigation)
+ipcMain.handle('updater:check', async (event) => {
+  if (!validateIpcSender(event)) {
+    return {
+      updateAvailable: false,
+      currentVersion: app.getVersion() || '1.1.0',
+      latestVersion: app.getVersion() || '1.1.0',
+      error: 'Unauthorized IPC invocation',
+    };
+  }
+  return checkGitHubRelease();
+});
+
+ipcMain.handle('updater:openRelease', async (event, releaseUrl?: string) => {
+  if (!validateIpcSender(event)) return false;
+  openReleaseUrl(releaseUrl);
   return true;
 });

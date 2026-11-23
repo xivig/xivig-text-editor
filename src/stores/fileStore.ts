@@ -26,6 +26,11 @@ interface FileState {
   setInitialSession: (folderPath: string | null, isSidebarOpen: boolean, view: ActiveSidebarView) => void;
   loadRecentHistory: () => Promise<void>;
   loadGitStatus: () => Promise<void>;
+  stageGitFile: (filePath: string) => Promise<void>;
+  unstageGitFile: (filePath: string) => Promise<void>;
+  stageAllGit: () => Promise<void>;
+  unstageAllGit: () => Promise<void>;
+  discardGitFile: (filePath: string) => Promise<void>;
   commitGitChanges: (msg: string) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -55,6 +60,42 @@ export const useFileStore = create<FileState>((set, get) => ({
     } catch {
       set({ isGitRepo: false, gitChanges: [] });
     }
+  },
+
+  stageGitFile: async (filePath: string) => {
+    const { currentFolderPath, loadGitStatus } = get();
+    if (!currentFolderPath || !window.xivig?.stageGitFile) return;
+    await window.xivig.stageGitFile(currentFolderPath, filePath);
+    await loadGitStatus();
+  },
+
+  unstageGitFile: async (filePath: string) => {
+    const { currentFolderPath, loadGitStatus } = get();
+    if (!currentFolderPath || !window.xivig?.unstageGitFile) return;
+    await window.xivig.unstageGitFile(currentFolderPath, filePath);
+    await loadGitStatus();
+  },
+
+  stageAllGit: async () => {
+    const { currentFolderPath, loadGitStatus } = get();
+    if (!currentFolderPath || !window.xivig?.stageAllGit) return;
+    await window.xivig.stageAllGit(currentFolderPath);
+    await loadGitStatus();
+  },
+
+  unstageAllGit: async () => {
+    const { currentFolderPath, loadGitStatus } = get();
+    if (!currentFolderPath || !window.xivig?.unstageAllGit) return;
+    await window.xivig.unstageAllGit(currentFolderPath);
+    await loadGitStatus();
+  },
+
+  discardGitFile: async (filePath: string) => {
+    const { currentFolderPath, loadGitStatus, refreshCurrentFolder } = get();
+    if (!currentFolderPath || !window.xivig?.discardGitChanges) return;
+    await window.xivig.discardGitChanges(currentFolderPath, filePath);
+    await loadGitStatus();
+    await refreshCurrentFolder();
   },
 
   commitGitChanges: async (msg: string) => {

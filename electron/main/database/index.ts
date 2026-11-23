@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
 
 export interface SavedDocumentState {
   id: string;
@@ -30,46 +31,119 @@ export interface RecentItem {
 }
 
 interface LocalStoreSchema {
+  version: number;
   settings: Record<string, string>;
   workspaces: RecentItem[];
   recentFiles: RecentItem[];
   session: SavedSession | null;
+  lastCheckpoint?: string;
 }
 
-let fallbackFile: string = '';
+export const CURRENT_STORE_SCHEMA_VERSION = 2;
+
+let storeFile: string = '';
+let backupFile: string = '';
 let inMemoryStore: LocalStoreSchema = {
+  version: CURRENT_STORE_SCHEMA_VERSION,
   settings: {},
   workspaces: [],
   recentFiles: [],
   session: null,
 };
 
+let persistPromise: Promise<boolean> | null = null;
+let pendingPersist = false;
+
+function migrateStore(raw: any): LocalStoreSchema {
+  const version = typeof raw?.version === 'number' ? raw.version : 1;
+  const migrated: LocalStoreSchema = {
+    version: CURRENT_STORE_SCHEMA_VERSION,
+    settings: (raw?.settings && typeof raw.settings === 'object') ? raw.settings : {},
+    workspaces: Array.isArray(raw?.workspaces) ? raw.workspaces : [],
+    recentFiles: Array.isArray(raw?.recentFiles) ? raw.recentFiles : [],
+    session: (raw?.session && typeof raw.session === 'object') ? raw.session : null,
+    lastCheckpoint: raw?.lastCheckpoint || new Date().toISOString(),
+  };
+
+  if (version < CURRENT_STORE_SCHEMA_VERSION) {
+    console.log(`[Xivig Store] Upgraded schema from v${version} to v${CURRENT_STORE_SCHEMA_VERSION}`);
+  }
+
+  return migrated;
+}
+
 function loadStore(): void {
   try {
-    if (fs.existsSync(fallbackFile)) {
-      const data = fs.readFileSync(fallbackFile, 'utf-8');
-      inMemoryStore = JSON.parse(data);
+    if (fs.existsSync(storeFile)) {
+      const data = fs.readFileSync(storeFile, 'utf-8');
+      const parsed = JSON.parse(data);
+      inMemoryStore = migrateStore(parsed);
+      return;
     }
   } catch (err) {
-    console.error('[Xivig Store] Failed to load store file:', err);
+    console.error('[Xivig Store] Failed to load store file, trying backup:', err);
+  }
+
+  // Fallback to recovery checkpoint if primary was corrupted
+  try {
+    if (backupFile && fs.existsSync(backupFile)) {
+      const backupData = fs.readFileSync(backupFile, 'utf-8');
+      const parsedBackup = JSON.parse(backupData);
+      inMemoryStore = migrateStore(parsedBackup);
+      console.log('[Xivig Store] Restored from backup checkpoint.');
+      return;
+    }
+  } catch (backupErr) {
+    console.error('[Xivig Store] Backup checkpoint load failed:', backupErr);
   }
 }
 
-function persistStore(): boolean {
-  if (!fallbackFile) return false;
-  try {
-    const parentDir = path.dirname(fallbackFile);
-    if (!fs.existsSync(parentDir)) {
-      fs.mkdirSync(parentDir, { recursive: true });
-    }
-    const tmp = `${fallbackFile}.tmp.${Date.now()}`;
-    fs.writeFileSync(tmp, JSON.stringify(inMemoryStore, null, 2), 'utf-8');
-    fs.renameSync(tmp, fallbackFile);
-    return true;
-  } catch (err) {
-    console.error('[Xivig Store] Failed to persist store file:', err);
-    return false;
+/**
+ * Asynchronously persists the in-memory store using atomic write-then-rename
+ * and maintains a reliable recovery checkpoint.
+ */
+async function schedulePersist(): Promise<boolean> {
+  if (persistPromise) {
+    pendingPersist = true;
+    return persistPromise;
   }
+
+  persistPromise = (async () => {
+    try {
+      if (!storeFile) return false;
+      const parentDir = path.dirname(storeFile);
+      await fsPromises.mkdir(parentDir, { recursive: true });
+
+      inMemoryStore.lastCheckpoint = new Date().toISOString();
+      const payload = JSON.stringify(inMemoryStore, null, 2);
+      const tmp = `${storeFile}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+
+      await fsPromises.writeFile(tmp, payload, 'utf-8');
+
+      // Create backup copy of previous valid store before atomic replace
+      if (fs.existsSync(storeFile)) {
+        try {
+          await fsPromises.copyFile(storeFile, backupFile);
+        } catch {
+          // Ignore copy error
+        }
+      }
+
+      await fsPromises.rename(tmp, storeFile);
+      return true;
+    } catch (err) {
+      console.error('[Xivig Store] Asynchronous persist error:', err);
+      return false;
+    } finally {
+      persistPromise = null;
+      if (pendingPersist) {
+        pendingPersist = false;
+        schedulePersist();
+      }
+    }
+  })();
+
+  return persistPromise;
 }
 
 export function initDatabase(): void {
@@ -79,9 +153,10 @@ export function initDatabase(): void {
       fs.mkdirSync(userDataPath, { recursive: true });
     }
 
-    fallbackFile = path.join(userDataPath, 'xivig-store.json');
+    storeFile = path.join(userDataPath, 'xivig-store.json');
+    backupFile = path.join(userDataPath, 'xivig-store.backup.json');
     loadStore();
-    console.log('[Xivig DB] Persistent storage initialized at:', fallbackFile);
+    console.log('[Xivig DB] Storage initialized at:', storeFile);
   } catch (err) {
     console.error('[Xivig DB] Storage initialization error:', err);
   }
@@ -89,7 +164,8 @@ export function initDatabase(): void {
 
 export function saveSession(session: SavedSession): boolean {
   inMemoryStore.session = session;
-  return persistStore();
+  schedulePersist();
+  return true;
 }
 
 export function restoreSession(): SavedSession | null {
@@ -108,7 +184,7 @@ export function addRecentFile(filePath: string, name: string): void {
     item,
     ...inMemoryStore.recentFiles.filter((f) => f.path !== filePath),
   ].slice(0, 20);
-  persistStore();
+  schedulePersist();
 }
 
 export function getRecentFiles(limit = 10): RecentItem[] {
@@ -127,7 +203,7 @@ export function addRecentWorkspace(folderPath: string, name: string): void {
     item,
     ...inMemoryStore.workspaces.filter((w) => w.path !== folderPath),
   ].slice(0, 15);
-  persistStore();
+  schedulePersist();
 }
 
 export function getRecentWorkspaces(limit = 10): RecentItem[] {
@@ -136,7 +212,8 @@ export function getRecentWorkspaces(limit = 10): RecentItem[] {
 
 export function setSetting(key: string, value: string): boolean {
   inMemoryStore.settings[key] = value;
-  return persistStore();
+  schedulePersist();
+  return true;
 }
 
 export function getSetting(key: string): string | null {

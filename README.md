@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-1.0-6c8cff.svg" alt="Release 1.0" /></a>
-  <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/Electron-34-47848f.svg" alt="Electron 34" /></a>
+  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-1.1-6c8cff.svg" alt="Release 1.1" /></a>
+  <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/Electron-45-47848f.svg" alt="Electron 45" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/CodeMirror-6-black.svg" alt="CodeMirror 6" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/React-18-61dafb.svg" alt="React 18" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/TypeScript-5.7-blue.svg" alt="TypeScript" /></a>
@@ -21,7 +21,7 @@
 
 ## 📖 Overview
 
-**Xivig Text Editor** is an ultra-responsive, modern desktop code editor designed for developers who demand speed, elegant typography, powerful multi-cursor editing, and seamless web development tools. Built from the ground up with **CodeMirror 6**, **Electron 34**, **React 18**, and **Vite 6**, Xivig blends the lightning speed of Sublime Text with the intuitive live tooling of modern web IDEs.
+**Xivig Text Editor** is an ultra-responsive, modern desktop code editor designed for developers who demand speed, elegant typography, powerful multi-cursor editing, and seamless web development tools. Built from the ground up with **CodeMirror 6**, **Electron 45**, **React 18**, and **Vite 6**, Xivig blends the lightning speed of Sublime Text with the intuitive live tooling of modern web IDEs.
 
 For a full step-by-step user manual, check out the [Comprehensive How-To Guide](docs/HOW_TO.md) or read more [About Xivig Text Editor](ABOUT.md).
 
@@ -35,13 +35,13 @@ Download the official release binaries for your operating system:
 |---|---|---|---|
 | **Windows** | `.exe` (Installer) | [**Download Setup (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig.Text.Editor.Setup.1.0.0.exe) | NSIS Installer with desktop and start menu shortcuts |
 | **Windows** | `.exe` (Portable) | [**Download Portable (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig.Text.Editor.1.0.0.exe) | Zero-install standalone executable |
-| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-mac.zip) | Native macOS `.app` bundle (Intel & Apple Silicon) |
+| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.dmg) | macOS Disk Image (Apple Silicon & Intel) |
+| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
 | **macOS** | `.zip` (x64) | [**Download macOS x64 (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-mac-x64.zip) | Native macOS x64 bundle archive |
-| **Linux** | `.tar.gz` (Universal) | [**Download tar.gz (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
-| **Linux** | `.zip` (Universal) | [**Download zip (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
-| **Linux** | `.AppImage` | [**Download AppImage (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.AppImage) | Universal Linux AppImage |
-| **Linux** | `.deb` | [**Download DEB (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/xivig-text-editor_1.0.0_amd64.deb) | Debian / Ubuntu package |
-| **macOS** | `.dmg` | [**Download DMG (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.dmg) | macOS Disk Image |
+| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.AppImage) | Standalone Linux x64 AppImage |
+| **Linux** | `.deb` (x64) | [**Download DEB (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/xivig-text-editor_1.0.0_amd64.deb) | Debian / Ubuntu amd64 package |
+| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
+| **Linux** | `.zip` (x64) | [**Download zip (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
 
 > All releases, release notes, and SHA-256 checksums are hosted on the [GitHub Releases Page](https://github.com/xivig/xivig-text-editor/releases).
 
@@ -148,7 +148,7 @@ Download the official release binaries for your operating system:
 
 ```
 Xivig Text Editor
-├── Desktop Shell: Electron 34 (Main Process, Preload IPC Bridge, Window Management)
+├── Desktop Shell: Electron 45 (Main Process, Preload IPC Bridge, Window Management)
 ├── Frontend Application: React 18 + TypeScript + Zustand State Stores
 │   ├── Editor Engine: CodeMirror 6 (Transactions, Compartments, Syntax Trees)
 │   ├── Emmet Engine: Custom AST expander supporting nesting, multipliers, and lorem

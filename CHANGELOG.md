@@ -1,0 +1,105 @@
+# Changelog
+
+All notable changes to the **Xivig Text Editor** project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.1.0] - 2026-11-23 — *Security and Stability Release*
+
+### 🛡️ Security Hardening (P0 Remediations)
+* **Canonical Path Authorization & Symlink Defense**:
+  - Replaced lexical `path.relative()` checks with canonical realpath resolution (`fs.realpathSync`) for both the workspace root and target files, preventing symlink directory traversal attacks.
+  - Added parent directory canonical resolution for newly created non-existent target files.
+  - Implemented `assertImmediateDestructiveAuthorization()` immediately before write, delete, and rename operations to mitigate Time-of-Check to Time-of-Use (TOCTOU) symlink swaps.
+* **Strict Workspace & Session Trust**:
+  - Eliminated automatic filesystem authorizations during `session:restore` and `workspace:watch`.
+  - Enforced that workspace directories can only be approved following explicit user selection through native operating system dialogs (`dialog:openFolder`).
+  - Separated `watchWorkspace()` from `addApprovedWorkspace()`.
+* **Renderer Frame Origin & IPC Validation**:
+  - Hardened `validateIpcSender()` to strictly reject calls originating from child frames, iframes, or untrusted web contexts (`senderFrame === sender.mainFrame`).
+  - In development, verified exact matching protocol, hostname, and port from `VITE_DEV_SERVER_URL`.
+  - In production, restricted valid IPC frame sources to the canonical packaged `file:` URL within `RENDERER_DIST`.
+* **Content Security Policy Hardening**:
+  - Stripped `'unsafe-inline'` from production CSP headers and `index.html` meta tags to prevent script injection.
+  - Locked production window navigation (`will-navigate`) strictly to `pathToFileURL(indexHtml).href`, routing external links through `shell.openExternal()`.
+  - Explicitly denied child window creation via `setWindowOpenHandler`.
+* **Cross-Platform Process Spawning**:
+  - Removed `cmd.exe /c` shell concatenation and `windowsVerbatimArguments: true` in build process spawning.
+  - Enforced discrete binary/argument arrays with `shell: false` across all process executions.
+  - Added `validateCommandTokens()` rejecting dangerous shell metacharacters (`|`, `&`, `;`, `` ` ``, `$`, `<`, `>`).
+  - Enforced workspace boundary checks (`assertPathAuthorized`) on all working directories prior to build execution.
+* **Preview Sandboxing & Sanitization**:
+  - Removed `allow-same-origin` from the Live Web Preview iframe sandbox.
+  - Added sanitization to Markdown Live Preview stripping `<script>`, `<iframe>`, `<object>`, `<embed>`, inline event handlers, and `javascript:` URIs.
+
+### ⚡ Reliability & Multi-Window Isolation (P1 Remediations)
+* **Per-Window Service Architecture**:
+  - Converted the global file watcher, terminal processes, live reload server, and build tasks into window-keyed registries (`watchersByWindow`, `terminalsByWindow`, `serversByWindow`, `activeProcessesByWindow`).
+  - Automatically cleaned up all background child processes upon `win.on('closed')`.
+* **Live Server Hardening**:
+  - Added session token verification (`/__xivig_live_reload?token=...`) on the SSE endpoint, returning `401 Unauthorized` on token mismatch.
+  - Denylisted sensitive files and secrets (`.env*`, `.git*`, `id_rsa*`, `*.pem`, `*.key`, `*.sql`, `node_modules`).
+  - Implemented safe URI decoding and canonical path resolution to prevent directory traversal escapes.
+* **Selective Git Staging**:
+  - Implemented granular Git staging APIs: `stageFile`, `unstageFile`, `stageAll`, `unstageAll`, `discardChanges`, and `getGitDiff`.
+  - Updated the Git sidebar view with dedicated **Staged Changes** and **Changes** sections.
+  - Enforced that commits require staged changes (`git diff --cached --quiet`), rejecting blind `git add -A` commits.
+* **Atomic Versioned Storage**:
+  - Replaced synchronous storage writes with atomic write-then-rename operations using temporary files (`.tmp`).
+  - Added automatic backup recovery checkpoints (`xivig-store.backup.json`).
+  - Introduced schema versioning (`CURRENT_STORE_SCHEMA_VERSION = 2`) with automatic migration logic (`migrateStore`).
+
+### 📦 Runtime & Dependency Upgrades
+* **Electron Upgrade**:
+  - Upgraded runtime to **Electron 45.4.1**, eliminating all 46+ CVE advisories present in Electron 34.
+* **Node.js Baseline**:
+  - Upgraded CI/CD and release workflow baselines to **Node.js 24 LTS**.
+* **Zero Vulnerability Audit**:
+  - Configured package overrides for `glob` (`^14.0.6`) and `minimatch` (`^11.0.9`), achieving **0 vulnerabilities in `npm audit`**.
+
+### ✨ Features & Product Improvements (P2)
+* **Live Update Notification System**:
+  - Implemented automated GitHub Release checking via `electron/main/updater/index.ts`.
+  - Added non-intrusive alert banner (`UpdateNotificationBanner.tsx`) that automatically notifies installed editors when a new version is published.
+  - Upgraded `UpdateCheckModal.tsx` to provide live version checks, changelog links, and direct download buttons.
+  - Added `"Help: Check for Updates..."` command to the Command Palette (`Ctrl+Shift+P`).
+* **Multi-File Project Search Engine**:
+  - Built `ProjectSearchView.tsx` and integrated it into the Sidebar Search view (`Ctrl+Shift+F`).
+  - Features real-time match counting, case-sensitive toggle (`Alt+C`), whole-word toggle (`Alt+W`), regular expressions (`Alt+R`), file include patterns, jump-to-match on click, and cross-file replacement.
+* **External File Modification & Conflict Resolution**:
+  - Automatically synchronizes clean editor buffers when files are edited externally on disk.
+  - Displays an inline conflict warning banner on dirty buffers with **"Reload from Disk"** and **"Keep Local Edits"** options to prevent accidental data loss.
+* **Large File Velocity Mode**:
+  - Automatically detects files larger than $1.5\text{MB}$ and disables expensive AST linters and color regex engines to maintain smooth 60fps scrolling and editing velocity.
+* **Interactive Status Bar Controls**:
+  - Added clickable `LF` / `CRLF` conversion, switching buffer line endings while preserving CodeMirror undo history.
+  - Added interactive indentation popover selector (`Spaces: 2`, `Spaces: 4`, `Spaces: 8`).
+  - Added file encoding selector (`UTF-8`, `UTF-8 with BOM`, `UTF-16 LE`, `Windows 1252`).
+* **Accessibility Enhancements**:
+  - Added `role="status"`, `role="alert"`, and descriptive `aria-label` attributes across TitleBar, StatusBar, Search inputs, and modal dialogs.
+
+### 🏗️ CI/CD, Build & Packaging Quality Gates
+* **Automated Unit Testing**:
+  - Integrated `vitest` with a dedicated test configuration (`vitest.config.ts`) and unit test suite covering color utilities, comment syntax detection, lorem ipsum generator, line ending conversions, large file thresholds, and semver comparison.
+* **Dual TypeScript Enforcement**:
+  - Bound both renderer typechecking (`tsc --noEmit`) and Node/Electron main typechecking (`tsc --project tsconfig.node.json --noEmit`) into the `"build"` quality gate.
+* **Pinned CI/CD Actions**:
+  - Pinned all third-party GitHub Actions to immutable 40-character commit SHAs in `.github/workflows/ci.yml` and `.github/workflows/release.yml`.
+* **Multi-Platform Release Packaging**:
+  - Aligned packaging targets with `README.md`:
+    - **Windows**: NSIS Installer & Portable standalone executables.
+    - **Linux**: AppImage, DEB, `tar.gz`, and `zip` archives.
+    - **macOS**: DMG, ZIP, Universal binary with `hardenedRuntime`, entitlements (`build/entitlements.mac.plist`), and notarization secrets.
+
+---
+
+## [1.0.0] - 2026-11-20 — *Initial Release*
+
+* Initial release of Xivig Text Editor.
+* Sublime-grade multi-cursor editing, bracket matching, Emmet 2.0 expansion, and visual bookmarks.
+* Integrated xterm.js terminal and build task execution.
+* Built-in zero-config live web server with real-time reload.
+* Markdown side-by-side live preview.

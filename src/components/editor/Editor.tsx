@@ -53,6 +53,7 @@ import { beautifyActiveEditor } from '../../utils/beautify';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import { FileContextMenu } from '../common/FileContextMenu';
+import { AlertTriangle, Zap } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
 
 interface EditorProps {
@@ -81,6 +82,12 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const updateDocumentContent = useEditorStore((state) => state.updateDocumentContent);
   const updateCursor = useEditorStore((state) => state.updateCursor);
   const setActivePane = useEditorStore((state) => state.setActivePane);
+  const conflictDocId = useEditorStore((state) => state.externalConflictDocId);
+  const reloadDocumentFromDisk = useEditorStore((state) => state.reloadDocumentFromDisk);
+  const dismissConflict = useEditorStore((state) => state.dismissConflict);
+
+  const isConflict = conflictDocId === activeDoc?.id;
+  const isLargeFile = (activeDoc?.content?.length || 0) > 1_500_000;
 
   // Maintain active document ID in ref for updateListener
   const docIdRef = useRef(activeDocumentId);
@@ -122,9 +129,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         foldGutter(),
         bookmarkField,
         bookmarkGutter,
-        autoRenameTagExtension,
-        cssColorHighlighterExtension,
-        ...createDiagnosticsLinter(activeDoc.id, activeDoc.path, activeDoc.name),
+        ...(!isLargeFile ? [autoRenameTagExtension, cssColorHighlighterExtension] : []),
+        ...(!isLargeFile ? createDiagnosticsLinter(activeDoc.id, activeDoc.path, activeDoc.name) : []),
         drawSelection(),
         dropCursor(),
         EditorState.allowMultipleSelections.of(true),
@@ -217,6 +223,18 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     };
   }, [activeDocumentId]);
 
+  // Keep editor view in sync if document content is updated externally (e.g. disk reload, line endings)
+  useEffect(() => {
+    if (viewRef.current && activeDoc) {
+      const currentText = viewRef.current.state.doc.toString();
+      if (currentText !== activeDoc.content) {
+        viewRef.current.dispatch({
+          changes: { from: 0, to: currentText.length, insert: activeDoc.content },
+        });
+      }
+    }
+  }, [activeDoc?.content]);
+
   // Dynamically reconfigure theme when user switches themes in Settings
   useEffect(() => {
     if (viewRef.current) {
@@ -303,18 +321,52 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           setContextMenu({ x: e.clientX, y: e.clientY });
         }
       }}
-      style={{ width: '100%', height: '100%', display: 'flex', overflow: 'hidden' }}
+      style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
     >
-      <div
-        ref={containerRef}
-        style={{
-          flex: 1,
-          height: '100%',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      />
-      <Minimap view={viewRef.current} content={activeDoc.content} />
+      {/* External Modification Conflict Banner */}
+      {isConflict && (
+        <div style={conflictBannerStyle}>
+          <AlertTriangle size={14} color="#e6ad45" style={{ marginRight: '8px', flexShrink: 0 }} />
+          <span style={{ fontSize: '11px', color: '#e5e7eb', flex: 1 }}>
+            This document was modified externally on disk. What would you like to do?
+          </span>
+          <button
+            onClick={() => reloadDocumentFromDisk(activeDoc.id)}
+            style={conflictActionBtnStyle}
+            title="Discard unsaved local changes and reload from disk"
+          >
+            Reload from Disk
+          </button>
+          <button
+            onClick={() => dismissConflict(activeDoc.id)}
+            style={{ ...conflictActionBtnStyle, backgroundColor: 'transparent', color: '#9ca3af', border: '1px solid #444' }}
+            title="Keep in-memory edits and dismiss conflict warning"
+          >
+            Keep Local Edits
+          </button>
+        </div>
+      )}
+
+      {/* Large File Performance Mode Indicator */}
+      {isLargeFile && (
+        <div style={largeFileBannerStyle}>
+          <Zap size={12} color="#4ec9b0" style={{ marginRight: '6px' }} />
+          <span>Large File Velocity Mode: Heavy extensions are paused to preserve ultra-fast 120 FPS typing.</span>
+        </div>
+      )}
+
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+        <div
+          ref={containerRef}
+          style={{
+            flex: 1,
+            height: '100%',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        />
+        <Minimap view={viewRef.current} content={activeDoc.content} />
+      </div>
 
       {contextMenu && activeDoc && (
         <FileContextMenu
@@ -354,4 +406,37 @@ const actionButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   fontWeight: 500,
   fontSize: '13px',
+};
+
+const conflictBannerStyle: React.CSSProperties = {
+  backgroundColor: '#2d2416',
+  borderBottom: '1px solid #735118',
+  padding: '6px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  userSelect: 'none',
+  zIndex: 10,
+};
+
+const conflictActionBtnStyle: React.CSSProperties = {
+  backgroundColor: '#e6ad45',
+  color: '#111',
+  fontWeight: 600,
+  fontSize: '11px',
+  padding: '3px 8px',
+  borderRadius: '3px',
+  marginLeft: '8px',
+  cursor: 'pointer',
+};
+
+const largeFileBannerStyle: React.CSSProperties = {
+  backgroundColor: '#1b2a2e',
+  borderBottom: '1px solid #234b52',
+  padding: '4px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '11px',
+  color: '#a7f3d0',
+  userSelect: 'none',
+  zIndex: 9,
 };

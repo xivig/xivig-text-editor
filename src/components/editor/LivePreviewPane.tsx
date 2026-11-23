@@ -297,7 +297,7 @@ export const LivePreviewPane: React.FC = () => {
               srcDoc={previewHtml}
               className="w-full h-full border-none flex-1"
               title="Xivig Direct Preview"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+              sandbox="allow-scripts allow-forms allow-modals"
             />
           )}
         </div>

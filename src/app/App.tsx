@@ -23,6 +23,7 @@ import { AboutModal } from '../components/modals/AboutModal';
 import { IndexingStatusModal } from '../components/modals/IndexingStatusModal';
 import { RemoveLicenseModal } from '../components/modals/RemoveLicenseModal';
 import { UpdateCheckModal } from '../components/modals/UpdateCheckModal';
+import { UpdateNotificationBanner } from '../components/common/UpdateNotificationBanner';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 import { useUIStore } from '../stores/uiStore';
@@ -140,8 +141,11 @@ export const App: React.FC = () => {
   // Listen to Workspace file changes from chokidar
   useEffect(() => {
     if (window.xivig?.onWorkspaceFilesChanged) {
-      const unsubscribe = window.xivig.onWorkspaceFilesChanged(() => {
+      const unsubscribe = window.xivig.onWorkspaceFilesChanged((data) => {
         refreshCurrentFolder();
+        if (data && data.path && (data.event === 'change' || data.event === 'unlink')) {
+          useEditorStore.getState().handleExternalFileChange(data.path);
+        }
       });
       return unsubscribe;
     }
@@ -652,6 +656,7 @@ export const App: React.FC = () => {
     <div style={appContainerStyle}>
       <Titlebar />
       {!isDistractionFree && <Menubar />}
+      <UpdateNotificationBanner />
       <div style={{ ...workbenchStyle, justifyContent: isDistractionFree ? 'center' : 'stretch' }}>
         {!isDistractionFree && <ActivityBar />}
         {!isDistractionFree && <Sidebar />}

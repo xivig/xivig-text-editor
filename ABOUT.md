@@ -4,7 +4,7 @@
 
 ### Application Information
 - **Application Name**: Xivig Text Editor
-- **Release Version**: Release 1.0 (Build 1.0.0)
+- **Release Version**: Release 1.1 (Build 1.1.0)
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 
@@ -18,7 +18,7 @@
 ### Third-Party Libraries & Attributions
 Xivig Text Editor is built with gratitude upon top open-source technologies:
 - **CodeMirror 6** (MIT) — Next-generation extensible code editor core
-- **Electron 34** (MIT) — Native desktop cross-platform runtime
+- **Electron 45** (MIT) — Native desktop cross-platform runtime
 - **React 18** (MIT) — Declarative UI component hierarchy
 - **Vite 6** (MIT) — Ultra-fast next-generation frontend tooling
 - **xterm.js** (MIT) — High-performance terminal emulation in the browser
