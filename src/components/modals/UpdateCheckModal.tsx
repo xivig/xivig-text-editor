@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, ExternalLink, RefreshCw, ArrowUpCircle, AlertCircle } from 'lucide-react';
+import { X, CheckCircle, ExternalLink, RefreshCw, ArrowUpCircle, AlertCircle, Download, RotateCw } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
-import { UpdateCheckResult } from '../../types/electron';
+import { UpdateCheckResult, UpdateProgress, DownloadedUpdateInfo } from '../../types/electron';
 
 export const UpdateCheckModal: React.FC = () => {
   const isOpen = useUIStore((state) => state.isUpdateCheckOpen);
@@ -9,6 +9,10 @@ export const UpdateCheckModal: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null);
+  const [downloadedInfo, setDownloadedInfo] = useState<DownloadedUpdateInfo | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -20,21 +24,50 @@ export const UpdateCheckModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, close]);
 
+  useEffect(() => {
+    if (window.xivig?.getDownloadedUpdateInfo) {
+      window.xivig.getDownloadedUpdateInfo().then((info) => {
+        if (info) setDownloadedInfo(info);
+      }).catch(() => {});
+    }
+
+    if (!window.xivig) return;
+
+    const unsubProgress = window.xivig.onUpdateDownloadProgress?.((progress) => {
+      setIsDownloading(true);
+      setDownloadProgress(progress);
+    });
+
+    const unsubDownloaded = window.xivig.onUpdateDownloaded?.((info) => {
+      setIsDownloading(false);
+      setDownloadProgress(null);
+      setDownloadedInfo(info);
+    });
+
+    return () => {
+      unsubProgress?.();
+      unsubDownloaded?.();
+    };
+  }, []);
+
   const performCheck = () => {
     setIsLoading(true);
     if (window.xivig?.checkForUpdates) {
-      window.xivig.checkForUpdates().then((res) => {
-        setResult(res);
-        setIsLoading(false);
-      }).catch((err) => {
-        setResult({
-          updateAvailable: false,
-          currentVersion: '1.1.0',
-          latestVersion: '1.1.0',
-          error: err.message || 'Network error',
+      window.xivig
+        .checkForUpdates()
+        .then((res) => {
+          setResult(res);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          setResult({
+            updateAvailable: false,
+            currentVersion: '1.1.0',
+            latestVersion: '1.1.0',
+            error: err.message || 'Network error',
+          });
+          setIsLoading(false);
         });
-        setIsLoading(false);
-      });
     } else {
       setTimeout(() => {
         setResult({
@@ -44,6 +77,29 @@ export const UpdateCheckModal: React.FC = () => {
         });
         setIsLoading(false);
       }, 500);
+    }
+  };
+
+  const handleStartDownload = async () => {
+    if (!window.xivig?.startUpdateDownload) return;
+    setIsDownloading(true);
+    try {
+      const res = await window.xivig.startUpdateDownload();
+      if (!res.success && res.error) {
+        setIsDownloading(false);
+      }
+    } catch {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleApplyAndRestart = async () => {
+    if (!window.xivig?.applyUpdateAndRestart) return;
+    setIsApplying(true);
+    try {
+      await window.xivig.applyUpdateAndRestart();
+    } catch {
+      setIsApplying(false);
     }
   };
 
@@ -149,27 +205,59 @@ export const UpdateCheckModal: React.FC = () => {
                   width: '52px',
                   height: '52px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(78, 201, 176, 0.18)',
+                  backgroundColor: downloadedInfo ? 'rgba(53, 183, 121, 0.18)' : 'rgba(78, 201, 176, 0.18)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 16px auto',
                 }}
               >
-                <ArrowUpCircle size={30} color="var(--xivig-accent)" />
+                {downloadedInfo ? (
+                  <CheckCircle size={30} color="#35b779" />
+                ) : (
+                  <ArrowUpCircle size={30} color="var(--xivig-accent)" />
+                )}
               </div>
 
               <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>
-                A New Version of Xivig is Available!
+                {downloadedInfo ? 'Update Ready to Install' : 'A New Version of Xivig is Available!'}
               </div>
 
               <div style={{ fontSize: '13px', color: '#d1d5db', marginTop: '8px', lineHeight: 1.5 }}>
-                Version <strong>v{result.latestVersion}</strong> is ready to download (Current: v{result.currentVersion}).
+                {downloadedInfo ? (
+                  <>
+                    Xivig <strong>v{downloadedInfo.version}</strong> has been downloaded. Restart now to update seamlessly without manual installation.
+                  </>
+                ) : (
+                  <>
+                    Version <strong>v{result.latestVersion}</strong> is available (Current: v{result.currentVersion}).
+                  </>
+                )}
               </div>
 
               {result.releaseName && (
                 <div style={{ fontSize: '12px', color: 'var(--xivig-accent)', marginTop: '4px', fontWeight: 500 }}>
                   {result.releaseName}
+                </div>
+              )}
+
+              {/* Download Progress Bar if downloading */}
+              {isDownloading && downloadProgress && (
+                <div style={{ margin: '14px 0', width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>
+                    <span>Downloading update package...</span>
+                    <span>{downloadProgress.percent}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', backgroundColor: '#1b1c1e', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${downloadProgress.percent}%`,
+                        height: '100%',
+                        backgroundColor: 'var(--xivig-accent)',
+                        transition: 'width 0.15s ease',
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -188,30 +276,76 @@ export const UpdateCheckModal: React.FC = () => {
               >
                 <div>• Current Version: <strong>v{result.currentVersion}</strong></div>
                 <div>• Latest Release: <strong>v{result.latestVersion}</strong></div>
-                <div>• Distribution: <strong>Stable (Electron 45 / Node 24)</strong></div>
+                <div>• Update Mode: <strong>Seamless In-Place Reload</strong></div>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                <button
-                  onClick={() => window.xivig?.openReleasePage?.(result.htmlUrl)}
-                  style={{
-                    backgroundColor: 'var(--xivig-accent)',
-                    border: 'none',
-                    color: '#ffffff',
-                    padding: '8px 20px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <ExternalLink size={14} />
-                  Download Update
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {downloadedInfo ? (
+                  <button
+                    onClick={handleApplyAndRestart}
+                    disabled={isApplying}
+                    style={{
+                      backgroundColor: '#35b779',
+                      border: 'none',
+                      color: '#ffffff',
+                      padding: '8px 20px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <RotateCw size={14} className={isApplying ? 'animate-spin' : ''} />
+                    {isApplying ? 'Restarting...' : 'Reload & Apply Update'}
+                  </button>
+                ) : (
+                  <>
+                    {result.downloadUrl && !isDownloading && (
+                      <button
+                        onClick={handleStartDownload}
+                        style={{
+                          backgroundColor: 'var(--xivig-accent)',
+                          border: 'none',
+                          color: '#ffffff',
+                          padding: '8px 20px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Download size={14} />
+                        Download Update
+                      </button>
+                    )}
+                    <button
+                      onClick={() => window.xivig?.openReleasePage?.(result.htmlUrl)}
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: '1px solid #4a4d55',
+                        color: '#4aa2f2',
+                        padding: '8px 18px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <ExternalLink size={13} />
+                      Release Notes
+                    </button>
+                  </>
+                )}
+
                 <button
                   onClick={close}
                   style={{
@@ -224,7 +358,7 @@ export const UpdateCheckModal: React.FC = () => {
                     cursor: 'pointer',
                   }}
                 >
-                  Remind Me Later
+                  Close
                 </button>
               </div>
             </>

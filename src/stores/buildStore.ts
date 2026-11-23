@@ -138,7 +138,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
             id: 'node-file',
             name: `Node.js: Run ${docName}`,
             command: 'node',
-            args: [`"${docPath}"`],
+            args: [docPath],
             description: `Execute current file (${docName}) with Node.js runtime`,
           });
         } else if (ext === 'ts') {
@@ -146,7 +146,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
             id: 'tsx-file',
             name: `TypeScript: Run ${docName}`,
             command: 'npx',
-            args: ['--yes', 'tsx', `"${docPath}"`],
+            args: ['--yes', 'tsx', docPath],
             description: `Execute TypeScript file (${docName}) directly with tsx`,
           });
         } else if (ext === 'py') {
@@ -154,7 +154,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
             id: 'python-file',
             name: `Python: Run ${docName}`,
             command: 'python',
-            args: [`"${docPath}"`],
+            args: [docPath],
             description: `Execute current script (${docName}) with Python interpreter`,
           });
         } else if (ext === 'rs') {
@@ -176,26 +176,26 @@ export const useBuildStore = create<BuildState>((set, get) => {
           const outName = docName.replace(/\.[^.]+$/, '');
           targets.push({
             id: 'cpp-build-run',
-            name: `C++: Compile & Run ${docName}`,
+            name: `C++: Compile ${docName}`,
             command: 'g++',
-            args: [`"${docPath}"`, '-o', `"${outName}.exe"`, '&&', `".\\${outName}.exe"`],
-            description: `Compile with g++ and immediately run`,
+            args: [docPath, '-o', `${outName}.exe`],
+            description: `Compile ${docName} with g++`,
           });
         } else if (ext === 'c') {
           const outName = docName.replace(/\.[^.]+$/, '');
           targets.push({
             id: 'c-build-run',
-            name: `C: Compile & Run ${docName}`,
+            name: `C: Compile ${docName}`,
             command: 'gcc',
-            args: [`"${docPath}"`, '-o', `"${outName}.exe"`, '&&', `".\\${outName}.exe"`],
-            description: `Compile with gcc and immediately run`,
+            args: [docPath, '-o', `${outName}.exe`],
+            description: `Compile ${docName} with gcc`,
           });
         } else if (ext === 'html') {
           targets.push({
             id: 'open-html',
             name: `Browser: Preview ${docName}`,
             command: 'start',
-            args: [`"${docPath}"`],
+            args: [docPath],
             description: `Open HTML document in default browser`,
           });
         }

@@ -95,7 +95,7 @@ export const BottomPanel: React.FC = () => {
         cursorBlink: true,
         cursorStyle: 'bar',
         fontSize: 13,
-        fontFamily: 'var(--xivig-font-mono)',
+        fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, "Courier New", monospace',
         lineHeight: 1.3,
         theme: {
           background: '#13151a',
@@ -137,14 +137,29 @@ export const BottomPanel: React.FC = () => {
     });
 
     const handleResize = () => {
-      fitAddonRef.current?.fit();
+      if (fitAddonRef.current && xtermRef.current) {
+        try {
+          fitAddonRef.current.fit();
+        } catch {}
+      }
     };
 
+    // Use ResizeObserver on container to handle panel toggle, expansion, and window resizes
+    let resizeObserver: ResizeObserver | null = null;
+    if (terminalContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(handleResize);
+      });
+      resizeObserver.observe(terminalContainerRef.current);
+    }
+
     window.addEventListener('resize', handleResize);
-    setTimeout(handleResize, 100);
+    setTimeout(handleResize, 50);
+    setTimeout(handleResize, 200);
 
     return () => {
       unsubscribe?.();
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
     };
   }, [isOpen, activeTab, currentFolderPath]);
@@ -334,15 +349,28 @@ export const BottomPanel: React.FC = () => {
         {/* Terminal Surface */}
         {activeTab === 'terminal' && (
           <div
-            ref={terminalContainerRef}
             style={{
               width: '100%',
               height: '100%',
+              boxSizing: 'border-box',
               backgroundColor: '#13151a',
-              padding: '6px 12px',
+              padding: '2px 8px 8px 8px',
               overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
             }}
-          />
+          >
+            <div
+              ref={terminalContainerRef}
+              style={{
+                width: '100%',
+                flex: 1,
+                minHeight: 0,
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+              }}
+            />
+          </div>
         )}
 
         {/* Problems Surface */}

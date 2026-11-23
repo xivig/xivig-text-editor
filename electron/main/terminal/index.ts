@@ -27,7 +27,14 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
   }
 
   const shellCmd = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || 'bash');
-  const args = process.platform === 'win32' ? ['-NoLogo'] : [];
+  const args = process.platform === 'win32'
+    ? [
+        '-NoLogo',
+        '-NoExit',
+        '-Command',
+        '[Console]::InputEncoding = [Console]::OutputEncoding = $OutputEncoding = [System.Text.UTF8Encoding]::new(); chcp 65001 > $null;',
+      ]
+    : [];
 
   try {
     const currentShell = spawn(shellCmd, args, {
@@ -36,6 +43,9 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
         ...process.env,
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
+        PYTHONIOENCODING: 'utf-8',
+        LANG: 'en_US.UTF-8',
+        LC_ALL: 'en_US.UTF-8',
       },
       shell: false,
     });
@@ -74,7 +84,7 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
 export function writeToTerminal(winId: number, data: string): void {
   const currentShell = terminalsByWindow.get(winId);
   if (currentShell && currentShell.stdin.writable) {
-    currentShell.stdin.write(data);
+    currentShell.stdin.write(data, 'utf-8');
   }
 }
 

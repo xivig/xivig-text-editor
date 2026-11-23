@@ -46,6 +46,19 @@ export interface AppInfo {
   platform?: string;
 }
 
+export interface UpdateProgress {
+  percent: number;
+  transferred: number;
+  total: number;
+}
+
+export interface DownloadedUpdateInfo {
+  version: string;
+  filePath: string;
+  assetName: string;
+  releaseName?: string;
+}
+
 export interface UpdateCheckResult {
   updateAvailable: boolean;
   currentVersion: string;
@@ -54,6 +67,8 @@ export interface UpdateCheckResult {
   releaseNotes?: string;
   publishedAt?: string;
   downloadUrl?: string;
+  assetName?: string;
+  assetSize?: number;
   htmlUrl?: string;
   error?: string;
 }
@@ -120,10 +135,15 @@ export interface XivigAPI {
   liveServerTriggerReload: () => Promise<boolean>;
   onLiveServerChanged: (callback: (data: { isRunning: boolean; port: number; url: string; rootPath: string }) => void) => () => void;
 
-  // Update Notification
+  // Update Notification & Seamless In-Place Reload
   checkForUpdates?: () => Promise<UpdateCheckResult>;
+  startUpdateDownload?: () => Promise<{ success: boolean; error?: string }>;
+  applyUpdateAndRestart?: () => Promise<{ success: boolean; error?: string }>;
+  getDownloadedUpdateInfo?: () => Promise<DownloadedUpdateInfo | null>;
   openReleasePage?: (url?: string) => Promise<boolean>;
   onUpdateAvailable?: (callback: (info: UpdateCheckResult) => void) => () => void;
+  onUpdateDownloadProgress?: (callback: (progress: UpdateProgress) => void) => () => void;
+  onUpdateDownloaded?: (callback: (info: DownloadedUpdateInfo) => void) => () => void;
 
   // Application info
   getAppInfo?: () => Promise<AppInfo | null>;

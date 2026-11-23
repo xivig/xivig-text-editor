@@ -34,7 +34,13 @@ import {
   openLiveServerInBrowser,
   triggerLiveReload,
 } from './liveserver';
-import { checkGitHubRelease, openReleaseUrl } from './updater';
+import {
+  checkGitHubRelease,
+  openReleaseUrl,
+  startDownloadUpdate,
+  applyUpdateAndRestart,
+  getDownloadedUpdateInfo,
+} from './updater';
 import {
   validateIpcSender,
   setExpectedRendererDist,
@@ -169,22 +175,29 @@ async function createWindow() {
     currentWin.webContents.send('window-state-changed', { isMaximized: false });
   });
 
-  // Background update check for already installed editor
-  setTimeout(async () => {
-    if (!currentWin.isDestroyed()) {
-      try {
-        const updateInfo = await checkGitHubRelease();
-        if (updateInfo.updateAvailable && !currentWin.isDestroyed()) {
-          currentWin.webContents.send('updater:available', updateInfo);
+  // Background update check and auto-update flow for installed editor
+  const performBackgroundUpdateCheck = async () => {
+    if (!currentWin || currentWin.isDestroyed()) return;
+    try {
+      const updateInfo = await checkGitHubRelease();
+      if (updateInfo.updateAvailable && !currentWin.isDestroyed()) {
+        currentWin.webContents.send('updater:available', updateInfo);
+        // Automatically download update package in background if available
+        if (updateInfo.downloadUrl) {
+          startDownloadUpdate(currentWin).catch(() => {});
         }
-      } catch {
-        // Silently ignore background check errors
       }
+    } catch {
+      // Silently ignore background check errors
     }
-  }, 4500);
+  };
+
+  setTimeout(performBackgroundUpdateCheck, 4500);
+  const updateInterval = setInterval(performBackgroundUpdateCheck, 30 * 60 * 1000);
 
   // Clean up per-window background services when THIS window closes
   currentWin.on('closed', () => {
+    clearInterval(updateInterval);
     stopWatching(currentWin.id);
     stopTerminal(currentWin.id);
     stopBuildProcess(currentWin);
@@ -689,7 +702,7 @@ ipcMain.handle('liveserver:triggerReload', async (event) => {
   return true;
 });
 
-// Update Notification IPC (Check releases and safe browser navigation)
+// Update Notification IPC (Check releases, download packages, and apply seamless reload updates)
 ipcMain.handle('updater:check', async (event) => {
   if (!validateIpcSender(event)) {
     return {
@@ -700,6 +713,22 @@ ipcMain.handle('updater:check', async (event) => {
     };
   }
   return checkGitHubRelease();
+});
+
+ipcMain.handle('updater:download', async (event) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC' };
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return startDownloadUpdate(win);
+});
+
+ipcMain.handle('updater:apply-and-restart', async (event) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC' };
+  return applyUpdateAndRestart();
+});
+
+ipcMain.handle('updater:status', async (event) => {
+  if (!validateIpcSender(event)) return null;
+  return getDownloadedUpdateInfo();
 });
 
 ipcMain.handle('updater:openRelease', async (event, releaseUrl?: string) => {

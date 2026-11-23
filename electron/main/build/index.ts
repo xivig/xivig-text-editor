@@ -91,7 +91,15 @@ export function runBuildProcess(
   const tokens = command.trim().split(/\s+/);
   const mainBinary = tokens[0];
   const initialArgs = tokens.slice(1);
-  const finalArgs = [...initialArgs, ...args];
+  const rawFinalArgs = [...initialArgs, ...args];
+
+  // Defensive sanitization: strip any surrounding quotes from arguments to prevent Node/spawn relative-path concatenation bugs
+  const finalArgs = rawFinalArgs.map((arg) => {
+    if (typeof arg === 'string' && ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'")))) {
+      return arg.slice(1, -1);
+    }
+    return arg;
+  });
 
   try {
     validateCommandTokens([mainBinary, ...finalArgs]);
@@ -106,7 +114,7 @@ export function runBuildProcess(
     if (!win.isDestroyed()) {
       win.webContents.send('build:start', {
         command: command.trim(),
-        args,
+        args: finalArgs,
         cwd: safeCwd,
         timestamp: new Date().toLocaleTimeString(),
       });

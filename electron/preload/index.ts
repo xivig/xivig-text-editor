@@ -107,14 +107,31 @@ const xivigAPI = {
     };
   },
 
-  // Update Notification
+  // Update Notification & Seamless Reload
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  startUpdateDownload: () => ipcRenderer.invoke('updater:download'),
+  applyUpdateAndRestart: () => ipcRenderer.invoke('updater:apply-and-restart'),
+  getDownloadedUpdateInfo: () => ipcRenderer.invoke('updater:status'),
   openReleasePage: (url?: string) => ipcRenderer.invoke('updater:openRelease', url),
   onUpdateAvailable: (callback: (info: any) => void) => {
     const handler = (_: any, data: any) => callback(data);
     ipcRenderer.on('updater:available', handler);
     return () => {
       ipcRenderer.removeListener('updater:available', handler);
+    };
+  },
+  onUpdateDownloadProgress: (callback: (progress: any) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('updater:download-progress', handler);
+    return () => {
+      ipcRenderer.removeListener('updater:download-progress', handler);
+    };
+  },
+  onUpdateDownloaded: (callback: (info: any) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('updater:downloaded', handler);
+    return () => {
+      ipcRenderer.removeListener('updater:downloaded', handler);
     };
   },
 
