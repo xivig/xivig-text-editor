@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-11-24 — *Developer Tooling & Security Architecture Release*
+
+### 🛡️ Core Security Architecture & Isolation (P0)
+* **Per-Window Authorization Isolation**:
+  - Eliminated global process-wide workspace/file authorization sets in `electron/main/security/index.ts`.
+  - Introduced granular per-window permission registries (`permissionsByWindow = Map<number, WindowPermissions>`).
+  - Enforced that filesystem operations strictly validate against permissions bound to the validated IPC sender window ID, preventing cross-window privilege leakage and unapproved access.
+* **Safe Windows Build Process Spawning**:
+  - Replaced whitespace token splitting with structured command/argument configurations.
+  - Added Windows launcher validation and direct executable spawning to prevent command injection via cmd.exe expansion rules (`%`, `^`, `!`, parentheses).
+
+### ⚡ Live Preview & Markdown Engine (P1)
+* **DOMPurify HTML Sanitization**:
+  - Integrated production DOMPurify sanitization in `src/utils/markdownSanitizer.ts`, replacing fragile regular expression replacements.
+  - Allowed safe attributes (`width`, `height`, `style`, `align`) to preserve markdown image dimensions.
+  - Added `resolveMarkdownImagePath()` to automatically resolve local and relative image paths (e.g. `public/logo.png`) to `file:///...` URLs without dev-server warnings or 404s.
+* **Synchronized Scrolling Engine**:
+  - Eliminated inertial feedback deadlocks between editor and markdown preview with an active interaction source lock (`activeScrollSourceRef`).
+  - Replaced virtualized viewport approximations with CodeMirror `targetView.lineBlockAtHeight(editorScroller.scrollTop)` for smooth, continuous 60fps tracking.
+  - Added smooth boundary interpolation for document headers, lists, code fences, and tables.
+* **Embedded Live Server & CSP Framing Fix**:
+  - Added `frame-src` and `img-src` permissions in Electron and HTML CSP for `127.0.0.1:*` and `localhost:*`.
+  - Removed `X-Frame-Options: SAMEORIGIN` from Live Server HTTP responses.
+  - Isolated user project previews from desktop application CSP injection.
+  - Intercepted `window.alert()` in embedded live previews to stream modal dialogs to the Preview Console.
+
+### 🚀 Developer Features & Language Support
+* **Multi-Language Expansion**:
+  - Added full syntax highlighting, file detection, and comment definitions for **Swift**, **Kotlin**, and **Windows Batch / CMD** (`.bat`, `.cmd`).
+  - Added language-specific auto-indent on save according to file extension and active language settings.
+* **Compile-and-Run Pipeline**:
+  - Integrated execution runners for Python, C/C++, Java, and Node.js.
+  - Added a direct "Run File" button beside the preview eye in the tab bar for one-click file execution.
+* **Build System Event Contract**:
+  - Unified build completion event contract (`build:done` with `exitCode` and `durationMs`) across main, preload bridge, and renderer Zustand stores.
+  - Guarded build process cleanup to prevent premature deletion on process replacement races.
+* **UI & Performance Enhancements**:
+  - Refined startup welcome screen, About modal, and update check workflows with dynamic application version metadata.
+
+---
+
 ## [1.1.0] - 2026-11-23 — *Security and Stability Release*
 
 ### 🛡️ Security Hardening (P0 Remediations)

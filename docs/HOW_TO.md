@@ -25,7 +25,7 @@ Welcome to the official user manual and how-to guide for **Xivig Text Editor** (
 ### Launching the Application
 - **Windows**: Run `Xivig Text Editor.exe` or launch from the Start Menu / Desktop shortcut.
 - **Linux**: Execute the `.AppImage` (ensure executable permission: `chmod +x Xivig-Text-Editor-*.AppImage`) or install the `.deb` package (`sudo dpkg -i xivig-text-editor_*.deb`).
-- **macOS**: Extract `Xivig-Text-Editor-1.1.0-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
+- **macOS**: Extract `Xivig-Text-Editor-1.2.0-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
 
 ### First-Run Overview
 When you open Xivig Text Editor for the first time, you will be greeted by the **Welcome** screen.

@@ -4,7 +4,7 @@
 
 ### Application Information
 - **Application Name**: Xivig Text Editor
-- **Release Version**: Release 1.1 (Build 1.1.0)
+- **Release Version**: Release 1.2 (Build 1.2.0)
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 
