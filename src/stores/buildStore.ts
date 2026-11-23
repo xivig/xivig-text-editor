@@ -487,7 +487,15 @@ export const useBuildStore = create<BuildState>((set, get) => {
     },
 
     executeBuild: async (chosenTarget) => {
-      const target = chosenTarget || get().activeTarget || get().detectDefaultTarget();
+      const activeDoc = useEditorStore.getState().getActiveDocument();
+      let target = chosenTarget;
+      if (!target) {
+        if (get().activeTarget && activeDoc && get().activeTarget?.name.includes(activeDoc.name)) {
+          target = get().activeTarget!;
+        } else {
+          target = get().detectDefaultTarget();
+        }
+      }
       set({ activeTarget: target });
 
       // Automatically open the Bottom Panel and activate the Output tab
@@ -498,7 +506,6 @@ export const useBuildStore = create<BuildState>((set, get) => {
         uiStore.setBottomTab('output');
       }
 
-      const activeDoc = useEditorStore.getState().getActiveDocument();
       const workspacePath = useFileStore.getState().currentFolderPath;
       const cwd = workspacePath || (activeDoc?.path ? activeDoc.path.replace(/[/\\][^/\\]+$/, '') : undefined);
 

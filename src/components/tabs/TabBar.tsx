@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen } from 'lucide-react';
+import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen, Play } from 'lucide-react';
 import { useEditorStore, SplitLayout } from '../../stores/editorStore';
+import { useBuildStore } from '../../stores/buildStore';
 import { FileIcon } from '../common/FileIcon';
 import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
 
@@ -29,6 +30,16 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
     state.documents.find((d) => d.id === (pane === 'secondary' ? state.secondaryDocumentId : state.activeDocumentId))
   );
   const isMarkdown = activeDoc?.language === 'markdown' || activeDoc?.name.endsWith('.md');
+
+  const isRunning = useBuildStore((state) => state.isRunning);
+  const executeBuild = useBuildStore((state) => state.executeBuild);
+  const stopBuild = useBuildStore((state) => state.stopBuild);
+  const activeTarget = useBuildStore((state) => state.activeTarget);
+  const detectDefaultTarget = useBuildStore((state) => state.detectDefaultTarget);
+
+  const currentTarget = activeTarget && activeDoc && activeTarget.name.includes(activeDoc.name)
+    ? activeTarget
+    : detectDefaultTarget();
 
   const [contextMenu, setContextMenu] = React.useState<{ x: number; y: number; target: ContextMenuTarget } | null>(null);
 
@@ -123,9 +134,41 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
         </button>
       </div>
 
-      {/* Pane Split & Preview Layout Controls (Rendered on primary tab bar) */}
+      {/* Pane Split, Preview & Run Controls (Rendered on primary tab bar) */}
       {pane === 'primary' && (
         <div style={layoutControlsStyle}>
+          {/* Direct File Runner Button */}
+          {isRunning ? (
+            <button
+              onClick={() => stopBuild()}
+              style={{
+                ...splitBtnStyle,
+                color: '#ef6464',
+                backgroundColor: 'rgba(239, 100, 100, 0.15)',
+              }}
+              title="Stop Running Task"
+            >
+              <Square size={12} fill="#ef6464" />
+            </button>
+          ) : (
+            <button
+              onClick={() => executeBuild()}
+              style={{
+                ...splitBtnStyle,
+                color: '#35b779',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(53, 183, 121, 0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              title={`Run ${activeDoc?.name || 'File'} (${currentTarget.name}) (Ctrl+B)`}
+            >
+              <Play size={13} fill="#35b779" />
+            </button>
+          )}
+
           {isMarkdown ? (
             <button
               onClick={() => togglePreview('markdown')}

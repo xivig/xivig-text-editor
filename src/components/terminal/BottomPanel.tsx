@@ -75,9 +75,13 @@ export const BottomPanel: React.FC = () => {
     }, {});
   }, [filteredDiagnostics]);
 
+  const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const currentBuildTarget = React.useMemo(() => {
-    return activeTarget || detectDefaultTarget();
-  }, [activeTarget, detectDefaultTarget]);
+    if (activeTarget && activeDoc && activeTarget.name.includes(activeDoc.name)) {
+      return activeTarget;
+    }
+    return detectDefaultTarget();
+  }, [activeTarget, activeDoc, detectDefaultTarget]);
 
   // Auto-scroll output to bottom
   useEffect(() => {
