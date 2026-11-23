@@ -33,15 +33,14 @@ Download the official release binaries for your operating system:
 
 | Platform | Format | Direct Download Link | Description |
 |---|---|---|---|
-| **Windows** | `.exe` (Installer) | [**Download Setup (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig.Text.Editor.Setup.1.0.0.exe) | NSIS Installer with desktop and start menu shortcuts |
-| **Windows** | `.exe` (Portable) | [**Download Portable (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig.Text.Editor.1.0.0.exe) | Zero-install standalone executable |
-| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.dmg) | macOS Disk Image (Apple Silicon & Intel) |
-| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
-| **macOS** | `.zip` (x64) | [**Download macOS x64 (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-mac-x64.zip) | Native macOS x64 bundle archive |
-| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0.AppImage) | Standalone Linux x64 AppImage |
-| **Linux** | `.deb` (x64) | [**Download DEB (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/xivig-text-editor_1.0.0_amd64.deb) | Debian / Ubuntu amd64 package |
-| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
-| **Linux** | `.zip` (x64) | [**Download zip (v1.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.0.0/Xivig-Text-Editor-1.0.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
+| **Windows** | `.exe` (Installer) | [**Download Setup (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig.Text.Editor.Setup.1.1.0.exe) | NSIS Installer with desktop and start menu shortcuts |
+| **Windows** | `.exe` (Portable) | [**Download Portable (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig.Text.Editor.1.1.0.exe) | Zero-install standalone executable |
+| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig-Text-Editor-1.1.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
+| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig-Text-Editor-1.1.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
+| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig-Text-Editor-1.1.0.AppImage) | Standalone Linux x64 AppImage |
+| **Linux** | `.deb` (x64) | [**Download DEB (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/xivig-text-editor_1.1.0_amd64.deb) | Debian / Ubuntu amd64 package |
+| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig-Text-Editor-1.1.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
+| **Linux** | `.zip` (x64) | [**Download zip (v1.1.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.1.0/Xivig-Text-Editor-1.1.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
 
 > All releases, release notes, and SHA-256 checksums are hosted on the [GitHub Releases Page](https://github.com/xivig/xivig-text-editor/releases).
 
@@ -227,7 +226,7 @@ Automated cross-platform compilation is powered by GitHub Actions in [`.github/w
 - Builds native Windows `.exe` installers on `windows-latest`.
 - Builds universal Linux `.AppImage` and `.deb` binaries on `ubuntu-latest`.
 - Builds signed macOS `.dmg` and `.zip` binaries on `macos-latest`.
-- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.0.0`).
+- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.1.0`).
 
 ---
 
