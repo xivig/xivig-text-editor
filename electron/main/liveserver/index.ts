@@ -217,10 +217,9 @@ export async function startLiveServer(
 
         const securityHeaders = {
           'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'SAMEORIGIN',
-          'Access-Control-Allow-Origin': `http://127.0.0.1:${portToTry}`,
+          'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Headers': 'Content-Type, Range',
         };
 
         // 2. Reject unsupported HTTP methods (only GET, HEAD, OPTIONS allowed)

@@ -55,16 +55,21 @@ export const LivePreviewPane: React.FC = () => {
   // Compute live server preview URL
   const serverPreviewUrl = React.useMemo(() => {
     if (!isRunning || !url) return '';
-    if (!activeDoc?.path || !currentFolderPath) return url;
+    if (!activeDoc?.path || !currentFolderPath) {
+      return activeDoc?.name ? `${url}/${activeDoc.name}` : url;
+    }
 
-    const normRoot = currentFolderPath.replace(/\\/g, '/');
-    const normPath = activeDoc.path.replace(/\\/g, '/');
+    const normRoot = currentFolderPath.replace(/\\/g, '/').toLowerCase();
+    const normPath = activeDoc.path.replace(/\\/g, '/').toLowerCase();
     if (normPath.startsWith(normRoot)) {
-      const rel = normPath.replace(normRoot, '').replace(/^\//, '');
+      const rel = activeDoc.path.replace(/\\/g, '/').slice(normRoot.length).replace(/^\//, '');
       return `${url}/${rel}`;
     }
+    if (activeDoc?.name) {
+      return `${url}/${activeDoc.name}`;
+    }
     return url;
-  }, [isRunning, url, activeDoc?.path, currentFolderPath]);
+  }, [isRunning, url, activeDoc?.path, activeDoc?.name, currentFolderPath]);
 
   // Capture console messages from iframe
   useEffect(() => {
@@ -111,6 +116,7 @@ export const LivePreviewPane: React.FC = () => {
           console.warn = function() { send('warn', arguments); _warn.apply(console, arguments); };
           console.error = function() { send('error', arguments); _error.apply(console, arguments); };
           console.info = function() { send('info', arguments); _info.apply(console, arguments); };
+          window.alert = function(msg) { send('info', ['[alert] ' + msg]); };
           window.onerror = function(msg, src, line, col) {
             send('error', [msg + ' (' + line + ':' + col + ')']);
           };

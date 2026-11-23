@@ -460,7 +460,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   togglePreview: (mode) => {
     const { isPreviewOpen, previewMode, getActiveDocument } = get();
     const doc = getActiveDocument();
-    const defaultMode: PreviewMode = doc?.language === 'markdown' ? 'markdown' : 'live-web';
+    const isDocMarkdown =
+      doc?.name?.toLowerCase().endsWith('.md') ||
+      doc?.name?.toLowerCase().endsWith('.markdown') ||
+      doc?.language === 'markdown';
+    const defaultMode: PreviewMode = isDocMarkdown ? 'markdown' : 'live-web';
     const targetMode = mode || defaultMode;
 
     if (isPreviewOpen && (!mode || previewMode === mode)) {
@@ -473,7 +477,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   openPreview: (mode) => {
     const { getActiveDocument } = get();
     const doc = getActiveDocument();
-    const defaultMode: PreviewMode = doc?.language === 'markdown' ? 'markdown' : 'live-web';
+    const isDocMarkdown =
+      doc?.name?.toLowerCase().endsWith('.md') ||
+      doc?.name?.toLowerCase().endsWith('.markdown') ||
+      doc?.language === 'markdown';
+    const defaultMode: PreviewMode = isDocMarkdown ? 'markdown' : 'live-web';
     set({ isPreviewOpen: true, previewMode: mode || defaultMode });
   },
 

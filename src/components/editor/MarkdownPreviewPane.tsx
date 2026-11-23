@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { X, Copy, Check, BookOpen, ArrowUpDown } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
+import { useFileStore } from '../../stores/fileStore';
 import { renderAndSanitizeMarkdown } from '../../utils/markdownSanitizer';
 import {
   subscribeActiveEditorView,
@@ -10,9 +11,14 @@ import {
 import { EditorView } from '@codemirror/view';
 
 export const MarkdownPreviewPane: React.FC = () => {
-  const activeDoc = useEditorStore((state) =>
-    state.documents.find((d) => d.id === state.activeDocumentId)
-  );
+  const currentFolderPath = useFileStore((state) => state.currentFolderPath);
+  const activeDoc = useEditorStore((state) => {
+    const currentId =
+      state.activePane === 'secondary'
+        ? state.secondaryDocumentId || state.activeDocumentId
+        : state.activeDocumentId;
+    return state.documents.find((d) => d.id === currentId);
+  });
   const closePreview = useEditorStore((state) => state.closePreview);
   const [copied, setCopied] = useState(false);
   const [syncScroll, setSyncScroll] = useState(true);
@@ -20,11 +26,14 @@ export const MarkdownPreviewPane: React.FC = () => {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewContentRef = useRef<HTMLDivElement>(null);
   const activeViewRef = useRef<EditorView | null>(null);
-  const isSyncingRef = useRef(false);
+  const isProgrammaticScrollRef = useRef<'editor' | 'preview' | null>(null);
+  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const syncScrollRef = useRef(syncScroll);
   syncScrollRef.current = syncScroll;
 
   const markdownContent = activeDoc?.content || '';
+  const basePath = activeDoc?.path ? activeDoc.path.replace(/[/\\][^/\\]+$/, '') : currentFolderPath || undefined;
+  const workspaceRoot = currentFolderPath || undefined;
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -36,10 +45,10 @@ export const MarkdownPreviewPane: React.FC = () => {
     return { words, lines, readTime: `${readTime} min` };
   }, [markdownContent]);
 
-  // Robust Markdown parser with DOMPurify sanitization & data-line tagging
+  // Robust Markdown parser with DOMPurify sanitization & exact data-line tagging
   const htmlContent = useMemo(() => {
-    return renderAndSanitizeMarkdown(markdownContent);
-  }, [markdownContent]);
+    return renderAndSanitizeMarkdown(markdownContent, basePath, workspaceRoot);
+  }, [markdownContent, basePath, workspaceRoot]);
 
   const handleCopyHtml = () => {
     navigator.clipboard.writeText(htmlContent);
@@ -52,9 +61,16 @@ export const MarkdownPreviewPane: React.FC = () => {
     return activeViewRef.current || getActiveEditorView() || getEditorViewByPane('primary');
   }, []);
 
+  // Helper to get element's top position relative to preview scroll container
+  const getElementScrollTop = (el: HTMLElement, container: HTMLElement): number => {
+    const elRect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    return elRect.top - containerRect.top + container.scrollTop;
+  };
+
   // Synchronize Preview scroll from Editor position
   const syncPreviewFromEditor = useCallback(() => {
-    if (!syncScrollRef.current || isSyncingRef.current) return;
+    if (!syncScrollRef.current || isProgrammaticScrollRef.current === 'preview') return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -67,67 +83,85 @@ export const MarkdownPreviewPane: React.FC = () => {
 
     let targetScrollTop = 0;
 
-    try {
-      // Determine the line currently at top of CodeMirror viewport
-      const topBlock = targetView.lineBlockAtHeight(editorScroller.scrollTop);
-      const currentLine = targetView.state.doc.lineAt(topBlock.from).number;
-
-      if (currentLine <= 1 || editorScroller.scrollTop <= 2) {
-        targetScrollTop = 0;
-      } else if (editorScroller.scrollTop >= editorMax - 4) {
-        targetScrollTop = previewMax;
-      } else {
-        // Query elements tagged with data-line in the preview DOM
-        const lineElements = Array.from(previewEl.querySelectorAll<HTMLElement>('[data-line]'));
-
-        if (lineElements.length > 0) {
-          let prevEl: HTMLElement | null = null;
-          let nextEl: HTMLElement | null = null;
-
-          for (const el of lineElements) {
-            const line = parseInt(el.getAttribute('data-line') || '0', 10);
-            if (line <= currentLine) {
-              prevEl = el;
-            } else if (!nextEl) {
-              nextEl = el;
-              break;
-            }
-          }
-
-          if (prevEl && nextEl) {
-            const prevLine = parseInt(prevEl.getAttribute('data-line') || '0', 10);
-            const nextLine = parseInt(nextEl.getAttribute('data-line') || '0', 10);
-            const progress = (currentLine - prevLine) / Math.max(1, nextLine - prevLine);
-            const prevTop = prevEl.offsetTop - previewEl.offsetTop;
-            const nextTop = nextEl.offsetTop - previewEl.offsetTop;
-            targetScrollTop = prevTop + progress * (nextTop - prevTop);
-          } else if (prevEl) {
-            targetScrollTop = prevEl.offsetTop - previewEl.offsetTop;
+    // Boundary checks: very top or very bottom
+    if (editorScroller.scrollTop <= 2) {
+      targetScrollTop = 0;
+    } else if (editorScroller.scrollTop >= editorMax - 4) {
+      targetScrollTop = previewMax;
+    } else {
+      // Determine the line number currently at the top of CodeMirror's viewport
+      let currentLine = 1;
+      const ratio = editorMax > 0 ? editorScroller.scrollTop / editorMax : 0;
+      try {
+        const topBlock = targetView.lineBlockAtHeight(editorScroller.scrollTop);
+        if (topBlock && typeof topBlock.from === 'number') {
+          currentLine = targetView.state.doc.lineAt(topBlock.from).number;
+        } else {
+          currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
+        }
+      } catch {
+        try {
+          const rect = editorScroller.getBoundingClientRect();
+          const pos = targetView.posAtCoords({ x: rect.left + 50, y: rect.top + 10 });
+          if (pos !== null) {
+            currentLine = targetView.state.doc.lineAt(pos).number;
           } else {
-            targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
+            currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
           }
+        } catch {
+          currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
+        }
+      }
+
+      // Query elements tagged with data-line in the preview DOM
+      const lineElements = Array.from(previewEl.querySelectorAll<HTMLElement>('[data-line]'));
+
+      if (lineElements.length > 0) {
+        let prevEl: HTMLElement | null = null;
+        let nextEl: HTMLElement | null = null;
+
+        for (const el of lineElements) {
+          const line = parseInt(el.getAttribute('data-line') || '0', 10);
+          if (line <= currentLine) {
+            prevEl = el;
+          } else if (!nextEl) {
+            nextEl = el;
+            break;
+          }
+        }
+
+        if (prevEl && nextEl) {
+          const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
+          const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
+          const prevTop = getElementScrollTop(prevEl, previewEl);
+          const nextTop = getElementScrollTop(nextEl, previewEl);
+          const progress = Math.max(0, Math.min(1, (currentLine - prevLine) / Math.max(1, nextLine - prevLine)));
+          targetScrollTop = prevTop + progress * (nextTop - prevTop);
+        } else if (prevEl) {
+          targetScrollTop = getElementScrollTop(prevEl, previewEl);
         } else {
           targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
         }
+      } else {
+        targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
       }
-    } catch {
-      targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
     }
 
     targetScrollTop = Math.max(0, Math.min(previewMax, Math.round(targetScrollTop)));
 
-    if (Math.abs(previewEl.scrollTop - targetScrollTop) > 1) {
-      isSyncingRef.current = true;
+    if (Math.abs(previewEl.scrollTop - targetScrollTop) > 2) {
+      isProgrammaticScrollRef.current = 'editor';
       previewEl.scrollTop = targetScrollTop;
-      requestAnimationFrame(() => {
-        isSyncingRef.current = false;
-      });
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        isProgrammaticScrollRef.current = null;
+      }, 50);
     }
   }, [getTargetView]);
 
   // Synchronize Editor scroll from Preview position
   const syncEditorFromPreview = useCallback(() => {
-    if (!syncScrollRef.current || isSyncingRef.current) return;
+    if (!syncScrollRef.current || isProgrammaticScrollRef.current === 'editor') return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -140,64 +174,67 @@ export const MarkdownPreviewPane: React.FC = () => {
 
     let targetScrollTop = 0;
 
-    try {
-      if (previewEl.scrollTop <= 2) {
-        targetScrollTop = 0;
-      } else if (previewEl.scrollTop >= previewMax - 4) {
-        targetScrollTop = editorMax;
-      } else {
-        const lineElements = Array.from(previewEl.querySelectorAll<HTMLElement>('[data-line]'));
-        if (lineElements.length > 0) {
-          const containerOffset = previewEl.offsetTop;
-          const currentPreviewTop = previewEl.scrollTop;
-          let prevEl: HTMLElement | null = null;
-          let nextEl: HTMLElement | null = null;
+    if (previewEl.scrollTop <= 2) {
+      targetScrollTop = 0;
+    } else if (previewEl.scrollTop >= previewMax - 4) {
+      targetScrollTop = editorMax;
+    } else {
+      const lineElements = Array.from(previewEl.querySelectorAll<HTMLElement>('[data-line]'));
+      if (lineElements.length > 0) {
+        const currentPreviewScroll = previewEl.scrollTop;
+        let prevEl: HTMLElement | null = null;
+        let nextEl: HTMLElement | null = null;
 
-          for (const el of lineElements) {
-            const elTop = el.offsetTop - containerOffset;
-            if (elTop <= currentPreviewTop) {
-              prevEl = el;
-            } else if (!nextEl) {
-              nextEl = el;
-              break;
-            }
+        for (const el of lineElements) {
+          const elTop = getElementScrollTop(el, previewEl);
+          if (elTop <= currentPreviewScroll + 5) {
+            prevEl = el;
+          } else if (!nextEl) {
+            nextEl = el;
+            break;
           }
+        }
 
-          if (prevEl && nextEl) {
-            const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
-            const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
-            const prevTop = prevEl.offsetTop - containerOffset;
-            const nextTop = nextEl.offsetTop - containerOffset;
-            const progress = (currentPreviewTop - prevTop) / Math.max(1, nextTop - prevTop);
-            const targetLine = prevLine + progress * (nextLine - prevLine);
-
-            const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, Math.round(targetLine)));
+        if (prevEl && nextEl) {
+          const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
+          const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
+          const prevTop = getElementScrollTop(prevEl, previewEl);
+          const nextTop = getElementScrollTop(nextEl, previewEl);
+          const progress = Math.max(0, Math.min(1, (currentPreviewScroll - prevTop) / Math.max(1, nextTop - prevTop)));
+          const targetLine = Math.round(prevLine + progress * (nextLine - prevLine));
+          const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, targetLine));
+          try {
             const lineBlock = targetView.lineBlockAt(targetView.state.doc.line(safeLine).from);
             targetScrollTop = lineBlock.top;
-          } else if (prevEl) {
-            const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
-            const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, prevLine));
+          } catch {
+            targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
+          }
+        } else if (prevEl) {
+          const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
+          const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, prevLine));
+          try {
             const lineBlock = targetView.lineBlockAt(targetView.state.doc.line(safeLine).from);
             targetScrollTop = lineBlock.top;
-          } else {
-            targetScrollTop = (previewEl.scrollTop / previewMax) * editorMax;
+          } catch {
+            targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
           }
         } else {
           targetScrollTop = (previewEl.scrollTop / previewMax) * editorMax;
         }
+      } else {
+        targetScrollTop = (previewEl.scrollTop / previewMax) * editorMax;
       }
-    } catch {
-      targetScrollTop = (previewEl.scrollTop / previewMax) * editorMax;
     }
 
     targetScrollTop = Math.max(0, Math.min(editorMax, Math.round(targetScrollTop)));
 
-    if (Math.abs(editorScroller.scrollTop - targetScrollTop) > 1) {
-      isSyncingRef.current = true;
+    if (Math.abs(editorScroller.scrollTop - targetScrollTop) > 2) {
+      isProgrammaticScrollRef.current = 'preview';
       editorScroller.scrollTop = targetScrollTop;
-      requestAnimationFrame(() => {
-        isSyncingRef.current = false;
-      });
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        isProgrammaticScrollRef.current = null;
+      }, 50);
     }
   }, [getTargetView]);
 
@@ -223,7 +260,7 @@ export const MarkdownPreviewPane: React.FC = () => {
           scroller.removeEventListener('scroll', onEditorScroll);
         };
 
-        // Perform initial synchronization immediately
+        // Initial sync
         requestAnimationFrame(() => {
           syncPreviewFromEditor();
         });
@@ -234,7 +271,6 @@ export const MarkdownPreviewPane: React.FC = () => {
       attachToView(view);
     });
 
-    // Check if view is already available directly
     const directView = getTargetView();
     if (directView && directView !== activeViewRef.current) {
       attachToView(directView);
@@ -256,7 +292,7 @@ export const MarkdownPreviewPane: React.FC = () => {
         previewEl.removeEventListener('scroll', onPreviewScroll);
       }
     };
-  }, [getTargetView, syncPreviewFromEditor, syncEditorFromPreview]);
+  }, [getTargetView, syncPreviewFromEditor, syncEditorFromPreview, activeDoc?.id]);
 
   // Re-sync when html content changes (e.g. typing or initial load)
   useEffect(() => {
@@ -270,7 +306,7 @@ export const MarkdownPreviewPane: React.FC = () => {
   useEffect(() => {
     if (!previewContentRef.current) return;
     const ro = new ResizeObserver(() => {
-      if (!isSyncingRef.current) {
+      if (!isProgrammaticScrollRef.current) {
         syncPreviewFromEditor();
       }
     });
@@ -334,11 +370,19 @@ export const MarkdownPreviewPane: React.FC = () => {
         </div>
       </div>
 
-      {/* Rendered Markdown Body (Instant programmatic scroll with no CSS transition lag) */}
+      {/* Rendered Markdown Body with exact positioning and constrained image sizing */}
       <div
         ref={previewContainerRef}
+        style={{ position: 'relative' }}
         className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
       >
+        <style>{`
+          .markdown-preview img {
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+          }
+        `}</style>
         <div
           ref={previewContentRef}
           className="max-w-3xl mx-auto"

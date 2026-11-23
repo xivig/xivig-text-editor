@@ -45,160 +45,265 @@ export function sanitizeMarkdownHtml(rawHtml: string): string {
     ALLOWED_ATTR: [
       'href', 'src', 'alt', 'title', 'class',
       'type', 'checked', 'disabled', 'target', 'rel', 'id', 'data-line',
+      'width', 'height', 'style', 'align',
     ],
-    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'style', 'base', 'link', 'meta', 'applet'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
-    // Disallow javascript:, vbscript:, and data: schemes for links
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|#):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'base', 'link', 'meta', 'applet'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
+    // Allow http, https, mailto, file (for local workspace assets), and in-page # anchors
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|file|#):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
     ALLOW_DATA_ATTR: true,
     ADD_ATTR: ['target', 'rel'],
   });
 }
 
-function getLineNumber(text: string, index: number): number {
-  return text.slice(0, index).split('\n').length;
+/**
+ * Resolves relative image paths against the Markdown file directory or workspace root.
+ * Converts local relative paths (e.g. public/logo.png, ./images/banner.png) to file:// URLs
+ * so Electron renders them cleanly without hitting Vite's dev server or 404ing.
+ */
+export function resolveMarkdownImagePath(src: string, basePath?: string, workspaceRoot?: string): string {
+  if (!src) return src;
+  const trimmed = src.trim();
+
+  // Keep external URLs, data URIs, or anchor hashes intact
+  if (/^(?:https?:|data:|file:|blob:|#)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const effectiveDir = basePath || workspaceRoot;
+  if (!effectiveDir) return trimmed;
+
+  try {
+    let targetOnDisk: string;
+    if (trimmed.startsWith('/') || trimmed.startsWith('\\')) {
+      const rootDir = workspaceRoot || basePath || '';
+      const cleanRel = trimmed.replace(/^[/\\]+/, '');
+      targetOnDisk = `${rootDir.replace(/\\/g, '/').replace(/\/+$/, '')}/${cleanRel}`;
+    } else {
+      const cleanBase = effectiveDir.replace(/\\/g, '/').replace(/\/+$/, '');
+      const cleanRel = trimmed.replace(/^\.\//, '');
+      targetOnDisk = `${cleanBase}/${cleanRel}`;
+    }
+
+    let fileUrl = targetOnDisk.replace(/\\/g, '/');
+    if (!fileUrl.startsWith('/')) {
+      fileUrl = '/' + fileUrl;
+    }
+    return `file://${encodeURI(fileUrl)}`;
+  } catch {
+    return trimmed;
+  }
 }
 
 /**
- * Parses raw Markdown text into structured HTML and applies DOMPurify sanitization.
- * Flow:
- * Markdown source -> Markdown parser -> HTML output -> DOMPurify sanitization -> Preview HTML
+ * Rewrites <img src="..."> in raw HTML blocks to use resolved local file paths.
  */
-export function renderAndSanitizeMarkdown(markdownContent: string): string {
+function resolveHtmlImages(html: string, basePath?: string, workspaceRoot?: string): string {
+  return html.replace(/<img\b([^>]*\bsrc=["'])([^"']+)(["'][^>]*)>/gi, (match, prefix, src, suffix) => {
+    const resolved = resolveMarkdownImagePath(src, basePath, workspaceRoot);
+    return `<img ${prefix.replace(/^<img\b\s*/, '')}${resolved}${suffix}>`;
+  });
+}
+
+function formatInlineMarkdown(text: string, basePath?: string, workspaceRoot?: string): string {
+  let res = text;
+  // Inline code: `...`
+  res = res.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#2d2d2d] text-[#ce9178] font-mono text-xs border border-[#3c3c3c]">$1</code>');
+  // Bold & italic
+  res = res.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-bold text-white"><em>$1</em></strong>');
+  res = res.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+  res = res.replace(/\*([^*]+)\*/g, '<em class="italic text-gray-300">$1</em>');
+  res = res.replace(/~~([^~]+)~~/g, '<del class="line-through text-gray-500">$1</del>');
+  // Images: ![alt](url)
+  res = res.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+    const resolvedSrc = resolveMarkdownImagePath(src, basePath, workspaceRoot);
+    return `<img src="${resolvedSrc}" alt="${alt}" class="max-w-full rounded border border-[#3e3e42] my-3 inline-block" />`;
+  });
+  // Links: [text](url)
+  res = res.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#3794ff] hover:underline cursor-pointer">$1</a>');
+  // Raw HTML <img src="..."> tags inside inline text
+  res = resolveHtmlImages(res, basePath, workspaceRoot);
+  return res;
+}
+
+/**
+ * Parses raw Markdown text into structured HTML with 100% exact line number tags on every block element.
+ * Follows:
+ * Markdown source -> Precise Line Parser -> DOMPurify Sanitization -> Rendered HTML
+ */
+export function renderAndSanitizeMarkdown(markdownContent: string, basePath?: string, workspaceRoot?: string): string {
   if (!markdownContent || !markdownContent.trim()) {
     return '<p class="text-gray-500 italic">No content to preview.</p>';
   }
 
-  // Normalize line endings
-  const normalizedSource = markdownContent.replace(/\r\n/g, '\n');
-  let md = normalizedSource;
+  const lines = markdownContent.replace(/\r\n/g, '\n').split('\n');
+  const blocks: string[] = [];
+  let i = 0;
 
-  // 2. Code blocks with syntax container and data-line tracking
-  md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    const escapedCode = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    return `<div data-line="${line}" class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
-      <div class="px-3 py-1 bg-[#252526] text-gray-400 text-xs font-mono border-b border-[#3e3e42] flex justify-between select-none">
-        <span>${lang || 'text'}</span>
-        <span>code</span>
-      </div>
-      <pre class="p-3 text-xs font-mono text-[#d4d4d4] overflow-x-auto whitespace-pre leading-relaxed"><code>${escapedCode}</code></pre>
-    </div>`;
-  });
+  while (i < lines.length) {
+    const lineNum = i + 1;
+    const line = lines[i];
+    const trimmed = line.trim();
 
-  // 3. Inline code
-  md = md.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#2d2d2d] text-[#ce9178] font-mono text-xs border border-[#3c3c3c]">$1</code>');
+    if (!trimmed) {
+      i++;
+      continue;
+    }
 
-  // 4. Tables with data-line tracking
-  const tableRegex = /((?:\|[^\n]+\|\r?\n)+)/g;
-  md = md.replace(tableRegex, (tableBlock, _, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    const rows = tableBlock.trim().split('\n').map((row) => row.trim());
-    if (rows.length < 2) return tableBlock;
-
-    let html = `<div data-line="${line}" class="overflow-x-auto my-4"><table class="w-full text-xs text-left border-collapse border border-[#3e3e42]">`;
-    rows.forEach((row, idx) => {
-      if (idx === 1 && /^[|\s-:]+$/.test(row)) return;
-
-      const cells = row
-        .split('|')
-        .slice(1, -1)
-        .map((c) => c.trim());
-
-      if (idx === 0) {
-        html += '<thead class="bg-[#252526] text-gray-200"><tr>';
-        cells.forEach((c) => {
-          html += `<th class="px-3 py-2 border border-[#3e3e42] font-semibold">${c}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-      } else {
-        html += `<tr class="${idx % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#181818]'} hover:bg-[#282828]">`;
-        cells.forEach((c) => {
-          html += `<td class="px-3 py-2 border border-[#3e3e42] text-gray-300">${c}</td>`;
-        });
-        html += '</tr>';
+    // 1. Fenced Code Block
+    const codeFenceMatch = line.match(/^```([a-zA-Z0-9_-]*)/);
+    if (codeFenceMatch) {
+      const lang = codeFenceMatch[1] || 'text';
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
       }
-    });
-    html += '</tbody></table></div>';
-    return html;
-  });
-
-  // 5. Blockquotes with data-line tracking
-  md = md.replace(/^>\s?(.*)$/gm, (match, content, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<blockquote data-line="${line}" class="border-l-4 border-[#007acc] pl-3 py-1 my-2 text-gray-400 bg-[#20252b] rounded-r italic">${content}</blockquote>`;
-  });
-
-  // 6. Headers with data-line tracking
-  md = md.replace(/^######\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h6 data-line="${line}" class="text-xs font-bold text-gray-400 mt-4 mb-2 uppercase tracking-wider">${title}</h6>`;
-  });
-  md = md.replace(/^#####\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h5 data-line="${line}" class="text-sm font-bold text-gray-300 mt-4 mb-2">${title}</h5>`;
-  });
-  md = md.replace(/^####\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h4 data-line="${line}" class="text-base font-semibold text-gray-200 mt-5 mb-2">${title}</h4>`;
-  });
-  md = md.replace(/^###\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h3 data-line="${line}" class="text-lg font-semibold text-[#569cd6] mt-6 mb-2 border-b border-[#2e2e2e] pb-1">${title}</h3>`;
-  });
-  md = md.replace(/^##\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h2 data-line="${line}" class="text-xl font-bold text-[#4ec9b0] mt-7 mb-3 border-b border-[#333] pb-1.5">${title}</h2>`;
-  });
-  md = md.replace(/^#\s+(.*)$/gm, (match, title, offset) => {
-    const line = getLineNumber(normalizedSource, offset);
-    return `<h1 data-line="${line}" class="text-2xl font-bold text-white mt-8 mb-4 border-b border-[#444] pb-2">${title}</h1>`;
-  });
-
-  // 7. Horizontal rule
-  md = md.replace(/^(?:---|\*\*\*|___)$/gm, '<hr class="my-6 border-t border-[#3e3e42]" />');
-
-  // 8. Task lists
-  md = md.replace(/^[-*]\s+\[ \]\s+(.*)$/gm, '<li class="flex items-center space-x-2 my-1 list-none"><input type="checkbox" disabled class="rounded bg-[#2a2a2a] border-[#444]" /> <span>$1</span></li>');
-  md = md.replace(/^[-*]\s+\[x\]\s+(.*)$/gm, '<li class="flex items-center space-x-2 my-1 list-none"><input type="checkbox" checked disabled class="rounded text-[#007acc]" /> <span class="line-through text-gray-500">$1</span></li>');
-
-  // 9. Unordered & Ordered lists
-  md = md.replace(/^[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc text-gray-300 my-0.5">$1</li>');
-  md = md.replace(/^(\d+)\.\s+(.*)$/gm, '<li class="ml-4 list-decimal text-gray-300 my-0.5">$2</li>');
-
-  // 10. Bold & Italics
-  md = md.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-bold text-white"><em>$1</em></strong>');
-  md = md.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-  md = md.replace(/\*([^*]+)\*/g, '<em class="italic text-gray-300">$1</em>');
-  md = md.replace(/~~([^~]+)~~/g, '<del class="line-through text-gray-500">$1</del>');
-
-  // 11. Links & Images
-  md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded border border-[#3e3e42] my-3 inline-block" />');
-  md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#3794ff] hover:underline cursor-pointer">$1</a>');
-
-  // 12. Paragraph line breaks
-  const paragraphs = md.split(/\n\n+/);
-  const rawHtml = paragraphs
-    .map((p) => {
-      p = p.trim();
-      if (
-        p.startsWith('<h') ||
-        p.startsWith('<div') ||
-        p.startsWith('<pre') ||
-        p.startsWith('<blockquote') ||
-        p.startsWith('<hr') ||
-        p.startsWith('<table') ||
-        p.startsWith('<li')
-      ) {
-        return p;
+      if (i < lines.length && lines[i].startsWith('```')) {
+        i++;
       }
-      return `<p class="my-2 leading-relaxed text-gray-300 text-sm">${p.replace(/\n/g, '<br />')}</p>`;
-    })
-    .join('\n');
+      const rawCode = codeLines.join('\n');
+      const escapedCode = rawCode
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      blocks.push(`
+        <div data-line="${lineNum}" class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
+          <div class="px-3 py-1 bg-[#252526] text-gray-400 text-xs font-mono border-b border-[#3e3e42] flex justify-between select-none">
+            <span>${lang}</span>
+            <span>code</span>
+          </div>
+          <pre class="p-3 text-xs font-mono text-[#d4d4d4] overflow-x-auto whitespace-pre leading-relaxed"><code>${escapedCode}</code></pre>
+        </div>
+      `);
+      continue;
+    }
 
-  // 13. DOMPurify Sanitization Stage
+    // 2. Headers (# through ######)
+    const headerMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (headerMatch) {
+      const level = headerMatch[1].length;
+      const title = formatInlineMarkdown(headerMatch[2], basePath, workspaceRoot);
+      const classes: Record<number, string> = {
+        1: 'text-2xl font-bold text-white mt-8 mb-4 border-b border-[#444] pb-2',
+        2: 'text-xl font-bold text-[#4ec9b0] mt-7 mb-3 border-b border-[#333] pb-1.5',
+        3: 'text-lg font-semibold text-[#569cd6] mt-6 mb-2 border-b border-[#2e2e2e] pb-1',
+        4: 'text-base font-semibold text-gray-200 mt-5 mb-2',
+        5: 'text-sm font-bold text-gray-300 mt-4 mb-2',
+        6: 'text-xs font-bold text-gray-400 mt-4 mb-2 uppercase tracking-wider',
+      };
+      blocks.push(`<h${level} data-line="${lineNum}" class="${classes[level] || ''}">${title}</h${level}>`);
+      i++;
+      continue;
+    }
+
+    // 3. Horizontal Rule (---, ***, ___)
+    if (/^(?:---|\*\*\*|___)$/.test(trimmed)) {
+      blocks.push(`<hr data-line="${lineNum}" class="my-6 border-t border-[#3e3e42]" />`);
+      i++;
+      continue;
+    }
+
+    // 4. Blockquotes
+    if (line.startsWith('>')) {
+      const quoteLines: string[] = [];
+      const quoteStartLine = lineNum;
+      while (i < lines.length && (lines[i].startsWith('>') || (lines[i].trim() && quoteLines.length > 0 && !lines[i].startsWith('#')))) {
+        quoteLines.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      const quoteContent = formatInlineMarkdown(quoteLines.join(' '), basePath, workspaceRoot);
+      blocks.push(`<blockquote data-line="${quoteStartLine}" class="border-l-4 border-[#007acc] pl-3 py-1 my-2 text-gray-400 bg-[#20252b] rounded-r italic">${quoteContent}</blockquote>`);
+      continue;
+    }
+
+    // 5. Tables
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const tableLines: string[] = [];
+      const tableStartLine = lineNum;
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      if (tableLines.length >= 2) {
+        let html = `<div data-line="${tableStartLine}" class="overflow-x-auto my-4"><table class="w-full text-xs text-left border-collapse border border-[#3e3e42]">`;
+        tableLines.forEach((row, idx) => {
+          if (idx === 1 && /^[|\s-:]+$/.test(row)) return;
+          const cells = row.split('|').slice(1, -1).map((c) => formatInlineMarkdown(c.trim(), basePath, workspaceRoot));
+          if (idx === 0) {
+            html += '<thead class="bg-[#252526] text-gray-200"><tr>';
+            cells.forEach((c) => { html += `<th class="px-3 py-2 border border-[#3e3e42] font-semibold">${c}</th>`; });
+            html += '</tr></thead><tbody>';
+          } else {
+            html += `<tr class="${idx % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#181818]'} hover:bg-[#282828]">`;
+            cells.forEach((c) => { html += `<td class="px-3 py-2 border border-[#3e3e42] text-gray-300">${c}</td>`; });
+            html += '</tr>';
+          }
+        });
+        html += '</tbody></table></div>';
+        blocks.push(html);
+        continue;
+      }
+    }
+
+    // 6. Lists (Unordered, Ordered, Task Lists)
+    const listMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+    if (listMatch) {
+      const listItems: string[] = [];
+      const listStartLine = lineNum;
+      while (i < lines.length) {
+        const itemMatch = lines[i].match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+        if (!itemMatch) break;
+        const itemLine = i + 1;
+        const rawItemText = itemMatch[3];
+        const taskMatch = rawItemText.match(/^\[([ xX])\]\s+(.*)$/);
+        if (taskMatch) {
+          const checked = taskMatch[1].toLowerCase() === 'x';
+          const itemText = formatInlineMarkdown(taskMatch[2], basePath, workspaceRoot);
+          listItems.push(`<li data-line="${itemLine}" class="flex items-center space-x-2 my-1 list-none"><input type="checkbox" ${checked ? 'checked' : ''} disabled class="rounded ${checked ? 'text-[#007acc]' : 'bg-[#2a2a2a] border-[#444]'}" /> <span class="${checked ? 'line-through text-gray-500' : ''}">${itemText}</span></li>`);
+        } else {
+          const isNum = /\d+\./.test(itemMatch[2]);
+          const itemText = formatInlineMarkdown(rawItemText, basePath, workspaceRoot);
+          listItems.push(`<li data-line="${itemLine}" class="ml-4 ${isNum ? 'list-decimal' : 'list-disc'} text-gray-300 my-0.5">${itemText}</li>`);
+        }
+        i++;
+      }
+      blocks.push(`<ul data-line="${listStartLine}" class="my-2 space-y-0.5">${listItems.join('\n')}</ul>`);
+      continue;
+    }
+
+    // 7. Raw HTML block (e.g. <p align="center">, <img ...>, <div>)
+    if (line.trim().startsWith('<')) {
+      const htmlStartLine = lineNum;
+      const htmlLines: string[] = [];
+      while (i < lines.length && lines[i].trim()) {
+        htmlLines.push(lines[i]);
+        i++;
+      }
+      let htmlBlock = htmlLines.join('\n');
+      htmlBlock = resolveHtmlImages(htmlBlock, basePath, workspaceRoot);
+      blocks.push(`<div data-line="${htmlStartLine}">${htmlBlock}</div>`);
+      continue;
+    }
+
+    // 8. Regular Paragraph with data-line
+    const paraLines: string[] = [];
+    const paraStartLine = lineNum;
+    paraLines.push(lines[i]);
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].match(/^(?:#{1,6}\s|```|---|\*\*\*|___|>|[-*]\s|\d+\.\s|\||<)/)
+    ) {
+      paraLines.push(lines[i]);
+      i++;
+    }
+    const paraText = formatInlineMarkdown(paraLines.join('\n'), basePath, workspaceRoot);
+    blocks.push(`<p data-line="${paraStartLine}" class="my-2 leading-relaxed text-gray-300 text-sm">${paraText.replace(/\n/g, '<br />')}</p>`);
+  }
+
+  const rawHtml = blocks.join('\n');
   return sanitizeMarkdownHtml(rawHtml);
 }

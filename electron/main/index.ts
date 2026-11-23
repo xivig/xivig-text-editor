@@ -231,10 +231,17 @@ app.whenReady().then(() => {
   // Content-Security-Policy enforcement
   // Production policy eliminates 'unsafe-inline' from script-src to prevent script injection.
   const cspHeader = isDev
-    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* ws://localhost:*;"
-    : "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;";
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: file: http://127.0.0.1:* http://localhost:* blob:; frame-src 'self' http://127.0.0.1:* http://localhost:* data:; media-src 'self' http://127.0.0.1:* http://localhost:* data: file:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* ws://localhost:* http://localhost:*;"
+    : "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: file: http://127.0.0.1:* http://localhost:* blob:; frame-src 'self' http://127.0.0.1:* http://localhost:* data:; media-src 'self' http://127.0.0.1:* http://localhost:* data: file:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    // Do not inject the editor desktop application's CSP into the user's embedded Live Server preview
+    const isLiveServer = details.url.startsWith('http://127.0.0.1:') || details.url.startsWith('http://localhost:');
+    if (isLiveServer) {
+      callback({ responseHeaders: details.responseHeaders });
+      return;
+    }
+
     callback({
       responseHeaders: {
         ...details.responseHeaders,

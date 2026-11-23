@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderAndSanitizeMarkdown, sanitizeMarkdownHtml } from '../utils/markdownSanitizer';
+import { renderAndSanitizeMarkdown, sanitizeMarkdownHtml, resolveMarkdownImagePath } from '../utils/markdownSanitizer';
 
 describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
   it('neutralizes malicious script tags', () => {
@@ -53,12 +53,33 @@ describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
     expect(output).toContain('<li');
   });
 
-  it('tags headings and sections with data-line for live scroll synchronization', () => {
+  it('tags headings, paragraphs, and sections with data-line for live scroll synchronization', () => {
     const markdown = '# Main Title\n\nIntro paragraph\n\n## Section Two\n\n```js\nconsole.log(1);\n```';
     const output = renderAndSanitizeMarkdown(markdown);
 
     expect(output).toContain('<h1 data-line="1"');
-    expect(output).toContain('data-line=');
+    expect(output).toContain('<p data-line="3"');
     expect(output).toContain('<h2 data-line="5"');
+    expect(output).toContain('<div data-line="7"');
+  });
+
+  it('preserves image dimensions width and height attributes in DOMPurify', () => {
+    const htmlWithImg = '<p align="center"><img src="public/logo.png" width="96" height="96" alt="Logo" /></p>';
+    const sanitized = sanitizeMarkdownHtml(htmlWithImg);
+
+    expect(sanitized).toContain('width="96"');
+    expect(sanitized).toContain('height="96"');
+    expect(sanitized).toContain('alt="Logo"');
+  });
+
+  it('resolves local relative image paths to file:/// URLs using basePath and workspaceRoot', () => {
+    const resolved = resolveMarkdownImagePath('public/logo.png', 'E:/my-project', 'E:/my-project');
+    expect(resolved).toMatch(/^file:\/\/\/E:\/my-project\/public\/logo\.png$/i);
+
+    const external = resolveMarkdownImagePath('https://example.com/image.png');
+    expect(external).toBe('https://example.com/image.png');
+
+    const dataUri = resolveMarkdownImagePath('data:image/png;base64,abc');
+    expect(dataUri).toBe('data:image/png;base64,abc');
   });
 });
