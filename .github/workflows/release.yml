@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js (Node 24 LTS baseline)
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+      - name: Setup Node.js (Node 22 LTS)
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'npm'
 
       - name: Install Linux Build Dependencies
@@ -54,16 +54,17 @@ jobs:
 
       - name: Package Windows Binaries (NSIS & Portable)
         if: runner.os == 'Windows'
-        run: npx electron-builder --win --x64
+        run: npx electron-builder --win
 
       - name: Package Linux Binaries (AppImage, DEB, tar.gz, zip)
         if: runner.os == 'Linux'
-        run: npx electron-builder --linux --x64
+        run: npx electron-builder --linux
 
-      - name: Package macOS Binaries (DMG, ZIP, Universal)
+      - name: Package macOS Binaries (DMG & ZIP)
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac --x64 --arm64 --universal
+        run: npx electron-builder --mac
         env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -71,7 +72,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload Release Binaries
-        uses: softprops/action-gh-release@c062e496a77d5494191c9489fef39ff4e2b0270a # v2.2.1
+        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
