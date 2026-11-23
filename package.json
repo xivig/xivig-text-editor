@@ -4,7 +4,10 @@
   "productName": "Xivig Text Editor",
   "private": true,
   "description": "⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect design tooling.",
-  "author": "Bandhu",
+  "author": {
+    "name": "Bandhu",
+    "email": "dev@xivig.com"
+  },
   "license": "MIT",
   "homepage": "https://github.com/xivig/xivig-text-editor",
   "repository": {
@@ -62,6 +65,11 @@
       "shortcutName": "Xivig Text Editor"
     },
     "linux": {
+      "maintainer": "Bandhu <dev@xivig.com>",
+      "desktopName": "xivig-text-editor",
+      "category": "Development",
+      "icon": "public/logo.png",
+      "artifactName": "Xivig-Text-Editor-${version}-linux-${arch}.${ext}",
       "target": [
         {
           "target": "AppImage",
@@ -87,29 +95,35 @@
             "x64"
           ]
         }
-      ],
-      "category": "Development",
-      "icon": "public/logo.png"
+      ]
+    },
+    "appImage": {
+      "artifactName": "Xivig-Text-Editor-${version}.${ext}"
+    },
+    "deb": {
+      "artifactName": "${name}_${version}_${arch}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "Xivig-Text-Editor-${version}.${ext}"
     },
     "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "public/logo.png",
+      "artifactName": "Xivig-Text-Editor-${version}-mac.${ext}",
       "target": [
         {
           "target": "dmg",
           "arch": [
-            "x64",
-            "arm64"
+            "universal"
           ]
         },
         {
           "target": "zip",
           "arch": [
-            "x64",
-            "arm64"
+            "universal"
           ]
         }
-      ],
-      "category": "public.app-category.developer-tools",
-      "icon": "public/logo.png"
+      ]
     }
   },
   "dependencies": {

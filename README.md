@@ -167,15 +167,17 @@ Xivig Text Editor is packaged for **Windows**, **Linux**, and **macOS**.
 
 ### Binary Types Produced
 - **Windows**:
-  - `Xivig-Text-Editor-Setup-1.0.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
-  - `Xivig-Text-Editor-1.0.0-portable.exe` (Zero-install standalone portable executable)
+  - `Xivig.Text.Editor.Setup.1.1.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
+  - `Xivig.Text.Editor.1.1.0.exe` (Zero-install standalone portable executable)
   - `win-unpacked/` (Direct portable folder)
 - **Linux**:
-  - `Xivig-Text-Editor-1.0.0.AppImage` (Universal plug-and-play Linux executable)
-  - `xivig-text-editor_1.0.0_amd64.deb` (Debian/Ubuntu package)
+  - `Xivig-Text-Editor-1.1.0.AppImage` (Universal plug-and-play Linux executable)
+  - `xivig-text-editor_1.1.0_amd64.deb` (Debian / Ubuntu amd64 package)
+  - `Xivig-Text-Editor-1.1.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
+  - `Xivig-Text-Editor-1.1.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
 - **macOS**:
-  - `Xivig-Text-Editor-1.0.0.dmg` (macOS Drag-and-Drop Disk Image for Apple Silicon & Intel)
-  - `Xivig-Text-Editor-1.0.0-mac.zip` (Portable `.app` bundle)
+  - `Xivig-Text-Editor-1.1.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
+  - `Xivig-Text-Editor-1.1.0-mac.zip` (Native macOS .app bundle: Universal binary)
 
 ---
 
@@ -232,7 +234,7 @@ Automated cross-platform compilation is powered by GitHub Actions in [`.github/w
 ## 📄 Release Information & Attributions
 
 - **App Name**: Xivig Text Editor
-- **Release Version**: 1.0 (Build 1.0.0)
+- **Release Version**: 1.1 (Build 1.1.0 — Security and Stability Release)
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 - **Legal**: Copyright © 2026 Xivig. All rights reserved.
