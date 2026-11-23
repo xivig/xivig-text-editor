@@ -157,14 +157,7 @@ export const Menubar: React.FC = () => {
       {
         label: 'Preferences: Settings',
         shortcut: 'Ctrl+,',
-        action: () =>
-          openDocument({
-            id: 'settings',
-            name: 'Settings',
-            content: '',
-            language: 'settings',
-            path: null,
-          }),
+        action: () => useEditorStore.getState().openSettings(),
       },
       {
         label: 'Preferences: Key Bindings',

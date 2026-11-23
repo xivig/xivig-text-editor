@@ -213,14 +213,7 @@ export const CommandPalette: React.FC = () => {
       category: 'Preferences',
       title: 'Open Settings (Preferences)',
       shortcut: 'Ctrl+,',
-      action: () =>
-        openDocument({
-          id: 'settings',
-          name: 'Settings',
-          content: '',
-          language: 'settings',
-          path: null,
-        }),
+      action: () => useEditorStore.getState().openSettings(),
     },
     {
       id: 'build:run',

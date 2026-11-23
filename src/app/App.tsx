@@ -538,13 +538,7 @@ export const App: React.FC = () => {
         toggleQuickOpen();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key === ',') {
         e.preventDefault();
-        openDocument({
-          id: 'settings',
-          name: 'Settings',
-          content: '',
-          language: 'settings',
-          path: null,
-        });
+        useEditorStore.getState().openSettings();
       } else if (isCtrlOrMeta && (e.key === '=' || e.key === '+' || e.code === 'NumpadAdd')) {
         e.preventDefault();
         useSettingsStore.getState().zoomIn();

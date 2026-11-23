@@ -697,13 +697,7 @@ export const Sidebar: React.FC = () => {
             </p>
             <button
               onClick={() => {
-                openDocument({
-                  id: 'settings',
-                  name: 'Settings',
-                  content: '',
-                  language: 'settings',
-                  path: null,
-                });
+                useEditorStore.getState().openSettings();
               }}
               style={openFolderBtnStyle}
             >

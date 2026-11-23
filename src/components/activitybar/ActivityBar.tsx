@@ -41,13 +41,7 @@ export const ActivityBar: React.FC = () => {
       <div style={itemsGroupStyle}>
         <button
           onClick={() => {
-            useEditorStore.getState().openDocument({
-              id: 'settings',
-              name: 'Settings',
-              content: '',
-              language: 'settings',
-              path: null,
-            });
+            useEditorStore.getState().openSettings();
           }}
           title="Settings (Ctrl+,)"
           style={iconBtnStyle}

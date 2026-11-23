@@ -44,6 +44,7 @@ interface EditorState {
   reloadDocumentFromDisk: (docId: string) => Promise<void>;
   dismissConflict: (docId: string) => void;
   openWelcomeDocument: () => void;
+  openSettings: () => void;
 }
 
 export const WELCOME_MARKDOWN_CONTENT = `# Xivig Editor
@@ -152,6 +153,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     triggerAutoSave();
   },
 
+  openSettings: () => {
+    const { documents } = get();
+    const existing = documents.find(
+      (d) => d.id === 'settings' || d.name?.toLowerCase() === 'settings' || d.language === 'settings'
+    );
+    if (existing) {
+      // Clean up any extraneous duplicate settings tabs if they somehow exist
+      const cleaned = documents.filter((d) => d === existing || (d.id !== 'settings' && d.language !== 'settings'));
+      if (get().activePane === 'secondary') {
+        set({ documents: cleaned, secondaryDocumentId: existing.id });
+      } else {
+        set({ documents: cleaned, activeDocumentId: existing.id });
+      }
+      triggerAutoSave();
+      return;
+    }
+
+    const settingsDoc: EditorDocument = {
+      id: 'settings',
+      path: null,
+      name: 'Settings',
+      content: '',
+      language: 'settings',
+      isDirty: false,
+      cursor: { line: 1, col: 1 },
+    };
+
+    set({
+      documents: [...documents, settingsDoc],
+      ...(get().activePane === 'secondary'
+        ? { secondaryDocumentId: 'settings' }
+        : { activeDocumentId: 'settings' }),
+    });
+    triggerAutoSave();
+  },
+
   persistSessionDebounced: triggerAutoSave,
 
   getActiveDocument: () => {
@@ -187,14 +224,68 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setRestoredSession: (docs, activeId) => {
+    // Deduplicate documents by ID and path
+    const seenIds = new Set<string>();
+    const seenPaths = new Set<string>();
+    const uniqueDocs = docs.filter((d) => {
+      if (d.id) {
+        if (seenIds.has(d.id)) return false;
+        seenIds.add(d.id);
+      }
+      if (d.path) {
+        if (seenPaths.has(d.path)) return false;
+        seenPaths.add(d.path);
+      }
+      return true;
+    });
+
+    const validActiveId = uniqueDocs.some((d) => d.id === activeId)
+      ? activeId
+      : uniqueDocs[0]?.id || null;
+
     set({
-      documents: docs,
-      activeDocumentId: activeId,
+      documents: uniqueDocs,
+      activeDocumentId: validActiveId,
     });
   },
 
   openDocument: (doc) => {
     const { documents } = get();
+
+    // 1. If document matches an existing tab by unique ID (e.g. 'settings' or 'welcome-tab')
+    if (doc.id) {
+      const existing = documents.find((d) => d.id === doc.id);
+      if (existing) {
+        // Clean up any extra duplicates with this same ID if they somehow exist
+        const cleaned = documents.filter((d) => d === existing || d.id !== doc.id);
+        if (get().activePane === 'secondary') {
+          set({ documents: cleaned, secondaryDocumentId: existing.id });
+        } else {
+          set({ documents: cleaned, activeDocumentId: existing.id });
+        }
+        triggerAutoSave();
+        return;
+      }
+    }
+
+    // 2. If it's settings (by id, name, or language)
+    if (doc.id === 'settings' || doc.name?.toLowerCase() === 'settings' || doc.language === 'settings') {
+      const existing = documents.find(
+        (d) => d.id === 'settings' || d.name?.toLowerCase() === 'settings' || d.language === 'settings'
+      );
+      if (existing) {
+        const cleaned = documents.filter((d) => d === existing || (d.id !== 'settings' && d.language !== 'settings'));
+        if (get().activePane === 'secondary') {
+          set({ documents: cleaned, secondaryDocumentId: existing.id });
+        } else {
+          set({ documents: cleaned, activeDocumentId: existing.id });
+        }
+        triggerAutoSave();
+        return;
+      }
+    }
+
+    // 3. If document has a file path, check if already open by path
     if (doc.path) {
       const existing = documents.find((d) => d.path === doc.path);
       if (existing) {
