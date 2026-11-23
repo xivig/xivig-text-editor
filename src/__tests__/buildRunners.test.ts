@@ -153,6 +153,81 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
     expect(available.some((t) => t.id === 'node-run-file')).toBe(true);
   });
 
+  it('detects and configures Swift runner for .swift files', () => {
+    useEditorStore.setState({
+      documents: [
+        {
+          id: 'swift-1',
+          name: 'main.swift',
+          path: 'C:/projects/app/main.swift',
+          content: 'print("Hello from Swift")',
+          language: 'swift',
+          isDirty: false,
+          cursor: { line: 1, col: 1 },
+        },
+      ],
+      activeDocumentId: 'swift-1',
+    });
+
+    const defaultTarget = useBuildStore.getState().detectDefaultTarget();
+    expect(defaultTarget.category).toBe('swift');
+    expect(defaultTarget.command).toBe('swift');
+    expect(defaultTarget.args).toContain('C:/projects/app/main.swift');
+
+    const available = useBuildStore.getState().getAvailableTargets();
+    expect(available.some((t) => t.id === 'swift-run-file')).toBe(true);
+    expect(available.some((t) => t.id === 'swift-build-release')).toBe(true);
+  });
+
+  it('detects and configures Kotlin runner for .kt and .kts files', () => {
+    useEditorStore.setState({
+      documents: [
+        {
+          id: 'kt-1',
+          name: 'App.kt',
+          path: 'C:/projects/app/App.kt',
+          content: 'fun main() { println("Hello Kotlin") }',
+          language: 'kotlin',
+          isDirty: false,
+          cursor: { line: 1, col: 1 },
+        },
+      ],
+      activeDocumentId: 'kt-1',
+    });
+
+    const defaultTarget = useBuildStore.getState().detectDefaultTarget();
+    expect(defaultTarget.category).toBe('kotlin');
+    expect(defaultTarget.command).toBe('kotlinc');
+    expect(defaultTarget.args).toContain('C:/projects/app/App.kt');
+
+    const available = useBuildStore.getState().getAvailableTargets();
+    expect(available.some((t) => t.id === 'kotlin-compile-run')).toBe(true);
+  });
+
+  it('detects and configures Batch runner for .bat and .cmd files', () => {
+    useEditorStore.setState({
+      documents: [
+        {
+          id: 'bat-1',
+          name: 'build.bat',
+          path: 'C:/projects/app/build.bat',
+          content: '@echo off\necho Building...',
+          language: 'bat',
+          isDirty: false,
+          cursor: { line: 1, col: 1 },
+        },
+      ],
+      activeDocumentId: 'bat-1',
+    });
+
+    const defaultTarget = useBuildStore.getState().detectDefaultTarget();
+    expect(defaultTarget.category).toBe('bat');
+    expect(defaultTarget.id).toBe('bat-run-file');
+
+    const available = useBuildStore.getState().getAvailableTargets();
+    expect(available.some((t) => t.id === 'bat-run-file')).toBe(true);
+  });
+
   it('automatically discovers runnable files in workspace fileTree', () => {
     useFileStore.setState({
       currentFolderPath: 'C:/projects/app',
@@ -161,6 +236,9 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
         { id: '2', name: 'a.js', path: 'C:/projects/app/a.js', isDirectory: false },
         { id: '3', name: 'main.c', path: 'C:/projects/app/main.c', isDirectory: false },
         { id: '4', name: 'App.java', path: 'C:/projects/app/App.java', isDirectory: false },
+        { id: '5', name: 'service.swift', path: 'C:/projects/app/service.swift', isDirectory: false },
+        { id: '6', name: 'Main.kt', path: 'C:/projects/app/Main.kt', isDirectory: false },
+        { id: '7', name: 'deploy.bat', path: 'C:/projects/app/deploy.bat', isDirectory: false },
       ],
     });
 
@@ -169,6 +247,9 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
     expect(available.some((t) => t.name.includes('Node.js: Run a.js'))).toBe(true);
     expect(available.some((t) => t.name.includes('C: Compile & Run main.c'))).toBe(true);
     expect(available.some((t) => t.name.includes('Java: Run App.java'))).toBe(true);
+    expect(available.some((t) => t.name.includes('Swift: Run service.swift'))).toBe(true);
+    expect(available.some((t) => t.name.includes('Kotlin: Compile & Run Main.kt'))).toBe(true);
+    expect(available.some((t) => t.name.includes('Batch: Run deploy.bat'))).toBe(true);
   });
 
   it('standardizes build:done completion contract with exitCode and durationMs', () => {

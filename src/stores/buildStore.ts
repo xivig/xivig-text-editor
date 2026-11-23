@@ -3,7 +3,7 @@ import { useUIStore } from './uiStore';
 import { useEditorStore } from './editorStore';
 import { useFileStore } from './fileStore';
 
-export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'workspace' | 'general';
+export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'swift' | 'kotlin' | 'bat' | 'workspace' | 'general';
 
 export interface BuildTarget {
   id: string;
@@ -138,6 +138,15 @@ export const useBuildStore = create<BuildState>((set, get) => {
       } else if (ext === 'java') {
         const javaTarget = targets.find((t) => t.category === 'java');
         if (javaTarget) return javaTarget;
+      } else if (ext === 'swift') {
+        const swiftTarget = targets.find((t) => t.category === 'swift');
+        if (swiftTarget) return swiftTarget;
+      } else if (ext === 'kt' || ext === 'kts') {
+        const ktTarget = targets.find((t) => t.category === 'kotlin');
+        if (ktTarget) return ktTarget;
+      } else if (ext === 'bat' || ext === 'cmd') {
+        const batTarget = targets.find((t) => t.category === 'bat');
+        if (batTarget) return batTarget;
       } else if (ext === 'js' || ext === 'mjs' || ext === 'cjs' || ext === 'ts' || ext === 'mts' || ext === 'cts') {
         const nodeTarget = targets.find((t) => t.category === 'nodejs');
         if (nodeTarget) return nodeTarget;
@@ -325,6 +334,71 @@ export const useBuildStore = create<BuildState>((set, get) => {
             description: `Run TypeScript type-checker in check-only mode`,
             category: 'nodejs',
           });
+        } else if (ext === 'swift') {
+          targets.push({
+            id: 'swift-run-file',
+            name: `Swift: Run ${docName}`,
+            command: 'swift',
+            args: [docPath],
+            description: `Execute ${docName} directly with Swift compiler/interpreter`,
+            category: 'swift',
+          });
+          targets.push({
+            id: 'swift-build-release',
+            name: `Swift: Compile ${docName} (-O)`,
+            command: 'swiftc',
+            args: ['-O', docPath, '-o', outExe],
+            secondaryCommand: {
+              command: outExe,
+              args: [],
+              cwd: fileDir,
+            },
+            description: `Compile ${docName} with swiftc and execute ${outExe}`,
+            category: 'swift',
+          });
+        } else if (ext === 'kt' || ext === 'kts') {
+          const jarOut = `${baseName}.jar`;
+          if (ext === 'kts') {
+            targets.push({
+              id: 'kotlin-run-script',
+              name: `Kotlin Script: Run ${docName}`,
+              command: 'kotlinc',
+              args: ['-script', docPath],
+              description: `Execute Kotlin script (${docName}) with kotlinc -script`,
+              category: 'kotlin',
+            });
+          } else {
+            targets.push({
+              id: 'kotlin-compile-run',
+              name: `Kotlin: Compile & Run ${docName}`,
+              command: 'kotlinc',
+              args: [docPath, '-include-runtime', '-d', jarOut],
+              secondaryCommand: {
+                command: 'java',
+                args: ['-jar', jarOut],
+                cwd: fileDir,
+              },
+              description: `Compile ${docName} to ${jarOut} and execute with java`,
+              category: 'kotlin',
+            });
+            targets.push({
+              id: 'kotlin-compile-only',
+              name: `Kotlin: Compile ${docName} (kotlinc)`,
+              command: 'kotlinc',
+              args: [docPath, '-include-runtime', '-d', jarOut],
+              description: `Compile ${docName} to standalone JAR ${jarOut}`,
+              category: 'kotlin',
+            });
+          }
+        } else if (ext === 'bat' || ext === 'cmd') {
+          targets.push({
+            id: 'bat-run-file',
+            name: `Batch: Run ${docName}`,
+            command: isWin ? 'cmd.exe' : docPath,
+            args: isWin ? ['/c', docPath] : [],
+            description: `Execute Windows batch script (${docName}) in Command Prompt`,
+            category: 'bat',
+          });
         } else if (ext === 'rs') {
           targets.push({
             id: 'rust-cargo-run',
@@ -402,6 +476,39 @@ export const useBuildStore = create<BuildState>((set, get) => {
               args: [f.path],
               description: `Execute workspace Java source file ${f.name}`,
               category: 'java',
+            });
+          } else if (fExt === 'swift') {
+            targets.push({
+              id: `ws-swift-${f.name}`,
+              name: `Swift: Run ${f.name}`,
+              command: 'swift',
+              args: [f.path],
+              description: `Execute workspace script ${f.name} with Swift`,
+              category: 'swift',
+            });
+          } else if (fExt === 'kt' || fExt === 'kts') {
+            const fJar = `${fBase}.jar`;
+            targets.push({
+              id: `ws-kotlin-${f.name}`,
+              name: `Kotlin: Compile & Run ${f.name}`,
+              command: 'kotlinc',
+              args: [f.path, '-include-runtime', '-d', fJar],
+              secondaryCommand: {
+                command: 'java',
+                args: ['-jar', fJar],
+                cwd: fDir,
+              },
+              description: `Compile and run workspace file ${f.name}`,
+              category: 'kotlin',
+            });
+          } else if (fExt === 'bat' || fExt === 'cmd') {
+            targets.push({
+              id: `ws-bat-${f.name}`,
+              name: `Batch: Run ${f.name}`,
+              command: isWin ? 'cmd.exe' : f.path,
+              args: isWin ? ['/c', f.path] : [],
+              description: `Execute workspace batch script ${f.name}`,
+              category: 'bat',
             });
           }
         }

@@ -134,15 +134,15 @@ export function resolveWindowsBinary(commandOrProgram: string, cwd?: string): { 
   }
 
   // Common tool mappings on Windows:
-  // Node, Python, GCC, Java are direct executables (.exe)
-  const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'gcc', 'g++', 'java', 'javac', 'git', 'cargo', 'rustc']);
+  // Node, Python, GCC, Java, Swift are direct executables (.exe)
+  const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'gcc', 'g++', 'java', 'javac', 'git', 'cargo', 'rustc', 'swift', 'swiftc', 'cmd']);
   const lower = commandOrProgram.toLowerCase();
   if (knownExeTools.has(lower)) {
     return { binary: `${commandOrProgram}.exe`, isBatch: false };
   }
 
-  // npm, npx, yarn, pnpm are batch wrappers on Windows
-  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm']);
+  // npm, npx, yarn, pnpm, kotlinc, kotlin are batch wrappers on Windows
+  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm', 'kotlinc', 'kotlin']);
   if (knownCmdTools.has(lower)) {
     return { binary: `${commandOrProgram}.cmd`, isBatch: true };
   }

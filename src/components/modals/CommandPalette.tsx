@@ -584,6 +584,24 @@ export const CommandPalette: React.FC = () => {
       action: () => setLanguage('shell'),
     },
     {
+      id: 'lang:swift',
+      category: 'Language',
+      title: 'Change Language Mode to Swift',
+      action: () => setLanguage('swift'),
+    },
+    {
+      id: 'lang:kotlin',
+      category: 'Language',
+      title: 'Change Language Mode to Kotlin',
+      action: () => setLanguage('kotlin'),
+    },
+    {
+      id: 'lang:bat',
+      category: 'Language',
+      title: 'Change Language Mode to Batch Script (CMD)',
+      action: () => setLanguage('bat'),
+    },
+    {
       id: 'lang:rust',
       category: 'Language',
       title: 'Change Language Mode to Rust',

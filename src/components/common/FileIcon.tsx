@@ -268,12 +268,40 @@ export const FileIcon: React.FC<FileIconProps> = ({
     case 'bash':
     case 'zsh':
     case 'ps1':
-    case 'bat':
-    case 'cmd':
       return (
         <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} style={style}>
           <rect width="16" height="16" rx="2.5" fill="#142918" stroke="#22c55e" strokeWidth="1" />
           <path d="M4 5.5l3 2.5-3 2.5M8.5 11h3.5" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'bat':
+    case 'cmd':
+      return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} style={style}>
+          <rect width="16" height="16" rx="2.5" fill="#0f172a" stroke="#38bdf8" strokeWidth="1" />
+          <path d="M3.5 5.5l2.5 2-2.5 2M7.5 10.5h4" stroke="#38bdf8" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'swift':
+      return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} style={style}>
+          <rect width="16" height="16" rx="2.5" fill="#f05138" />
+          <path
+            d="M12.5 11.8C10.2 13.2 7.2 12.6 5 10.8c1.5.3 3.1 0 4.3-.9-1.9-.2-3.4-1.5-4-3.2.6.1 1.2 0 1.8-.2-1.9-.7-3-2.5-2.8-4.5 1 1.5 2.4 2.7 4.1 3.4-.2-.7-.1-1.4.3-2 .8-1.2 2.5-1.6 3.7-.8.5.3.8.6 1.1 1.1-.4-.1-.9-.1-1.3.1 1.1.6 1.6 1.9 1.3 3.1 1.3-.6 2.3-1.8 2.8-3.2-.3 1.6-1.2 3-2.7 3.7 1.1.4 2.1.4 3.2.3-.8 1.6-2.3 3-4.2 3.7z"
+            fill="#ffffff"
+          />
+        </svg>
+      );
+
+    case 'kt':
+    case 'kts':
+    case 'kotlin':
+      return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} style={style}>
+          <rect width="16" height="16" rx="2.5" fill="#7f52ff" />
+          <path d="M3 3h10L8 8l5 5H3V3z" fill="#ffffff" />
         </svg>
       );
 

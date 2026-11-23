@@ -22,6 +22,11 @@ describe('Language Support and Syntax Highlighting', () => {
     expect(detectLanguageName('style.css')).toBe('CSS');
     expect(detectLanguageName('index.js')).toBe('JavaScript');
     expect(detectLanguageName('index.ts')).toBe('TypeScript');
+    expect(detectLanguageName('ContentView.swift')).toBe('Swift');
+    expect(detectLanguageName('Main.kt')).toBe('Kotlin');
+    expect(detectLanguageName('build.gradle.kts')).toBe('Kotlin');
+    expect(detectLanguageName('deploy.bat')).toBe('Batch Script');
+    expect(detectLanguageName('run.cmd')).toBe('Batch Script');
     expect(detectLanguageName('notes.txt')).toBe('Plain Text');
   });
 
@@ -56,6 +61,51 @@ describe('Language Support and Syntax Highlighting', () => {
     expect(state.doc.lines).toBe(7);
     const tree = syntaxTree(state);
     expect(tree).toBeDefined();
+  });
+
+  it('provides active CodeMirror language extension for Swift and builds syntax tree', () => {
+    const swiftExt = getLanguageExtension('swift', 'App.swift');
+    expect(swiftExt).toBeDefined();
+
+    const state = EditorState.create({
+      doc: 'import SwiftUI\n\n@main\nstruct MyApp: App {\n  var body: some Scene {\n    WindowGroup {\n      Text("Hello Swift")\n    }\n  }\n}',
+      extensions: [swiftExt],
+    });
+
+    expect(state.doc.lines).toBe(10);
+    const tree = syntaxTree(state);
+    expect(tree).toBeDefined();
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it('provides active CodeMirror language extension for Kotlin and builds syntax tree', () => {
+    const kotlinExt = getLanguageExtension('kotlin', 'Main.kt');
+    expect(kotlinExt).toBeDefined();
+
+    const state = EditorState.create({
+      doc: 'package com.example\n\nfun main(args: Array<String>) {\n  val name = "Kotlin"\n  println("Hello, $name!")\n}',
+      extensions: [kotlinExt],
+    });
+
+    expect(state.doc.lines).toBe(6);
+    const tree = syntaxTree(state);
+    expect(tree).toBeDefined();
+    expect(tree.length).toBeGreaterThan(0);
+  });
+
+  it('provides active CodeMirror language extension for Batch script and builds syntax tree', () => {
+    const batExt = getLanguageExtension('bat', 'build.bat');
+    expect(batExt).toBeDefined();
+
+    const state = EditorState.create({
+      doc: '@echo off\nREM Build Script\nset TARGET_DIR=%~dp0dist\nif not exist "%TARGET_DIR%" (\n  mkdir "%TARGET_DIR%"\n)\necho Done.',
+      extensions: [batExt],
+    });
+
+    expect(state.doc.lines).toBe(7);
+    const tree = syntaxTree(state);
+    expect(tree).toBeDefined();
+    expect(tree.length).toBeGreaterThan(0);
   });
 
   it('respects language selection even when filename is generic (e.g. Untitled-1)', () => {

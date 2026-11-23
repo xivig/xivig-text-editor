@@ -29,6 +29,9 @@ export const supportedLanguages: LanguageOption[] = [
   { id: 'xml', name: 'XML', extensions: ['.xml', '.svg'] },
   { id: 'sql', name: 'SQL', extensions: ['.sql'] },
   { id: 'shell', name: 'Shell Script', extensions: ['.sh', '.bash', '.zsh'] },
+  { id: 'swift', name: 'Swift', extensions: ['.swift'] },
+  { id: 'kotlin', name: 'Kotlin', extensions: ['.kt', '.kts'] },
+  { id: 'bat', name: 'Batch Script (CMD)', extensions: ['.bat', '.cmd'] },
   { id: 'markdown', name: 'Markdown', extensions: ['.md', '.markdown'] },
   { id: 'text', name: 'Plain Text', extensions: ['.txt'] },
 ];

@@ -42,6 +42,13 @@ export function getCommentTokens(filenameOrLang = ''): CommentTokens {
     };
   }
 
+  // Windows Batch / CMD
+  if (['bat', 'cmd', 'batch'].includes(ext)) {
+    return {
+      line: 'REM ',
+    };
+  }
+
   // JavaScript, TypeScript, JSX, TSX, C, C++, C#, Rust, Java, Go, PHP, Kotlin, Swift
   return {
     line: '// ',

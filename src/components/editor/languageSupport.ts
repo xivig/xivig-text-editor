@@ -622,6 +622,421 @@ export const shellLanguage = StreamLanguage.define<{ inString: boolean }>({
 });
 
 // -------------------------------------------------------------
+// 9. Swift Stream Language
+// -------------------------------------------------------------
+interface SwiftParserState {
+  blockCommentDepth: number;
+  inString: boolean;
+  braceDepth: number;
+}
+
+const SWIFT_KEYWORDS = new Set([
+  'associatedtype', 'actor', 'any', 'async', 'await', 'as', 'break', 'case', 'catch',
+  'class', 'continue', 'convenience', 'default', 'defer', 'deinit', 'didSet', 'do',
+  'dynamic', 'else', 'enum', 'extension', 'fallthrough', 'fileprivate', 'final',
+  'for', 'func', 'get', 'guard', 'if', 'import', 'in', 'infix', 'init', 'inout',
+  'internal', 'is', 'isolated', 'lazy', 'let', 'macro', 'mutating', 'nonisolated',
+  'nonmutating', 'open', 'operator', 'optional', 'override', 'postfix', 'precedencegroup',
+  'prefix', 'private', 'protocol', 'public', 'repeat', 'required', 'rethrows',
+  'return', 'self', 'Self', 'set', 'some', 'static', 'struct', 'subscript', 'super',
+  'switch', 'throw', 'throws', 'true', 'try', 'typealias', 'unowned', 'var', 'weak',
+  'where', 'while', 'willSet', 'yield',
+]);
+
+const SWIFT_ATOMS = new Set(['true', 'false', 'nil']);
+
+const SWIFT_BUILTIN_TYPES = new Set([
+  'Int', 'Int8', 'Int16', 'Int32', 'Int64', 'UInt', 'UInt8', 'UInt16', 'UInt32', 'UInt64',
+  'Float', 'Double', 'Float80', 'Bool', 'String', 'Character', 'UnicodeScalar', 'Substring',
+  'Array', 'Dictionary', 'Set', 'Optional', 'Result', 'Void', 'Any', 'AnyObject', 'Error',
+  'Task', 'URL', 'Data', 'Date', 'UUID', 'Sequence', 'Collection',
+]);
+
+export const swiftLanguage = StreamLanguage.define<SwiftParserState>({
+  name: 'swift',
+  startState: () => ({ blockCommentDepth: 0, inString: false, braceDepth: 0 }),
+  token(stream: StringStream, state: SwiftParserState): string | null {
+    // Nested block comments
+    if (state.blockCommentDepth > 0) {
+      while (!stream.eol()) {
+        if (stream.match('/*')) {
+          state.blockCommentDepth++;
+        } else if (stream.match('*/')) {
+          state.blockCommentDepth--;
+          if (state.blockCommentDepth === 0) break;
+        } else {
+          stream.next();
+        }
+      }
+      return 'blockComment';
+    }
+
+    if (stream.eatSpace()) return null;
+
+    // Line comment
+    if (stream.match('//')) {
+      stream.skipToEnd();
+      return 'lineComment';
+    }
+
+    // Start block comment
+    if (stream.match('/*')) {
+      state.blockCommentDepth = 1;
+      while (!stream.eol()) {
+        if (stream.match('/*')) {
+          state.blockCommentDepth++;
+        } else if (stream.match('*/')) {
+          state.blockCommentDepth--;
+          if (state.blockCommentDepth === 0) break;
+        } else {
+          stream.next();
+        }
+      }
+      return 'blockComment';
+    }
+
+    // Attributes / Annotations (e.g. @main, @State, @Binding, @Observable, @objc)
+    if (stream.match(/^@[a-zA-Z_]\w*/)) {
+      return 'annotation';
+    }
+
+    // Compiler directives (e.g. #if, #available, #preview, #selector)
+    if (stream.match(/^#[a-zA-Z_]\w*/)) {
+      return 'meta';
+    }
+
+    // Multiline Strings
+    if (stream.match(/^"""[\s\S]*?"""/)) {
+      return 'string';
+    }
+
+    // Standard Strings
+    if (stream.match(/^"(?:[^"\\]|\\.)*"/)) {
+      return 'string';
+    }
+
+    // Numbers
+    if (
+      stream.match(/^0x[0-9a-fA-F_]+/i) ||
+      stream.match(/^0b[01_]+/i) ||
+      stream.match(/^0o[0-7_]+/i) ||
+      stream.match(/^\d[\d_]*(\.[\d_]+)?([eE][+-]?\d+)?/)
+    ) {
+      return 'number';
+    }
+
+    // Braces tracking for auto-indent
+    if (stream.eat('{')) {
+      state.braceDepth++;
+      return 'bracket';
+    }
+    if (stream.eat('}')) {
+      state.braceDepth = Math.max(0, state.braceDepth - 1);
+      return 'bracket';
+    }
+    if (stream.match(/^[()[\]]/)) {
+      return 'bracket';
+    }
+
+    // Operators
+    if (stream.match(/^(?:[-+*/%&|^!=<>?~:;]|&&|\|\||\?\?|->|\.\.<|\.\.\.|\+\+|--|==|!=|<=|>=|\+=|-=|\*=|\/=|%=)/)) {
+      return 'operator';
+    }
+
+    // Identifiers & keywords
+    const match = stream.match(/^[a-zA-Z_]\w*/);
+    if (match) {
+      const word = stream.current();
+      if (SWIFT_KEYWORDS.has(word)) return 'keyword';
+      if (SWIFT_ATOMS.has(word)) return 'atom';
+      if (SWIFT_BUILTIN_TYPES.has(word)) return 'typeName';
+      if (/^[A-Z]/.test(word)) return 'className';
+      return 'variableName';
+    }
+
+    stream.next();
+    return null;
+  },
+  indent(state: SwiftParserState, textAfter: string, cx): number | null {
+    const depth = state.braceDepth || 0;
+    if (/^\s*\}/.test(textAfter)) {
+      return Math.max(0, depth - 1) * cx.unit;
+    }
+    return depth * cx.unit;
+  },
+  languageData: {
+    commentTokens: { line: '//', block: { open: '/*', close: '*/' } },
+    closeBrackets: { brackets: ['(', '[', '{', '"'] },
+    indentOnInput: /^\s*\}$/,
+  },
+});
+
+// -------------------------------------------------------------
+// 10. Kotlin Stream Language
+// -------------------------------------------------------------
+interface KotlinParserState {
+  blockCommentDepth: number;
+  inString: boolean;
+  braceDepth: number;
+}
+
+const KOTLIN_KEYWORDS = new Set([
+  'abstract', 'actual', 'annotation', 'as', 'break', 'by', 'catch', 'class',
+  'companion', 'const', 'constructor', 'continue', 'crossinline', 'data', 'delegate',
+  'do', 'dynamic', 'else', 'enum', 'expect', 'external', 'field', 'file', 'final',
+  'finally', 'for', 'fun', 'get', 'import', 'in', 'infix', 'init', 'inline', 'inner',
+  'interface', 'internal', 'is', 'it', 'lateinit', 'noinline', 'object', 'open',
+  'operator', 'out', 'override', 'package', 'param', 'private', 'property',
+  'protected', 'public', 'receiver', 'reified', 'return', 'sealed', 'set',
+  'setparam', 'super', 'suspend', 'tailrec', 'this', 'throw', 'try', 'typealias',
+  'val', 'value', 'var', 'vararg', 'when', 'where', 'while', 'yield',
+]);
+
+const KOTLIN_ATOMS = new Set(['true', 'false', 'null']);
+
+const KOTLIN_BUILTIN_TYPES = new Set([
+  'Any', 'Unit', 'Nothing', 'Int', 'Long', 'Short', 'Byte', 'Double', 'Float',
+  'Boolean', 'Char', 'String', 'Array', 'IntArray', 'LongArray', 'ByteArray',
+  'ShortArray', 'DoubleArray', 'FloatArray', 'BooleanArray', 'CharArray',
+  'List', 'MutableList', 'Map', 'MutableMap', 'Set', 'MutableSet', 'Sequence',
+  'Pair', 'Triple', 'Exception', 'Throwable',
+]);
+
+export const kotlinLanguage = StreamLanguage.define<KotlinParserState>({
+  name: 'kotlin',
+  startState: () => ({ blockCommentDepth: 0, inString: false, braceDepth: 0 }),
+  token(stream: StringStream, state: KotlinParserState): string | null {
+    // Nested block comments
+    if (state.blockCommentDepth > 0) {
+      while (!stream.eol()) {
+        if (stream.match('/*')) {
+          state.blockCommentDepth++;
+        } else if (stream.match('*/')) {
+          state.blockCommentDepth--;
+          if (state.blockCommentDepth === 0) break;
+        } else {
+          stream.next();
+        }
+      }
+      return 'blockComment';
+    }
+
+    if (stream.eatSpace()) return null;
+
+    // Line comment
+    if (stream.match('//')) {
+      stream.skipToEnd();
+      return 'lineComment';
+    }
+
+    // Start block comment
+    if (stream.match('/*')) {
+      state.blockCommentDepth = 1;
+      while (!stream.eol()) {
+        if (stream.match('/*')) {
+          state.blockCommentDepth++;
+        } else if (stream.match('*/')) {
+          state.blockCommentDepth--;
+          if (state.blockCommentDepth === 0) break;
+        } else {
+          stream.next();
+        }
+      }
+      return 'blockComment';
+    }
+
+    // Annotations (e.g. @JvmStatic, @Composable, @OptIn, @Suppress)
+    if (stream.match(/^@[a-zA-Z_]\w*/)) {
+      return 'annotation';
+    }
+
+    // Raw multiline Strings
+    if (stream.match(/^"""[\s\S]*?"""/)) {
+      return 'string';
+    }
+
+    // Standard Strings
+    if (stream.match(/^"(?:[^"\\]|\\.)*"/)) {
+      return 'string';
+    }
+
+    // Character literals
+    if (stream.match(/^'(?:[^'\\]|\\.)*'/)) {
+      return 'string';
+    }
+
+    // String templates ($var or ${expr})
+    if (stream.match(/^\$[a-zA-Z_]\w*/) || stream.match(/^\$\{[^}]+\}/)) {
+      return 'variableName';
+    }
+
+    // Numbers
+    if (
+      stream.match(/^0x[0-9a-fA-F_]+/i) ||
+      stream.match(/^0b[01_]+/i) ||
+      stream.match(/^\d[\d_]*(\.[\d_]+)?([eE][+-]?\d+)?[fFLuU]*/)
+    ) {
+      return 'number';
+    }
+
+    // Braces tracking for auto-indent
+    if (stream.eat('{')) {
+      state.braceDepth++;
+      return 'bracket';
+    }
+    if (stream.eat('}')) {
+      state.braceDepth = Math.max(0, state.braceDepth - 1);
+      return 'bracket';
+    }
+    if (stream.match(/^[()[\]]/)) {
+      return 'bracket';
+    }
+
+    // Operators
+    if (stream.match(/^(?:[-+*/%&|^!=<>?~:;]|&&|\|\||===|!==|==|!=|<=|>=|\?:|::|->|\.\.<\.\.|\+=|-=|\*=|\/=|%=)/)) {
+      return 'operator';
+    }
+
+    // Identifiers & keywords
+    const match = stream.match(/^[a-zA-Z_]\w*/);
+    if (match) {
+      const word = stream.current();
+      if (KOTLIN_KEYWORDS.has(word)) return 'keyword';
+      if (KOTLIN_ATOMS.has(word)) return 'atom';
+      if (KOTLIN_BUILTIN_TYPES.has(word)) return 'typeName';
+      if (/^[A-Z]/.test(word)) return 'className';
+      return 'variableName';
+    }
+
+    stream.next();
+    return null;
+  },
+  indent(state: KotlinParserState, textAfter: string, cx): number | null {
+    const depth = state.braceDepth || 0;
+    if (/^\s*\}/.test(textAfter)) {
+      return Math.max(0, depth - 1) * cx.unit;
+    }
+    return depth * cx.unit;
+  },
+  languageData: {
+    commentTokens: { line: '//', block: { open: '/*', close: '*/' } },
+    closeBrackets: { brackets: ['(', '[', '{', '"', "'"] },
+    indentOnInput: /^\s*\}$/,
+  },
+});
+
+// -------------------------------------------------------------
+// 11. Windows Batch / CMD Stream Language (.bat, .cmd)
+// -------------------------------------------------------------
+interface BatParserState {
+  inString: boolean;
+  parenDepth: number;
+}
+
+const BAT_KEYWORDS = new Set([
+  'assoc', 'attrib', 'call', 'cd', 'chdir', 'cls', 'color', 'copy', 'date', 'del',
+  'dir', 'do', 'echo', 'else', 'endlocal', 'erase', 'errorlevel', 'exist', 'exit',
+  'find', 'findstr', 'for', 'ftype', 'goto', 'if', 'in', 'md', 'mkdir', 'move',
+  'not', 'pause', 'popd', 'prompt', 'pushd', 'rd', 'rem', 'ren', 'rename', 'rmdir',
+  'robocopy', 'set', 'setlocal', 'shift', 'start', 'time', 'title', 'type', 'ver',
+  'vol', 'xcopy', 'choice', 'timeout', 'defined', 'equ', 'neq', 'lss', 'leq',
+  'gtr', 'geq',
+]);
+
+export const batLanguage = StreamLanguage.define<BatParserState>({
+  name: 'bat',
+  startState: () => ({ inString: false, parenDepth: 0 }),
+  token(stream: StringStream, state: BatParserState): string | null {
+    if (stream.eatSpace()) return null;
+
+    // Line comment via REM or @REM (case-insensitive)
+    if (stream.match(/^@?rem\b/i)) {
+      stream.skipToEnd();
+      return 'lineComment';
+    }
+
+    // Line comment via :: (colon-colon pseudo label)
+    if (stream.match(/^::.*/)) {
+      stream.skipToEnd();
+      return 'lineComment';
+    }
+
+    // Labels: :label_name
+    if (stream.match(/^:[a-zA-Z0-9_\-]+/)) {
+      return 'labelName';
+    }
+
+    // Directives: @echo off, @echo on, or @ prefix
+    if (stream.eat('@')) {
+      return 'meta';
+    }
+
+    // Strings: "..."
+    if (stream.match(/^"(?:[^"\\]|\\.)*"/)) {
+      return 'string';
+    }
+
+    // Environment variables %VAR%, delayed expansion !VAR!, arguments %1-%9, %*, %~dp0, loop %%i
+    if (
+      stream.match(/^%~[a-zA-Z0-9_$]+/) ||
+      stream.match(/^%[a-zA-Z0-9_#$]+%/) ||
+      stream.match(/^![a-zA-Z0-9_#$]+!/) ||
+      stream.match(/^%\d\b/) ||
+      stream.match(/^%\*/) ||
+      stream.match(/^%%[a-zA-Z]/)
+    ) {
+      return 'variableName';
+    }
+
+    // Numbers
+    if (stream.match(/^\d+/)) {
+      return 'number';
+    }
+
+    // Parentheses tracking for block auto-indent (e.g. IF (...) ELSE (...))
+    if (stream.eat('(')) {
+      state.parenDepth++;
+      return 'bracket';
+    }
+    if (stream.eat(')')) {
+      state.parenDepth = Math.max(0, state.parenDepth - 1);
+      return 'bracket';
+    }
+    if (stream.match(/^[()[\]]/)) {
+      return 'bracket';
+    }
+
+    // Operators and redirections (|, >, >>, <, 2>&1, &, &&, ||, ==)
+    if (stream.match(/^(?:2>&1|>>|>|<|\|\||&&|\||==|&|\+)/)) {
+      return 'operator';
+    }
+
+    // Identifiers and commands
+    const match = stream.match(/^[a-zA-Z_][\w-]*/);
+    if (match) {
+      const word = stream.current().toLowerCase();
+      if (BAT_KEYWORDS.has(word)) return 'keyword';
+      return 'variableName';
+    }
+
+    stream.next();
+    return null;
+  },
+  indent(state: BatParserState, textAfter: string, cx): number | null {
+    const depth = state.parenDepth || 0;
+    if (/^\s*\)/.test(textAfter)) {
+      return Math.max(0, depth - 1) * cx.unit;
+    }
+    return depth * cx.unit;
+  },
+  languageData: {
+    commentTokens: { line: 'REM ' },
+    closeBrackets: { brackets: ['(', '[', '"'] },
+    indentOnInput: /^\s*\)$/,
+  },
+});
+
+// -------------------------------------------------------------
 // Language Extension Resolver
 // -------------------------------------------------------------
 export function getLanguageExtension(languageOrFilename?: string, fallbackFilename?: string): Extension {
@@ -686,6 +1101,15 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
   if (target.endsWith('.sh') || target.endsWith('.bash') || target.endsWith('.zsh')) {
     return shellLanguage;
   }
+  if (target.endsWith('.swift')) {
+    return swiftLanguage;
+  }
+  if (target.endsWith('.kt') || target.endsWith('.kts')) {
+    return kotlinLanguage;
+  }
+  if (target.endsWith('.bat') || target.endsWith('.cmd')) {
+    return batLanguage;
+  }
 
   // Match by exact language identifier
   switch (target) {
@@ -742,6 +1166,16 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
     case 'bash':
     case 'sh':
       return shellLanguage;
+    case 'swift':
+      return swiftLanguage;
+    case 'kotlin':
+    case 'kt':
+    case 'kts':
+      return kotlinLanguage;
+    case 'bat':
+    case 'cmd':
+    case 'batch':
+      return batLanguage;
     default:
       // If language identifier didn't match, try checking fallback filename if provided
       if (fallbackFilename && fallbackFilename.toLowerCase() !== target) {
@@ -827,6 +1261,16 @@ export function detectLanguageName(filenameOrLang?: string, fallbackLangId?: str
     case 'zsh':
     case 'shell':
       return 'Shell Script';
+    case 'swift':
+      return 'Swift';
+    case 'kt':
+    case 'kts':
+    case 'kotlin':
+      return 'Kotlin';
+    case 'bat':
+    case 'cmd':
+    case 'batch':
+      return 'Batch Script';
     default:
       if (fallbackLangId && fallbackLangId !== target) {
         return detectLanguageName(fallbackLangId);

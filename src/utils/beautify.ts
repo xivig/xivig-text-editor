@@ -121,6 +121,7 @@ export function autoIndentAndFormatEditor(
   const ext = (targetDocName.split('.').pop() || '').toLowerCase();
 
   const isPython = ext === 'py' || targetLang === 'python';
+  const isBatch = ext === 'bat' || ext === 'cmd' || targetLang === 'bat' || targetLang === 'cmd' || targetLang === 'batch';
   const isPlainText = ext === 'txt' || targetLang === 'text' || targetLang === 'plain text';
   const isMarkdown = ext === 'md' || ext === 'markdown' || targetLang === 'markdown';
   const isYaml = ext === 'yaml' || ext === 'yml' || targetLang === 'yaml';
@@ -136,8 +137,8 @@ export function autoIndentAndFormatEditor(
   const effectiveLangOrFile = targetLang || targetDocName || 'code.js';
 
   if (view) {
-    // 1. If not python, format braces and structure with beautifyCode
-    if (!isPython) {
+    // 1. If not python or batch script, format braces and structure with beautifyCode
+    if (!isPython && !isBatch) {
       const currentDoc = view.state.doc.toString();
       const formatted = beautifyCode(currentDoc, effectiveLangOrFile);
       if (formatted !== currentDoc) {
@@ -165,7 +166,7 @@ export function autoIndentAndFormatEditor(
   }
 
   // Fallback when view is not actively mounted
-  if (!isPython && activeDoc) {
+  if (!isPython && !isBatch && activeDoc) {
     const formatted = beautifyCode(activeDoc.content, effectiveLangOrFile);
     if (formatted !== activeDoc.content) {
       useEditorStore.getState().updateDocumentContent(activeDoc.id, formatted);
