@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ActiveSidebarView, FileItem } from '../types/editor';
 import { RecentItem, GitFileChange } from '../types/electron';
+import { useEditorStore } from './editorStore';
 
 interface FileState {
   currentFolderPath: string | null;
@@ -194,6 +195,57 @@ export const useFileStore = create<FileState>((set, get) => ({
 
     get().loadRecentHistory();
     get().loadGitStatus();
+
+    // Automatically open primary entrypoint file if no project document is currently open
+    try {
+      const editorStore = useEditorStore.getState();
+      const currentDocs = editorStore.documents;
+      const hasProjectDoc = currentDocs.some((d) => d.path && (d.path.startsWith(folderPath) || d.path.includes(folderName)));
+
+      if (!hasProjectDoc) {
+        const filesOnly = items.filter((i) => !i.isDirectory);
+        if (filesOnly.length > 0) {
+          const preferredNames = [
+            'index.html',
+            'index.htm',
+            'index.js',
+            'index.ts',
+            'main.js',
+            'main.ts',
+            'app.js',
+            'app.ts',
+            'main.py',
+            'app.py',
+            'README.md',
+            'readme.md',
+            'package.json',
+          ];
+
+          let targetFile = filesOnly.find((f) => preferredNames.includes(f.name.toLowerCase()));
+          if (!targetFile) {
+            targetFile = filesOnly[0];
+          }
+
+          if (targetFile && window.xivig?.readFile) {
+            window.xivig.readFile(targetFile.path).then((res) => {
+              if (res.success && res.content !== undefined) {
+                // If only welcome-tab was open, close it
+                const docsNow = useEditorStore.getState().documents;
+                if (docsNow.length === 1 && docsNow[0].id === 'welcome-tab') {
+                  useEditorStore.getState().closeDocument('welcome-tab');
+                }
+                useEditorStore.getState().openDocument({
+                  path: targetFile.path,
+                  name: targetFile.name,
+                  content: res.content,
+                  language: targetFile.name,
+                });
+              }
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch {}
   },
 
   toggleFolderExpanded: (itemPath) => {

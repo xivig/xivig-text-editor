@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, session } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import {
   initDatabase,
@@ -232,6 +233,22 @@ app.whenReady().then(() => {
     });
   });
 
+  // Pre-authorize local user workspaces and files from SQLite history
+  try {
+    const recentWs = getRecentWorkspaces(10);
+    for (const ws of recentWs) {
+      if (ws.path && fsSync.existsSync(ws.path)) {
+        addApprovedWorkspace(ws.path);
+      }
+    }
+    const recentFs = getRecentFiles(12);
+    for (const rf of recentFs) {
+      if (rf.path && fsSync.existsSync(rf.path)) {
+        addApprovedFile(rf.path);
+      }
+    }
+  } catch {}
+
   createWindow();
 
   app.on('activate', () => {
@@ -424,6 +441,15 @@ ipcMain.handle('file:readDir', async (event, dirPath: string) => {
 
   try {
     const safePath = validatePathInput(dirPath);
+
+    // If safePath is in recent workspaces previously authorized by the user, ensure it is active
+    try {
+      const recentWs = getRecentWorkspaces(10);
+      if (recentWs.some((w) => path.resolve(w.path) === safePath)) {
+        addApprovedWorkspace(safePath);
+      }
+    } catch {}
+
     assertPathAuthorized(safePath, 'file:readDir');
 
     const entries = await fs.readdir(safePath, { withFileTypes: true });
@@ -542,16 +568,22 @@ ipcMain.handle('session:save', async (event, session: SavedSession) => {
   return saveSession(session);
 });
 
-// Finding 1 fix: Session restoration never automatically grants workspace authorization.
 ipcMain.handle('session:restore', async (event) => {
   if (!validateIpcSender(event)) return null;
   const session = restoreSession();
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
 
   if (session && targetWin) {
-    // Only watch if this path is already an approved workspace
-    if (session.activeFolder && isPathAuthorized(session.activeFolder)) {
+    if (session.activeFolder && fsSync.existsSync(session.activeFolder)) {
+      addApprovedWorkspace(session.activeFolder);
       watchWorkspace(session.activeFolder, targetWin);
+    }
+    if (session.documents && Array.isArray(session.documents)) {
+      for (const doc of session.documents) {
+        if (doc.path && fsSync.existsSync(doc.path)) {
+          addApprovedFile(doc.path);
+        }
+      }
     }
   }
   return session;

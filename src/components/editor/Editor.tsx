@@ -54,7 +54,10 @@ import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import { WelcomeView } from '../welcome/WelcomeView';
 import { FileContextMenu } from '../common/FileContextMenu';
-import { AlertTriangle, Zap } from 'lucide-react';
+import { FileIcon } from '../common/FileIcon';
+import { useFileStore } from '../../stores/fileStore';
+import { useUIStore } from '../../stores/uiStore';
+import { AlertTriangle, Zap, FolderOpen, Search, Sparkles } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
 
 interface EditorProps {
@@ -86,6 +89,12 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const conflictDocId = useEditorStore((state) => state.externalConflictDocId);
   const reloadDocumentFromDisk = useEditorStore((state) => state.reloadDocumentFromDisk);
   const dismissConflict = useEditorStore((state) => state.dismissConflict);
+
+  const currentFolderPath = useFileStore((state) => state.currentFolderPath);
+  const fileTree = useFileStore((state) => state.fileTree);
+  const currentFolderName = currentFolderPath
+    ? currentFolderPath.split(/[/\\]/).filter(Boolean).pop() || currentFolderPath
+    : null;
 
   const isConflict = conflictDocId === activeDoc?.id;
   const isLargeFile = (activeDoc?.content?.length || 0) > 1_500_000;
@@ -286,7 +295,145 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     return <WelcomeView />;
   }
 
+  const handleOpenProjectFile = async (filePath: string, fileName: string) => {
+    if (window.xivig?.readFile) {
+      const res = await window.xivig.readFile(filePath);
+      if (res.success && res.content !== undefined) {
+        const currentDocs = useEditorStore.getState().documents;
+        if (currentDocs.length === 1 && currentDocs[0].id === 'welcome-tab') {
+          useEditorStore.getState().closeDocument('welcome-tab');
+        }
+        useEditorStore.getState().openDocument({
+          path: filePath,
+          name: fileName,
+          content: res.content,
+          language: fileName,
+        });
+      }
+    }
+  };
+
+  const handleOpenFolder = async () => {
+    if (window.xivig?.openFolderDialog) {
+      const res = await window.xivig.openFolderDialog();
+      if (!res.canceled && res.folderPath && res.files) {
+        useFileStore.getState().setCurrentFolder(res.folderPath, res.files);
+      }
+    }
+  };
+
+  const handleOpenWelcome = () => {
+    useEditorStore.getState().openDocument({
+      id: 'welcome-tab',
+      name: 'Welcome',
+      path: '',
+      content: '',
+      language: 'markdown',
+    });
+  };
+
   if (!activeDoc) {
+    if (currentFolderPath) {
+      const projectFiles = fileTree.filter((f) => !f.isDirectory).slice(0, 10);
+      return (
+        <div style={emptyContainerStyle}>
+          <div style={{ ...emptyContentStyle, maxWidth: '520px' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                backgroundColor: 'var(--xivig-sidebar)',
+                border: '1px solid var(--xivig-border)',
+                marginBottom: '16px',
+              }}
+            >
+              <FolderOpen size={16} color="var(--xivig-accent)" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--xivig-text)' }}>
+                {currentFolderName}
+              </span>
+            </div>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--xivig-text)', marginBottom: '8px' }}>
+              Workspace Active
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--xivig-text-muted)', marginBottom: '20px', lineHeight: 1.5 }}>
+              Choose a file from your project below or select one from the explorer sidebar to begin editing.
+            </p>
+
+            {projectFiles.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: 'var(--xivig-text-muted)',
+                    marginBottom: '10px',
+                  }}
+                >
+                  Project Files
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                  {projectFiles.map((file) => (
+                    <button
+                      key={file.path}
+                      onClick={() => handleOpenProjectFile(file.path, file.name)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--xivig-sidebar)',
+                        border: '1px solid var(--xivig-border)',
+                        color: 'var(--xivig-text)',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--xivig-accent)';
+                        e.currentTarget.style.backgroundColor = 'var(--xivig-activity-bar)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--xivig-border)';
+                        e.currentTarget.style.backgroundColor = 'var(--xivig-sidebar)';
+                      }}
+                    >
+                      <FileIcon filename={file.name} size={14} />
+                      <span>{file.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => useUIStore.getState().openQuickOpen()}
+                style={actionButtonStyle}
+              >
+                Quick Open (Ctrl+P)
+              </button>
+              <button
+                onClick={() => useEditorStore.getState().createNewDocument()}
+                style={{
+                  ...actionButtonStyle,
+                  backgroundColor: 'transparent',
+                  border: '1px solid var(--xivig-border)',
+                  color: 'var(--xivig-text)',
+                }}
+              >
+                New File (Ctrl+N)
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={emptyContainerStyle}>
         <div style={emptyContentStyle}>
@@ -301,12 +448,34 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           <p style={{ fontSize: '13px', color: 'var(--xivig-text-muted)', marginBottom: '20px' }}>
             Open a file, folder, or create a new file to start editing.
           </p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => useEditorStore.getState().createNewDocument()}
               style={actionButtonStyle}
             >
               New File (Ctrl+N)
+            </button>
+            <button
+              onClick={handleOpenFolder}
+              style={{
+                ...actionButtonStyle,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--xivig-border)',
+                color: 'var(--xivig-text)',
+              }}
+            >
+              Open Folder
+            </button>
+            <button
+              onClick={handleOpenWelcome}
+              style={{
+                ...actionButtonStyle,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--xivig-border)',
+                color: 'var(--xivig-text-muted)',
+              }}
+            >
+              Welcome Page
             </button>
           </div>
         </div>

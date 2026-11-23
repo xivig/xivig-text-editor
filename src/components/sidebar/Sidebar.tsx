@@ -181,12 +181,19 @@ export const Sidebar: React.FC = () => {
       if (window.xivig?.readFile) {
         const res = await window.xivig.readFile(item.path);
         if (res.success && res.content !== undefined) {
+          // If only welcome-tab was open, close it
+          const currentDocs = useEditorStore.getState().documents;
+          if (currentDocs.length === 1 && currentDocs[0].id === 'welcome-tab') {
+            useEditorStore.getState().closeDocument('welcome-tab');
+          }
           openDocument({
             path: item.path,
             name: item.name,
             content: res.content,
             language: item.name,
           });
+        } else if (!res.success && res.error) {
+          console.warn('[Sidebar] Failed to read file:', res.error);
         }
       }
     }
