@@ -32,7 +32,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-tools libopenjp2-7
+          sudo apt-get install -y libarchive-tools libopenjp2-7 libfuse2 || sudo apt-get install -y libarchive-tools libopenjp2-7 libfuse2t64
 
       - name: Install NPM Dependencies
         run: npm ci
@@ -54,15 +54,15 @@ jobs:
 
       - name: Package Windows Binaries (NSIS & Portable)
         if: runner.os == 'Windows'
-        run: npx electron-builder --win
+        run: npx electron-builder --win --publish never
 
       - name: Package Linux Binaries (AppImage, DEB, tar.gz, zip)
         if: runner.os == 'Linux'
-        run: npx electron-builder --linux
+        run: npx electron-builder --linux --publish never
 
       - name: Package macOS Binaries (DMG & ZIP)
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac
+        run: npx electron-builder --mac --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           CSC_LINK: ${{ secrets.CSC_LINK }}
