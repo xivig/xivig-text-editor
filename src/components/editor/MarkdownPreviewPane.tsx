@@ -26,8 +26,7 @@ export const MarkdownPreviewPane: React.FC = () => {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewContentRef = useRef<HTMLDivElement>(null);
   const activeViewRef = useRef<EditorView | null>(null);
-  const isProgrammaticScrollRef = useRef<'editor' | 'preview' | null>(null);
-  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeScrollSourceRef = useRef<'editor' | 'preview'>('editor');
   const syncScrollRef = useRef(syncScroll);
   syncScrollRef.current = syncScroll;
 
@@ -70,7 +69,7 @@ export const MarkdownPreviewPane: React.FC = () => {
 
   // Synchronize Preview scroll from Editor position
   const syncPreviewFromEditor = useCallback(() => {
-    if (!syncScrollRef.current || isProgrammaticScrollRef.current === 'preview') return;
+    if (!syncScrollRef.current || activeScrollSourceRef.current === 'preview') return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -97,19 +96,19 @@ export const MarkdownPreviewPane: React.FC = () => {
         if (topBlock && typeof topBlock.from === 'number') {
           currentLine = targetView.state.doc.lineAt(topBlock.from).number;
         } else {
-          currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
+          currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
         }
       } catch {
         try {
-          const rect = editorScroller.getBoundingClientRect();
-          const pos = targetView.posAtCoords({ x: rect.left + 50, y: rect.top + 10 });
+          const contentRect = targetView.contentDOM.getBoundingClientRect();
+          const pos = targetView.posAtCoords({ x: contentRect.left + 20, y: contentRect.top + 10 });
           if (pos !== null) {
             currentLine = targetView.state.doc.lineAt(pos).number;
           } else {
-            currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
+            currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
           }
         } catch {
-          currentLine = Math.max(1, Math.round(ratio * targetView.state.doc.lines));
+          currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
         }
       }
 
@@ -138,30 +137,33 @@ export const MarkdownPreviewPane: React.FC = () => {
           const progress = Math.max(0, Math.min(1, (currentLine - prevLine) / Math.max(1, nextLine - prevLine)));
           targetScrollTop = prevTop + progress * (nextTop - prevTop);
         } else if (prevEl) {
-          targetScrollTop = getElementScrollTop(prevEl, previewEl);
+          const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
+          const prevTop = getElementScrollTop(prevEl, previewEl);
+          const remainingProgress = (currentLine - prevLine) / Math.max(1, targetView.state.doc.lines - prevLine);
+          targetScrollTop = prevTop + remainingProgress * (previewMax - prevTop);
+        } else if (nextEl) {
+          const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
+          const nextTop = getElementScrollTop(nextEl, previewEl);
+          const firstProgress = Math.max(0, currentLine / Math.max(1, nextLine));
+          targetScrollTop = firstProgress * nextTop;
         } else {
-          targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
+          targetScrollTop = ratio * previewMax;
         }
       } else {
-        targetScrollTop = (editorScroller.scrollTop / editorMax) * previewMax;
+        targetScrollTop = ratio * previewMax;
       }
     }
 
     targetScrollTop = Math.max(0, Math.min(previewMax, Math.round(targetScrollTop)));
 
-    if (Math.abs(previewEl.scrollTop - targetScrollTop) > 2) {
-      isProgrammaticScrollRef.current = 'editor';
+    if (Math.abs(previewEl.scrollTop - targetScrollTop) > 1) {
       previewEl.scrollTop = targetScrollTop;
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = setTimeout(() => {
-        isProgrammaticScrollRef.current = null;
-      }, 50);
     }
   }, [getTargetView]);
 
   // Synchronize Editor scroll from Preview position
   const syncEditorFromPreview = useCallback(() => {
-    if (!syncScrollRef.current || isProgrammaticScrollRef.current === 'editor') return;
+    if (!syncScrollRef.current || activeScrollSourceRef.current !== 'preview') return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -218,6 +220,10 @@ export const MarkdownPreviewPane: React.FC = () => {
           } catch {
             targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
           }
+        } else if (nextEl) {
+          const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
+          const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, nextLine));
+          targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
         } else {
           targetScrollTop = (previewEl.scrollTop / previewMax) * editorMax;
         }
@@ -228,13 +234,8 @@ export const MarkdownPreviewPane: React.FC = () => {
 
     targetScrollTop = Math.max(0, Math.min(editorMax, Math.round(targetScrollTop)));
 
-    if (Math.abs(editorScroller.scrollTop - targetScrollTop) > 2) {
-      isProgrammaticScrollRef.current = 'preview';
+    if (Math.abs(editorScroller.scrollTop - targetScrollTop) > 1) {
       editorScroller.scrollTop = targetScrollTop;
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = setTimeout(() => {
-        isProgrammaticScrollRef.current = null;
-      }, 50);
     }
   }, [getTargetView]);
 
@@ -252,16 +253,31 @@ export const MarkdownPreviewPane: React.FC = () => {
 
       if (view?.scrollDOM) {
         const scroller = view.scrollDOM;
+        const setEditorSource = () => {
+          activeScrollSourceRef.current = 'editor';
+        };
+
         const onEditorScroll = () => {
           syncPreviewFromEditor();
         };
+
+        scroller.addEventListener('mouseenter', setEditorSource, { passive: true });
+        scroller.addEventListener('wheel', setEditorSource, { passive: true });
+        scroller.addEventListener('pointerdown', setEditorSource, { passive: true });
+        scroller.addEventListener('focusin', setEditorSource, { passive: true });
         scroller.addEventListener('scroll', onEditorScroll, { passive: true });
+
         cleanUpEditorScroll = () => {
+          scroller.removeEventListener('mouseenter', setEditorSource);
+          scroller.removeEventListener('wheel', setEditorSource);
+          scroller.removeEventListener('pointerdown', setEditorSource);
+          scroller.removeEventListener('focusin', setEditorSource);
           scroller.removeEventListener('scroll', onEditorScroll);
         };
 
         // Initial sync
         requestAnimationFrame(() => {
+          activeScrollSourceRef.current = 'editor';
           syncPreviewFromEditor();
         });
       }
@@ -306,7 +322,7 @@ export const MarkdownPreviewPane: React.FC = () => {
   useEffect(() => {
     if (!previewContentRef.current) return;
     const ro = new ResizeObserver(() => {
-      if (!isProgrammaticScrollRef.current) {
+      if (activeScrollSourceRef.current !== 'preview') {
         syncPreviewFromEditor();
       }
     });
@@ -333,6 +349,7 @@ export const MarkdownPreviewPane: React.FC = () => {
               setSyncScroll((prev) => {
                 const next = !prev;
                 if (next) {
+                  activeScrollSourceRef.current = 'editor';
                   setTimeout(() => syncPreviewFromEditor(), 50);
                 }
                 return next;
@@ -374,6 +391,15 @@ export const MarkdownPreviewPane: React.FC = () => {
       <div
         ref={previewContainerRef}
         style={{ position: 'relative' }}
+        onMouseEnter={() => {
+          activeScrollSourceRef.current = 'preview';
+        }}
+        onWheel={() => {
+          activeScrollSourceRef.current = 'preview';
+        }}
+        onPointerDown={() => {
+          activeScrollSourceRef.current = 'preview';
+        }}
         className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
       >
         <style>{`
