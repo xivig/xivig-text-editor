@@ -7,48 +7,166 @@ import { assertPathAuthorized } from '../security';
 // Per-window tracking to avoid global singleton collision
 const activeProcessesByWindow = new Map<number, { process: ChildProcess; startTime: number }>();
 
-export interface RunBuildOptions {
-  command: string;
+export interface BuildCompletedEvent {
+  exitCode: number;
+  durationMs: number;
+}
+
+export interface StructuredCommand {
+  program?: string;
+  command?: string;
   args?: string[];
   cwd?: string;
-  secondaryCommand?: {
-    command: string;
-    args?: string[];
-    cwd?: string;
-  };
+}
+
+export interface RunBuildOptions {
+  program?: string;
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  secondaryCommand?: StructuredCommand;
+}
+
+/**
+ * Quote-aware command-line string tokenizer that respects single/double quotes and escapes.
+ * Never performs naive whitespace splitting.
+ */
+export function parseCommandLine(cmdString: string): { program: string; args: string[] } {
+  const trimmed = cmdString.trim();
+  if (!trimmed) return { program: '', args: [] };
+
+  const tokens: string[] = [];
+  let current = '';
+  let inQuote: '"' | "'" | null = null;
+  let escape = false;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+
+    if (escape) {
+      current += char;
+      escape = false;
+    } else if (char === '\\' && inQuote !== "'") {
+      if (i + 1 < trimmed.length && (trimmed[i + 1] === '"' || trimmed[i + 1] === '\\')) {
+        escape = true;
+      } else {
+        current += char;
+      }
+    } else if (inQuote) {
+      if (char === inQuote) {
+        inQuote = null;
+      } else {
+        current += char;
+      }
+    } else if (char === '"' || char === "'") {
+      inQuote = char;
+    } else if (/\s/.test(char)) {
+      if (current.length > 0) {
+        tokens.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.length > 0) {
+    tokens.push(current);
+  }
+
+  const program = tokens[0] || '';
+  const args = tokens.slice(1);
+  return { program, args };
 }
 
 /**
  * Validates that command components do not contain dangerous shell metacharacters.
+ * If running via Windows batch/cmd interpreter, enforces strict checks against
+ * cmd.exe expansion characters (%, ^, !, parentheses, &, |, <, >, ;, `).
  */
-function validateCommandTokens(tokens: string[]): void {
-  const dangerousPattern = /[|&;`$<>]/;
+export function validateCommandTokens(tokens: string[], isWindowsBatch = false): void {
+  // General shell metacharacters
+  const dangerousGeneral = /[|&;`$<>]/;
+  // Strict Windows cmd.exe expansion and delimiter metacharacters
+  const dangerousCmd = /[|&;`$<>%^!()]/;
+
+  const pattern = isWindowsBatch ? dangerousCmd : dangerousGeneral;
+
   for (const token of tokens) {
-    if (dangerousPattern.test(token)) {
-      throw new Error(`Security Exception: Command contains forbidden shell metacharacter: "${token}"`);
+    if (typeof token !== 'string') continue;
+    if (pattern.test(token)) {
+      const charMatch = token.match(pattern)?.[0];
+      throw new Error(
+        `Security Exception: Command argument contains forbidden ${isWindowsBatch ? 'Windows cmd.exe' : 'shell'} metacharacter (${charMatch}): "${token}"`
+      );
     }
   }
 }
 
 /**
- * Resolves the executable path on Windows safely without invoking shell interpretation.
+ * Resolves the executable path on Windows safely.
+ * Prefers direct .exe binaries over batch files to avoid shell interpreter invocation.
  */
-function resolveWindowsBinary(command: string): string {
+export function resolveWindowsBinary(commandOrProgram: string, cwd?: string): { binary: string; isBatch: boolean } {
   const isWin = process.platform === 'win32';
-  if (!isWin) return command;
-
-  const ext = path.extname(command).toLowerCase();
-  if (ext === '.exe' || ext === '.cmd' || ext === '.bat') {
-    return command;
+  if (!isWin) {
+    return { binary: commandOrProgram, isBatch: false };
   }
 
-  // Common tool mappings on Windows
-  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm', 'tsc']);
-  if (knownCmdTools.has(command.toLowerCase())) {
-    return `${command}.cmd`;
+  const ext = path.extname(commandOrProgram).toLowerCase();
+  if (ext === '.cmd' || ext === '.bat') {
+    return { binary: commandOrProgram, isBatch: true };
+  }
+  if (ext === '.exe') {
+    return { binary: commandOrProgram, isBatch: false };
   }
 
-  return command;
+  // Check if executable exists in cwd with .exe or without
+  if (cwd && !path.isAbsolute(commandOrProgram)) {
+    const directExe = path.join(cwd, `${commandOrProgram}.exe`);
+    if (fs.existsSync(directExe)) {
+      return { binary: directExe, isBatch: false };
+    }
+    const directBin = path.join(cwd, commandOrProgram);
+    if (fs.existsSync(directBin)) {
+      return { binary: directBin, isBatch: false };
+    }
+  }
+
+  // Common tool mappings on Windows:
+  // Node, Python, GCC, Java are direct executables (.exe)
+  const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'gcc', 'g++', 'java', 'javac', 'git', 'cargo', 'rustc']);
+  const lower = commandOrProgram.toLowerCase();
+  if (knownExeTools.has(lower)) {
+    return { binary: `${commandOrProgram}.exe`, isBatch: false };
+  }
+
+  // npm, npx, yarn, pnpm are batch wrappers on Windows
+  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm']);
+  if (knownCmdTools.has(lower)) {
+    return { binary: `${commandOrProgram}.cmd`, isBatch: true };
+  }
+
+  return { binary: commandOrProgram, isBatch: false };
+}
+
+/**
+ * Extracts structured program and argument list from RunBuildOptions.
+ */
+export function resolveStructuredCommand(options: { program?: string; command?: string; args?: string[] }): { program: string; args: string[] } {
+  if (options.program && options.program.trim()) {
+    const program = options.program.trim();
+    const explicitArgs = (options.args || []).map((a) => String(a));
+    return { program, args: explicitArgs };
+  }
+
+  if (options.command && options.command.trim()) {
+    const parsed = parseCommandLine(options.command);
+    const combinedArgs = [...parsed.args, ...(options.args || []).map((a) => String(a))];
+    return { program: parsed.program, args: combinedArgs };
+  }
+
+  return { program: '', args: [] };
 }
 
 export function runBuildProcess(
@@ -64,11 +182,12 @@ export function runBuildProcess(
   // Stop any currently running build task in THIS window
   stopBuildProcess(win);
 
-  const { command, args = [], cwd = process.cwd() } = options;
+  const { program: rawProgram, args: initialArgs } = resolveStructuredCommand(options);
+  const cwd = options.cwd || process.cwd();
 
-  // 1. Strict validation of command and working directory
-  if (!command || typeof command !== 'string' || !command.trim()) {
-    return { success: false, error: 'Build command must be a non-empty string' };
+  // 1. Strict validation of program and working directory
+  if (!rawProgram) {
+    return { success: false, error: 'Build execution requires a valid program or command' };
   }
 
   const safeCwd = path.resolve(cwd);
@@ -85,44 +204,45 @@ export function runBuildProcess(
     return { success: false, error: `Failed to inspect working directory: ${err.message}` };
   }
 
-  // 2. Strict workspace authorization check
+  // 2. Strict per-window workspace authorization check
   try {
-    assertPathAuthorized(safeCwd, 'build:run');
+    assertPathAuthorized(winId, safeCwd, 'build:run');
   } catch (secErr: any) {
     return { success: false, error: secErr.message };
   }
 
-  // 3. Parse and validate command tokens
-  const tokens = command.trim().split(/\s+/);
-  const mainBinary = tokens[0];
-  const initialArgs = tokens.slice(1);
-  const rawFinalArgs = [...initialArgs, ...args];
+  // 3. Resolve Windows binary type (direct .exe vs batch launcher)
+  const { binary: targetBinary, isBatch } = resolveWindowsBinary(rawProgram, safeCwd);
 
-  // Defensive sanitization: strip any surrounding quotes from arguments to prevent Node/spawn relative-path concatenation bugs
-  const finalArgs = rawFinalArgs.map((arg) => {
-    if (typeof arg === 'string' && ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'")))) {
+  // Strip wrapping quotes from arguments to prevent Node/spawn relative-path concatenation bugs
+  const finalArgs = initialArgs.map((arg) => {
+    if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
       return arg.slice(1, -1);
     }
     return arg;
   });
 
+  // 4. Validate command arguments against shell and cmd.exe expansion rules
   try {
-    validateCommandTokens([mainBinary, ...finalArgs]);
+    validateCommandTokens([targetBinary, ...finalArgs], isBatch);
+
     if (options.secondaryCommand) {
-      const secTokens = options.secondaryCommand.command.trim().split(/\s+/);
-      validateCommandTokens([...secTokens, ...(options.secondaryCommand.args || [])]);
+      const secResolved = resolveStructuredCommand(options.secondaryCommand);
+      const secBinaryInfo = resolveWindowsBinary(secResolved.program, options.secondaryCommand.cwd ? path.resolve(options.secondaryCommand.cwd) : safeCwd);
+      validateCommandTokens([secBinaryInfo.binary, ...secResolved.args], secBinaryInfo.isBatch);
     }
   } catch (valErr: any) {
     return { success: false, error: valErr.message };
   }
 
   const startTime = Date.now();
+  let proc: ChildProcess | undefined;
 
   try {
     // Notify renderer that build has started
     if (!win.isDestroyed()) {
       win.webContents.send('build:start', {
-        command: command.trim(),
+        command: rawProgram,
         args: finalArgs,
         cwd: safeCwd,
         timestamp: new Date().toLocaleTimeString(),
@@ -130,21 +250,14 @@ export function runBuildProcess(
     }
 
     const isWin = process.platform === 'win32';
-    const targetBinary = resolveWindowsBinary(mainBinary);
-
-    // Secure execution:
-    // Always pass binary and arguments as discrete array items with shell: false.
-    // Avoid cmd.exe string concatenation and windowsVerbatimArguments vulnerabilities.
-    let proc: ChildProcess;
-
     const baseEnv = {
       ...process.env,
       FORCE_COLOR: '1',
       PYTHONUNBUFFERED: '1',
     };
 
-    if (isWin && (targetBinary.endsWith('.cmd') || targetBinary.endsWith('.bat'))) {
-      // For Windows batch/cmd wrappers, pass arguments as discrete array entries to cmd.exe
+    if (isWin && isBatch) {
+      // For Windows batch files, pass discrete arguments to cmd.exe with shell: false
       proc = spawn('cmd.exe', ['/d', '/c', targetBinary, ...finalArgs], {
         cwd: safeCwd,
         env: baseEnv,
@@ -183,7 +296,7 @@ export function runBuildProcess(
       if (!win.isDestroyed()) {
         let helpfulTip = '';
         if (err.code === 'ENOENT') {
-          const binLower = mainBinary.toLowerCase();
+          const binLower = rawProgram.toLowerCase();
           if (binLower === 'python' || binLower === 'py' || binLower === 'python3') {
             helpfulTip = '\r\n[Tip] Python interpreter was not found on PATH. Please ensure Python is installed and added to PATH (e.g. from python.org or Microsoft Store).\r\n';
           } else if (binLower === 'gcc' || binLower === 'g++') {
@@ -205,47 +318,56 @@ export function runBuildProcess(
         win.webContents.send('build:done', {
           exitCode: 1,
           durationMs: Date.now() - startTime,
-        });
-        win.webContents.send('build:exit', {
-          code: 1,
-          duration: Math.round((Date.now() - startTime) / 1000),
-        });
+        } as BuildCompletedEvent);
       }
-      activeProcessesByWindow.delete(winId);
+
+      // Safe cleanup: only delete if map entry still refers to THIS process
+      const current = activeProcessesByWindow.get(winId);
+      if (current?.process === proc) {
+        activeProcessesByWindow.delete(winId);
+      }
     });
 
     proc.on('close', (code: number | null) => {
       // If primary command succeeded and a secondary command was provided (e.g. compile & run)
       if (code === 0 && options.secondaryCommand) {
-        const secOptions = options.secondaryCommand;
-        const secTokens = secOptions.command.trim().split(/\s+/);
-        const secBinary = secTokens[0];
-        const secRawArgs = [...secTokens.slice(1), ...(secOptions.args || [])];
-        const secFinalArgs = secRawArgs.map((arg) => {
-          if (typeof arg === 'string' && ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'")))) {
+        const secResolved = resolveStructuredCommand(options.secondaryCommand);
+        const secCwd = options.secondaryCommand.cwd ? path.resolve(options.secondaryCommand.cwd) : safeCwd;
+        const { binary: secBinary, isBatch: secIsBatch } = resolveWindowsBinary(secResolved.program, secCwd);
+
+        let finalSecBinary = secBinary;
+        if (!path.isAbsolute(finalSecBinary) && fs.existsSync(path.join(secCwd, finalSecBinary))) {
+          finalSecBinary = path.join(secCwd, finalSecBinary);
+        }
+
+        const secFinalArgs = secResolved.args.map((arg) => {
+          if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
             return arg.slice(1, -1);
           }
           return arg;
         });
 
-        const secCwd = secOptions.cwd ? path.resolve(secOptions.cwd) : safeCwd;
-        let resolvedSecBinary = resolveWindowsBinary(secBinary);
-        if (!path.isAbsolute(resolvedSecBinary) && fs.existsSync(path.join(secCwd, resolvedSecBinary))) {
-          resolvedSecBinary = path.join(secCwd, resolvedSecBinary);
-        }
-
         if (!win.isDestroyed()) {
           win.webContents.send('build:data', {
             type: 'stdout',
-            text: `\r\n[Compilation successful. Launching: ${path.basename(resolvedSecBinary)}]\r\n`,
+            text: `\r\n[Compilation successful. Launching: ${path.basename(finalSecBinary)}]\r\n`,
           });
         }
 
-        const secProc = spawn(resolvedSecBinary, secFinalArgs, {
-          cwd: secCwd,
-          env: baseEnv,
-          shell: false,
-        });
+        let secProc: ChildProcess;
+        if (isWin && secIsBatch) {
+          secProc = spawn('cmd.exe', ['/d', '/c', finalSecBinary, ...secFinalArgs], {
+            cwd: secCwd,
+            env: baseEnv,
+            shell: false,
+          });
+        } else {
+          secProc = spawn(finalSecBinary, secFinalArgs, {
+            cwd: secCwd,
+            env: baseEnv,
+            shell: false,
+          });
+        }
 
         activeProcessesByWindow.set(winId, { process: secProc, startTime });
 
@@ -276,13 +398,12 @@ export function runBuildProcess(
             win.webContents.send('build:done', {
               exitCode: 1,
               durationMs: Date.now() - startTime,
-            });
-            win.webContents.send('build:exit', {
-              code: 1,
-              duration: Math.round((Date.now() - startTime) / 1000),
-            });
+            } as BuildCompletedEvent);
           }
-          activeProcessesByWindow.delete(winId);
+          const current = activeProcessesByWindow.get(winId);
+          if (current?.process === secProc) {
+            activeProcessesByWindow.delete(winId);
+          }
         });
 
         secProc.on('close', (secCode: number | null) => {
@@ -291,13 +412,12 @@ export function runBuildProcess(
             win.webContents.send('build:done', {
               exitCode: secCode ?? 0,
               durationMs,
-            });
-            win.webContents.send('build:exit', {
-              code: secCode ?? 0,
-              duration: Math.round(durationMs / 1000),
-            });
+            } as BuildCompletedEvent);
           }
-          activeProcessesByWindow.delete(winId);
+          const current = activeProcessesByWindow.get(winId);
+          if (current?.process === secProc) {
+            activeProcessesByWindow.delete(winId);
+          }
         });
         return;
       }
@@ -308,18 +428,24 @@ export function runBuildProcess(
         win.webContents.send('build:done', {
           exitCode: code ?? 0,
           durationMs,
-        });
-        win.webContents.send('build:exit', {
-          code: code ?? 0,
-          duration: Math.round(durationMs / 1000),
-        });
+        } as BuildCompletedEvent);
       }
-      activeProcessesByWindow.delete(winId);
+
+      // Safe cleanup: only delete if map entry still refers to THIS process
+      const current = activeProcessesByWindow.get(winId);
+      if (current?.process === proc) {
+        activeProcessesByWindow.delete(winId);
+      }
     });
 
     return { success: true };
   } catch (err: any) {
-    activeProcessesByWindow.delete(winId);
+    if (proc) {
+      const current = activeProcessesByWindow.get(winId);
+      if (current?.process === proc) {
+        activeProcessesByWindow.delete(winId);
+      }
+    }
     return { success: false, error: `Execution exception: ${err.message}` };
   }
 }

@@ -2,11 +2,15 @@ import { BrowserWindow, IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { existsSync, realpathSync, statSync } from 'node:fs';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
-// Sets storing strictly canonical, real filesystem paths
-const approvedWorkspaces = new Set<string>();
-const approvedFiles = new Set<string>();
+export interface WindowPermissions {
+  workspaces: Set<string>;
+  files: Set<string>;
+}
+
+// Per-window authorization isolation
+const permissionsByWindow = new Map<number, WindowPermissions>();
 
 let expectedRendererDistCanonical: string | null = null;
 
@@ -89,10 +93,42 @@ export function validateIpcSender(event: IpcMainInvokeEvent | IpcMainEvent): boo
 }
 
 /**
- * Registers a workspace directory as approved following explicit user selection via native dialog.
+ * Validates the IPC sender and returns the validated BrowserWindow instance.
+ * Never accepts a window ID supplied by the renderer.
+ */
+export function getValidatedWindow(event: IpcMainInvokeEvent | IpcMainEvent): BrowserWindow {
+  if (!validateIpcSender(event)) {
+    throw new Error('Security Exception: Unauthorized IPC sender');
+  }
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win || win.isDestroyed()) {
+    throw new Error('Security Exception: No valid BrowserWindow for IPC sender');
+  }
+  return win;
+}
+
+export function getOrCreateWindowPermissions(winId: number): WindowPermissions {
+  let perms = permissionsByWindow.get(winId);
+  if (!perms) {
+    perms = {
+      workspaces: new Set<string>(),
+      files: new Set<string>(),
+    };
+    permissionsByWindow.set(winId, perms);
+  }
+  return perms;
+}
+
+export function clearWindowPermissions(winId: number): void {
+  permissionsByWindow.delete(winId);
+  console.log(`[Security Win-${winId}] Cleared window authorization permissions`);
+}
+
+/**
+ * Registers a workspace directory as approved following explicit user selection via native dialog in a specific window.
  * Resolves symlinks to ensure the canonical root is recorded.
  */
-export function addApprovedWorkspace(folderPath: string): void {
+export function addApprovedWorkspace(winId: number, folderPath: string): void {
   try {
     const resolved = path.resolve(folderPath);
     if (!existsSync(resolved)) return;
@@ -100,40 +136,48 @@ export function addApprovedWorkspace(folderPath: string): void {
     if (!stat.isDirectory()) return;
 
     const canonical = realpathSync(resolved);
-    approvedWorkspaces.add(canonical);
-    console.log('[Security] Registered approved workspace root:', canonical);
+    const perms = getOrCreateWindowPermissions(winId);
+    perms.workspaces.add(canonical);
+    console.log(`[Security Win-${winId}] Registered approved workspace root:`, canonical);
   } catch (err) {
-    console.warn('[Security] Failed to add approved workspace:', err);
+    console.warn(`[Security Win-${winId}] Failed to add approved workspace:`, err);
   }
 }
 
 /**
- * Revokes approval for a workspace directory (e.g. on workspace close).
+ * Revokes approval for a workspace directory for a specific window (e.g. on workspace close).
  */
-export function removeApprovedWorkspace(folderPath: string): void {
+export function removeApprovedWorkspace(winId: number, folderPath: string): void {
   try {
+    const perms = permissionsByWindow.get(winId);
+    if (!perms) return;
     const resolved = path.resolve(folderPath);
     const canonical = existsSync(resolved) ? realpathSync(resolved) : resolved;
-    approvedWorkspaces.delete(canonical);
-    approvedWorkspaces.delete(resolved);
+    perms.workspaces.delete(canonical);
+    perms.workspaces.delete(resolved);
+    console.log(`[Security Win-${winId}] Revoked approved workspace root:`, canonical);
   } catch {
-    approvedWorkspaces.delete(path.resolve(folderPath));
+    const perms = permissionsByWindow.get(winId);
+    if (perms) perms.workspaces.delete(path.resolve(folderPath));
   }
 }
 
 /**
- * Registers an individually approved file following explicit user selection via native dialog.
+ * Registers an individually approved file following explicit user selection via native dialog for a specific window.
  */
-export function addApprovedFile(filePath: string): void {
+export function addApprovedFile(winId: number, filePath: string): void {
   try {
+    const perms = getOrCreateWindowPermissions(winId);
     const resolved = path.resolve(filePath);
     if (existsSync(resolved)) {
-      approvedFiles.add(realpathSync(resolved));
+      perms.files.add(realpathSync(resolved));
     }
     // Also track the unresolved target in case it's a new file about to be created
-    approvedFiles.add(resolved);
+    perms.files.add(resolved);
+    console.log(`[Security Win-${winId}] Registered approved file:`, resolved);
   } catch {
-    approvedFiles.add(path.resolve(filePath));
+    const perms = getOrCreateWindowPermissions(winId);
+    perms.files.add(path.resolve(filePath));
   }
 }
 
@@ -164,20 +208,23 @@ export function validateContentPayload(content: unknown, maxBytes = 100 * 1024 *
 }
 
 /**
- * Checks if a target path is strictly inside an approved workspace or explicitly approved file.
+ * Checks if a target path is strictly inside an approved workspace or explicitly approved file for a specific window.
  * Resolves all symlinks to protect against filesystem escapes.
  */
-export function isPathAuthorized(targetPath: string): boolean {
+export function isPathAuthorized(winId: number, targetPath: string): boolean {
   try {
+    const perms = permissionsByWindow.get(winId);
+    if (!perms) return false;
+
     const resolved = path.resolve(targetPath);
 
-    // 1. Direct check against individually approved files
-    if (approvedFiles.has(resolved)) {
+    // 1. Direct check against individually approved files for THIS window
+    if (perms.files.has(resolved)) {
       return true;
     }
     if (existsSync(resolved)) {
       const canonicalFile = realpathSync(resolved);
-      if (approvedFiles.has(canonicalFile)) {
+      if (perms.files.has(canonicalFile)) {
         return true;
       }
     }
@@ -206,8 +253,8 @@ export function isPathAuthorized(targetPath: string): boolean {
       canonicalTarget = path.join(canonicalParent, ...remainingSegments);
     }
 
-    // 3. Verify target is within at least one approved workspace canonical root
-    for (const root of approvedWorkspaces) {
+    // 3. Verify target is within at least one approved workspace canonical root for THIS window
+    for (const root of perms.workspaces) {
       const relative = path.relative(root, canonicalTarget);
       if (!relative.startsWith('..') && !path.isAbsolute(relative)) {
         return true;
@@ -216,30 +263,35 @@ export function isPathAuthorized(targetPath: string): boolean {
 
     return false;
   } catch (err) {
-    console.warn('[Security] Path authorization check failed:', err);
+    console.warn(`[Security Win-${winId}] Path authorization check failed:`, err);
     return false;
   }
 }
 
 /**
- * Ensures a path is authorized before proceeding with a filesystem operation.
+ * Ensures a path is authorized before proceeding with a filesystem operation in a specific window.
  */
-export function assertPathAuthorized(targetPath: string, operationName: string): void {
-  if (!isPathAuthorized(targetPath)) {
-    throw new Error(`Security Exception: [${operationName}] Access denied outside approved workspaces: ${targetPath}`);
+export function assertPathAuthorized(winId: number, targetPath: string, operationName: string): void {
+  if (!isPathAuthorized(winId, targetPath)) {
+    throw new Error(`Security Exception: [${operationName}] Access denied outside approved workspaces for window ${winId}: ${targetPath}`);
   }
 }
 
 /**
  * Performs a re-check immediately before a destructive operation to prevent TOCTOU symlink swaps.
  */
-export function assertImmediateDestructiveAuthorization(targetPath: string, operationName: string): void {
+export function assertImmediateDestructiveAuthorization(winId: number, targetPath: string, operationName: string): void {
+  const perms = permissionsByWindow.get(winId);
+  if (!perms) {
+    throw new Error(`Security Exception: [${operationName}] No authorization context found for window ${winId}`);
+  }
+
   const resolved = path.resolve(targetPath);
   if (existsSync(resolved)) {
     const canonical = realpathSync(resolved);
-    let authorized = approvedFiles.has(canonical) || approvedFiles.has(resolved);
+    let authorized = perms.files.has(canonical) || perms.files.has(resolved);
     if (!authorized) {
-      for (const root of approvedWorkspaces) {
+      for (const root of perms.workspaces) {
         const relative = path.relative(root, canonical);
         if (!relative.startsWith('..') && !path.isAbsolute(relative)) {
           authorized = true;
@@ -248,10 +300,10 @@ export function assertImmediateDestructiveAuthorization(targetPath: string, oper
       }
     }
     if (!authorized) {
-      throw new Error(`Security Exception: [${operationName}] Symlink destination escape detected: ${canonical}`);
+      throw new Error(`Security Exception: [${operationName}] Symlink destination escape detected for window ${winId}: ${canonical}`);
     }
   } else {
-    assertPathAuthorized(targetPath, operationName);
+    assertPathAuthorized(winId, targetPath, operationName);
   }
 }
 

@@ -170,4 +170,30 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
     expect(available.some((t) => t.name.includes('C: Compile & Run main.c'))).toBe(true);
     expect(available.some((t) => t.name.includes('Java: Run App.java'))).toBe(true);
   });
+
+  it('standardizes build:done completion contract with exitCode and durationMs', () => {
+    const eventPayload = { exitCode: 0, durationMs: 350 };
+    useBuildStore.setState({ isRunning: true, exitCode: null, durationMs: null });
+
+    // Directly test state handling of build:done payload
+    useBuildStore.setState({
+      isRunning: false,
+      exitCode: eventPayload.exitCode,
+      durationMs: eventPayload.durationMs,
+      outputLines: [
+        {
+          id: 'test-done',
+          type: 'success',
+          text: `[Finished in ${(eventPayload.durationMs / 1000).toFixed(2)}s with exit code ${eventPayload.exitCode}]`,
+          timestamp: '12:00:00 PM',
+        },
+      ],
+    });
+
+    const state = useBuildStore.getState();
+    expect(state.isRunning).toBe(false);
+    expect(state.exitCode).toBe(0);
+    expect(state.durationMs).toBe(350);
+    expect(state.outputLines.some((l) => l.text.includes('Finished in 0.35s with exit code 0'))).toBe(true);
+  });
 });

@@ -18,7 +18,7 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
     try {
       const resolved = path.resolve(cwd);
       if (fs.existsSync(resolved)) {
-        assertPathAuthorized(resolved, 'terminal:init');
+        assertPathAuthorized(winId, resolved, 'terminal:init');
         targetCwd = resolved;
       }
     } catch (err: any) {
@@ -66,7 +66,12 @@ export function initTerminalSession(cwd: string | null, win: BrowserWindow | nul
       if (!win.isDestroyed()) {
         win.webContents.send('terminal:data', `\r\n[Process terminated with exit code ${code}]\r\n`);
       }
-      terminalsByWindow.delete(winId);
+      // Safe cleanup: only delete entry if it still refers to this specific closed process
+      if (terminalsByWindow.get(winId) === currentShell) {
+        if (terminalsByWindow.get(winId) === currentShell) {
+        terminalsByWindow.delete(winId);
+      }
+      }
     });
 
     terminalsByWindow.set(winId, currentShell);
@@ -101,7 +106,9 @@ export function stopTerminal(winId?: number): void {
       } catch {
         // ignore
       }
-      terminalsByWindow.delete(winId);
+      if (terminalsByWindow.get(winId) === currentShell) {
+        terminalsByWindow.delete(winId);
+      }
     }
   } else {
     for (const [id, shellProc] of terminalsByWindow) {

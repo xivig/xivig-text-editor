@@ -164,7 +164,7 @@ export async function startLiveServer(
   let canonicalRoot: string;
   try {
     const resolvedPath = path.resolve(rootDirectory);
-    assertPathAuthorized(resolvedPath, 'liveserver:start');
+    assertPathAuthorized(winId, resolvedPath, 'liveserver:start');
     const stat = fs.statSync(resolvedPath);
     const targetDir = stat.isDirectory() ? resolvedPath : path.dirname(resolvedPath);
     canonicalRoot = fs.realpathSync(targetDir);

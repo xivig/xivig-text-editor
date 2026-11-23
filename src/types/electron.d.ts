@@ -122,11 +122,13 @@ export interface XivigAPI {
 
   // Build System & Task Runner
   buildRun: (options: {
-    command: string;
+    command?: string;
+    program?: string;
     args?: string[];
     cwd?: string;
     secondaryCommand?: {
-      command: string;
+      command?: string;
+      program?: string;
       args?: string[];
       cwd?: string;
     };

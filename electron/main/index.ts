@@ -44,6 +44,8 @@ import {
 } from './updater';
 import {
   validateIpcSender,
+  getValidatedWindow,
+  clearWindowPermissions,
   setExpectedRendererDist,
   addApprovedWorkspace,
   removeApprovedWorkspace,
@@ -196,13 +198,14 @@ async function createWindow() {
   setTimeout(performBackgroundUpdateCheck, 4500);
   const updateInterval = setInterval(performBackgroundUpdateCheck, 30 * 60 * 1000);
 
-  // Clean up per-window background services when THIS window closes
+  // Clean up per-window background services and permissions when THIS window closes
   currentWin.on('closed', () => {
     clearInterval(updateInterval);
     stopWatching(currentWin.id);
     stopTerminal(currentWin.id);
     stopBuildProcess(currentWin);
     stopLiveServer(currentWin);
+    clearWindowPermissions(currentWin.id);
 
     openWindows.delete(currentWin);
     if (activeWindow === currentWin) {
@@ -232,22 +235,6 @@ app.whenReady().then(() => {
       },
     });
   });
-
-  // Pre-authorize local user workspaces and files from SQLite history
-  try {
-    const recentWs = getRecentWorkspaces(10);
-    for (const ws of recentWs) {
-      if (ws.path && fsSync.existsSync(ws.path)) {
-        addApprovedWorkspace(ws.path);
-      }
-    }
-    const recentFs = getRecentFiles(12);
-    for (const rf of recentFs) {
-      if (rf.path && fsSync.existsSync(rf.path)) {
-        addApprovedFile(rf.path);
-      }
-    }
-  } catch {}
 
   createWindow();
 
@@ -323,7 +310,7 @@ ipcMain.handle('dialog:openFile', async (event) => {
 
   const filePath = result.filePaths[0];
   try {
-    addApprovedFile(filePath);
+    addApprovedFile(targetWin.id, filePath);
     const content = await fs.readFile(filePath, 'utf-8');
     const name = path.basename(filePath);
     addRecentFile(filePath, name);
@@ -334,9 +321,7 @@ ipcMain.handle('dialog:openFile', async (event) => {
 });
 
 ipcMain.handle('dialog:openFolder', async (event) => {
-  if (!validateIpcSender(event)) return { canceled: true };
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  if (!targetWin) return { canceled: true };
+  const targetWin = getValidatedWindow(event);
 
   const result = await dialog.showOpenDialog(targetWin, {
     properties: ['openDirectory'],
@@ -348,8 +333,8 @@ ipcMain.handle('dialog:openFolder', async (event) => {
 
   const folderPath = result.filePaths[0];
   try {
-    // Explicit user approval through native folder dialog
-    addApprovedWorkspace(folderPath);
+    // Explicit user approval through native folder dialog for this window
+    addApprovedWorkspace(targetWin.id, folderPath);
     const folderName = path.basename(folderPath) || folderPath;
     addRecentWorkspace(folderPath, folderName);
     watchWorkspace(folderPath, targetWin);
@@ -367,17 +352,15 @@ ipcMain.handle('dialog:openFolder', async (event) => {
 });
 
 ipcMain.handle('file:save', async (event, { filePath, content }: { filePath: string; content: string }) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(filePath);
     const safeContent = validateContentPayload(content);
-    assertImmediateDestructiveAuthorization(safePath, 'file:save');
+    assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:save');
 
     await atomicWriteFile(safePath, safeContent);
-    addApprovedFile(safePath);
+    addApprovedFile(targetWin.id, safePath);
     addRecentFile(safePath, path.basename(safePath));
     triggerLiveReload();
     return { success: true };
@@ -387,9 +370,7 @@ ipcMain.handle('file:save', async (event, { filePath, content }: { filePath: str
 });
 
 ipcMain.handle('file:saveDialog', async (event, { defaultName, content }: { defaultName?: string; content?: string }) => {
-  if (!validateIpcSender(event)) return { canceled: true };
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  if (!targetWin) return { canceled: true };
+  const targetWin = getValidatedWindow(event);
 
   const result = await dialog.showSaveDialog(targetWin, {
     defaultPath: defaultName || 'Untitled.txt',
@@ -400,8 +381,8 @@ ipcMain.handle('file:saveDialog', async (event, { defaultName, content }: { defa
   }
 
   const safePath = validatePathInput(result.filePath);
-  // Explicit user approval through native save dialog
-  addApprovedFile(safePath);
+  // Explicit user approval through native save dialog for this window
+  addApprovedFile(targetWin.id, safePath);
 
   if (content !== undefined) {
     try {
@@ -418,13 +399,11 @@ ipcMain.handle('file:saveDialog', async (event, { defaultName, content }: { defa
 });
 
 ipcMain.handle('file:read', async (event, filePath: string) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(filePath);
-    assertPathAuthorized(safePath, 'file:read');
+    assertPathAuthorized(targetWin.id, safePath, 'file:read');
 
     const content = await fs.readFile(safePath, 'utf-8');
     addRecentFile(safePath, path.basename(safePath));
@@ -435,22 +414,20 @@ ipcMain.handle('file:read', async (event, filePath: string) => {
 });
 
 ipcMain.handle('file:readDir', async (event, dirPath: string) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(dirPath);
 
-    // If safePath is in recent workspaces previously authorized by the user, ensure it is active
+    // If safePath is in recent workspaces previously authorized by the user, activate for this window
     try {
       const recentWs = getRecentWorkspaces(10);
       if (recentWs.some((w) => path.resolve(w.path) === safePath)) {
-        addApprovedWorkspace(safePath);
+        addApprovedWorkspace(targetWin.id, safePath);
       }
     } catch {}
 
-    assertPathAuthorized(safePath, 'file:readDir');
+    assertPathAuthorized(targetWin.id, safePath, 'file:readDir');
 
     const entries = await fs.readdir(safePath, { withFileTypes: true });
     const items = entries.map((entry) => ({
@@ -466,13 +443,11 @@ ipcMain.handle('file:readDir', async (event, dirPath: string) => {
 
 // File Management operations (create, delete, rename, duplicate)
 ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targetPath: string; isDirectory: boolean }) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(targetPath);
-    assertImmediateDestructiveAuthorization(safePath, 'file:create');
+    assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:create');
 
     if (isDirectory) {
       await fs.mkdir(safePath, { recursive: true });
@@ -481,7 +456,7 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
       await fs.mkdir(parentDir, { recursive: true });
       await fs.writeFile(safePath, '', { flag: 'w' });
     }
-    addApprovedFile(safePath);
+    addApprovedFile(targetWin.id, safePath);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -489,13 +464,11 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
 });
 
 ipcMain.handle('file:delete', async (event, targetPath: string) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(targetPath);
-    assertImmediateDestructiveAuthorization(safePath, 'file:delete');
+    assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:delete');
 
     const stat = await fs.stat(safePath);
     if (stat.isDirectory()) {
@@ -510,18 +483,16 @@ ipcMain.handle('file:delete', async (event, targetPath: string) => {
 });
 
 ipcMain.handle('file:rename', async (event, { oldPath, newPath }: { oldPath: string; newPath: string }) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safeOld = validatePathInput(oldPath);
     const safeNew = validatePathInput(newPath);
-    assertImmediateDestructiveAuthorization(safeOld, 'file:rename (source)');
-    assertImmediateDestructiveAuthorization(safeNew, 'file:rename (destination)');
+    assertImmediateDestructiveAuthorization(targetWin.id, safeOld, 'file:rename (source)');
+    assertImmediateDestructiveAuthorization(targetWin.id, safeNew, 'file:rename (destination)');
 
     await fs.rename(safeOld, safeNew);
-    addApprovedFile(safeNew);
+    addApprovedFile(targetWin.id, safeNew);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -529,18 +500,16 @@ ipcMain.handle('file:rename', async (event, { oldPath, newPath }: { oldPath: str
 });
 
 ipcMain.handle('file:duplicate', async (event, { sourcePath, targetPath }: { sourcePath: string; targetPath: string }) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safeSource = validatePathInput(sourcePath);
     const safeTarget = validatePathInput(targetPath);
-    assertPathAuthorized(safeSource, 'file:duplicate (source)');
-    assertImmediateDestructiveAuthorization(safeTarget, 'file:duplicate (destination)');
+    assertPathAuthorized(targetWin.id, safeSource, 'file:duplicate (source)');
+    assertImmediateDestructiveAuthorization(targetWin.id, safeTarget, 'file:duplicate (destination)');
 
     await fs.copyFile(safeSource, safeTarget);
-    addApprovedFile(safeTarget);
+    addApprovedFile(targetWin.id, safeTarget);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -548,13 +517,11 @@ ipcMain.handle('file:duplicate', async (event, { sourcePath, targetPath }: { sou
 });
 
 ipcMain.handle('file:revealInExplorer', async (event, targetPath: string) => {
-  if (!validateIpcSender(event)) {
-    return { success: false, error: 'Unauthorized IPC invocation' };
-  }
+  const targetWin = getValidatedWindow(event);
 
   try {
     const safePath = validatePathInput(targetPath);
-    assertPathAuthorized(safePath, 'file:revealInExplorer');
+    assertPathAuthorized(targetWin.id, safePath, 'file:revealInExplorer');
     shell.showItemInFolder(safePath);
     return { success: true };
   } catch (error: any) {
@@ -569,19 +536,18 @@ ipcMain.handle('session:save', async (event, session: SavedSession) => {
 });
 
 ipcMain.handle('session:restore', async (event) => {
-  if (!validateIpcSender(event)) return null;
+  const targetWin = getValidatedWindow(event);
   const session = restoreSession();
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
 
   if (session && targetWin) {
     if (session.activeFolder && fsSync.existsSync(session.activeFolder)) {
-      addApprovedWorkspace(session.activeFolder);
+      addApprovedWorkspace(targetWin.id, session.activeFolder);
       watchWorkspace(session.activeFolder, targetWin);
     }
     if (session.documents && Array.isArray(session.documents)) {
       for (const doc of session.documents) {
         if (doc.path && fsSync.existsSync(doc.path)) {
-          addApprovedFile(doc.path);
+          addApprovedFile(targetWin.id, doc.path);
         }
       }
     }
@@ -610,114 +576,101 @@ ipcMain.handle('settings:set', async (event, { key, value }: { key: string; valu
 
 // Finding 1 fix: watchWorkspace is strictly separated from addApprovedWorkspace.
 ipcMain.handle('workspace:watch', async (event, folderPath: string) => {
-  if (!validateIpcSender(event)) return false;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   const safePath = validatePathInput(folderPath);
 
-  // Require path to already be authorized
-  assertPathAuthorized(safePath, 'workspace:watch');
+  // Require path to already be authorized for this window
+  assertPathAuthorized(targetWin.id, safePath, 'workspace:watch');
   watchWorkspace(safePath, targetWin);
   return true;
 });
 
 ipcMain.handle('workspace:close', async (event, folderPath?: string) => {
-  if (!validateIpcSender(event)) return false;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  if (targetWin) {
-    stopWatching(targetWin.id);
-  }
+  const targetWin = getValidatedWindow(event);
+  stopWatching(targetWin.id);
   if (folderPath) {
-    removeApprovedWorkspace(folderPath);
+    removeApprovedWorkspace(targetWin.id, folderPath);
   }
   return true;
 });
 
 // Terminal IPC (Per-window session management)
 ipcMain.handle('terminal:init', async (event, cwd?: string) => {
-  if (!validateIpcSender(event)) return false;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   return initTerminalSession(cwd || null, targetWin);
 });
 
 ipcMain.on('terminal:write', (event, data: string) => {
-  if (!validateIpcSender(event)) return;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  if (targetWin) {
-    writeToTerminal(targetWin.id, data);
-  }
+  const targetWin = getValidatedWindow(event);
+  writeToTerminal(targetWin.id, data);
 });
 
 // Git IPC (Selective staging, diffing, and safe commit)
 ipcMain.handle('git:status', async (event, cwd: string) => {
-  if (!validateIpcSender(event)) return { isRepo: false, branch: '', changes: [] };
-  return getGitStatus(cwd);
+  const targetWin = getValidatedWindow(event);
+  return getGitStatus(targetWin.id, cwd);
 });
 
 ipcMain.handle('git:stage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return stageFile(cwd, filePath);
+  const targetWin = getValidatedWindow(event);
+  return stageFile(targetWin.id, cwd, filePath);
 });
 
 ipcMain.handle('git:unstage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return unstageFile(cwd, filePath);
+  const targetWin = getValidatedWindow(event);
+  return unstageFile(targetWin.id, cwd, filePath);
 });
 
 ipcMain.handle('git:stageAll', async (event, cwd: string) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return stageAll(cwd);
+  const targetWin = getValidatedWindow(event);
+  return stageAll(targetWin.id, cwd);
 });
 
 ipcMain.handle('git:unstageAll', async (event, cwd: string) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return unstageAll(cwd);
+  const targetWin = getValidatedWindow(event);
+  return unstageAll(targetWin.id, cwd);
 });
 
 ipcMain.handle('git:discard', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return discardChanges(cwd, filePath);
+  const targetWin = getValidatedWindow(event);
+  return discardChanges(targetWin.id, cwd, filePath);
 });
 
 ipcMain.handle('git:diff', async (event, { cwd, filePath, staged }: { cwd: string; filePath?: string; staged?: boolean }) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return getGitDiff(cwd, filePath, staged);
+  const targetWin = getValidatedWindow(event);
+  return getGitDiff(targetWin.id, cwd, filePath, staged);
 });
 
 ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; message: string }) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  return commitChanges(cwd, message);
+  const targetWin = getValidatedWindow(event);
+  return commitChanges(targetWin.id, cwd, message);
 });
 
 // Build System & Task Runner IPC (Per-window tracking & safe Windows execution)
 ipcMain.handle('build:run', async (event, options: RunBuildOptions) => {
-  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   return runBuildProcess(options, targetWin);
 });
 
 ipcMain.handle('build:stop', async (event) => {
-  if (!validateIpcSender(event)) return false;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   return stopBuildProcess(targetWin);
 });
 
 // Live Server & Live Reload IPC (Per-window instances, session tokens, sensitive files denylist)
 ipcMain.handle('liveserver:start', async (event, { rootPath, port }: { rootPath: string; port?: number }) => {
-  if (!validateIpcSender(event)) return { success: false, port: 0, url: '', error: 'Unauthorized' };
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   return startLiveServer(rootPath, port, targetWin);
 });
 
 ipcMain.handle('liveserver:stop', async (event) => {
-  if (!validateIpcSender(event)) return false;
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  const targetWin = getValidatedWindow(event);
   return stopLiveServer(targetWin);
 });
 
 ipcMain.handle('liveserver:status', async (event) => {
-  if (!validateIpcSender(event)) return { isRunning: false, port: 0, url: '', rootPath: '' };
-  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
-  return getLiveServerStatus(targetWin?.id);
+  const targetWin = getValidatedWindow(event);
+  return getLiveServerStatus(targetWin.id);
 });
 
 ipcMain.handle('liveserver:openBrowser', async (event, subPath?: string) => {

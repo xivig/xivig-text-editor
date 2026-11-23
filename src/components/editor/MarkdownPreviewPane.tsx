@@ -1,6 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { X, Copy, Check, BookOpen } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { X, Copy, Check, BookOpen, ArrowUpDown } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
+import { renderAndSanitizeMarkdown } from '../../utils/markdownSanitizer';
+import { subscribeActiveEditorView } from './editorViewRegistry';
+import { EditorView } from '@codemirror/view';
 
 export const MarkdownPreviewPane: React.FC = () => {
   const activeDoc = useEditorStore((state) =>
@@ -8,6 +11,16 @@ export const MarkdownPreviewPane: React.FC = () => {
   );
   const closePreview = useEditorStore((state) => state.closePreview);
   const [copied, setCopied] = useState(false);
+  const [syncScroll, setSyncScroll] = useState(true);
+
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const previewContentRef = useRef<HTMLDivElement>(null);
+  const activeViewRef = useRef<EditorView | null>(null);
+  const isScrollingRef = useRef<'none' | 'editor' | 'preview'>('none');
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const syncScrollRef = useRef(syncScroll);
+  syncScrollRef.current = syncScroll;
 
   const markdownContent = activeDoc?.content || '';
 
@@ -21,127 +34,9 @@ export const MarkdownPreviewPane: React.FC = () => {
     return { words, lines, readTime: `${readTime} min` };
   }, [markdownContent]);
 
-  // Robust zero-dependency Markdown-to-HTML parser
+  // Robust Markdown parser with DOMPurify sanitization
   const htmlContent = useMemo(() => {
-    if (!markdownContent) return '<p class="text-gray-500 italic">No content to preview.</p>';
-
-    let md = markdownContent;
-
-    // Normalize line endings
-    md = md.replace(/\r\n/g, '\n');
-
-    // Security: Sanitize dangerous tags and attributes from raw input
-    md = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    md = md.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
-    md = md.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
-    md = md.replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '');
-    md = md.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-    md = md.replace(/javascript:/gi, '');
-
-    // Code blocks with syntax container
-    md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
-      const escapedCode = code
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-      return `<div class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
-        <div class="px-3 py-1 bg-[#252526] text-gray-400 text-xs font-mono border-b border-[#3e3e42] flex justify-between select-none">
-          <span>${lang || 'text'}</span>
-          <span>code</span>
-        </div>
-        <pre class="p-3 text-xs font-mono text-[#d4d4d4] overflow-x-auto whitespace-pre leading-relaxed"><code>${escapedCode}</code></pre>
-      </div>`;
-    });
-
-    // Inline code
-    md = md.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#2d2d2d] text-[#ce9178] font-mono text-xs border border-[#3c3c3c]">$1</code>');
-
-    // Tables
-    const tableRegex = /((?:\|[^\n]+\|\r?\n)+)/g;
-    md = md.replace(tableRegex, (tableBlock) => {
-      const rows = tableBlock.trim().split('\n').map((row) => row.trim());
-      if (rows.length < 2) return tableBlock;
-
-      let html = '<div class="overflow-x-auto my-4"><table class="w-full text-xs text-left border-collapse border border-[#3e3e42]">';
-      rows.forEach((row, idx) => {
-        if (idx === 1 && /^[|\s-:]+$/.test(row)) return; // Header separator
-
-        const cells = row
-          .split('|')
-          .slice(1, -1)
-          .map((c) => c.trim());
-
-        if (idx === 0) {
-          html += '<thead class="bg-[#252526] text-gray-200"><tr>';
-          cells.forEach((c) => {
-            html += `<th class="px-3 py-2 border border-[#3e3e42] font-semibold">${c}</th>`;
-          });
-          html += '</tr></thead><tbody>';
-        } else {
-          html += `<tr class="${idx % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#181818]'} hover:bg-[#282828]">`;
-          cells.forEach((c) => {
-            html += `<td class="px-3 py-2 border border-[#3e3e42] text-gray-300">${c}</td>`;
-          });
-          html += '</tr>';
-        }
-      });
-      html += '</tbody></table></div>';
-      return html;
-    });
-
-    // Blockquotes
-    md = md.replace(/^>\s?(.*)$/gm, '<blockquote class="border-l-4 border-[#007acc] pl-3 py-1 my-2 text-gray-400 bg-[#20252b] rounded-r italic">$1</blockquote>');
-
-    // Headers
-    md = md.replace(/^######\s+(.*)$/gm, '<h6 class="text-xs font-bold text-gray-400 mt-4 mb-2 uppercase tracking-wider">$1</h6>');
-    md = md.replace(/^#####\s+(.*)$/gm, '<h5 class="text-sm font-bold text-gray-300 mt-4 mb-2">$1</h5>');
-    md = md.replace(/^####\s+(.*)$/gm, '<h4 class="text-base font-semibold text-gray-200 mt-5 mb-2">$1</h4>');
-    md = md.replace(/^###\s+(.*)$/gm, '<h3 class="text-lg font-semibold text-[#569cd6] mt-6 mb-2 border-b border-[#2e2e2e] pb-1">$1</h3>');
-    md = md.replace(/^##\s+(.*)$/gm, '<h2 class="text-xl font-bold text-[#4ec9b0] mt-7 mb-3 border-b border-[#333] pb-1.5">$1</h2>');
-    md = md.replace(/^#\s+(.*)$/gm, '<h1 class="text-2xl font-bold text-white mt-8 mb-4 border-b border-[#444] pb-2">$1</h1>');
-
-    // Horizontal rule
-    md = md.replace(/^(?:---|\*\*\*|___)$/gm, '<hr class="my-6 border-t border-[#3e3e42]" />');
-
-    // Task lists
-    md = md.replace(/^[-*]\s+\[ \]\s+(.*)$/gm, '<li class="flex items-center space-x-2 my-1 list-none"><input type="checkbox" disabled class="rounded bg-[#2a2a2a] border-[#444]" /> <span>$1</span></li>');
-    md = md.replace(/^[-*]\s+\[x\]\s+(.*)$/gm, '<li class="flex items-center space-x-2 my-1 list-none"><input type="checkbox" checked disabled class="rounded text-[#007acc]" /> <span class="line-through text-gray-500">$1</span></li>');
-
-    // Unordered lists
-    md = md.replace(/^[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc text-gray-300 my-0.5">$1</li>');
-
-    // Ordered lists
-    md = md.replace(/^(\d+)\.\s+(.*)$/gm, '<li class="ml-4 list-decimal text-gray-300 my-0.5">$2</li>');
-
-    // Bold & Italics
-    md = md.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-bold text-white"><em>$1</em></strong>');
-    md = md.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-    md = md.replace(/\*([^*]+)\*/g, '<em class="italic text-gray-300">$1</em>');
-    md = md.replace(/~~([^~]+)~~/g, '<del class="line-through text-gray-500">$1</del>');
-
-    // Links & Images
-    md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded border border-[#3e3e42] my-3 inline-block" />');
-    md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#3794ff] hover:underline cursor-pointer">$1</a>');
-
-    // Paragraph line breaks (double line break -> paragraph, single -> newline)
-    const paragraphs = md.split(/\n\n+/);
-    return paragraphs
-      .map((p) => {
-        p = p.trim();
-        if (
-          p.startsWith('<h') ||
-          p.startsWith('<div') ||
-          p.startsWith('<pre') ||
-          p.startsWith('<blockquote') ||
-          p.startsWith('<hr') ||
-          p.startsWith('<table') ||
-          p.startsWith('<li')
-        ) {
-          return p;
-        }
-        return `<p class="my-2 leading-relaxed text-gray-300 text-sm">${p.replace(/\n/g, '<br />')}</p>`;
-      })
-      .join('\n');
+    return renderAndSanitizeMarkdown(markdownContent);
   }, [markdownContent]);
 
   const handleCopyHtml = () => {
@@ -149,6 +44,121 @@ export const MarkdownPreviewPane: React.FC = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const resetScrollLock = useCallback(() => {
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      isScrollingRef.current = 'none';
+    }, 120);
+  }, []);
+
+  // Synchronize Preview from Editor scroll position
+  const syncFromEditor = useCallback(() => {
+    if (!syncScrollRef.current) return;
+    if (isScrollingRef.current === 'preview') return;
+
+    const editorScroller = activeViewRef.current?.scrollDOM;
+    const previewEl = previewContainerRef.current;
+    if (!editorScroller || !previewEl) return;
+
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = requestAnimationFrame(() => {
+      const editorMax = editorScroller.scrollHeight - editorScroller.clientHeight;
+      const previewMax = previewEl.scrollHeight - previewEl.clientHeight;
+
+      if (editorMax > 0 && previewMax > 0) {
+        isScrollingRef.current = 'editor';
+        const ratio = Math.max(0, Math.min(1, editorScroller.scrollTop / editorMax));
+        previewEl.scrollTop = Math.round(ratio * previewMax);
+        resetScrollLock();
+      }
+    });
+  }, [resetScrollLock]);
+
+  // Synchronize Editor from Preview scroll position
+  const syncFromPreview = useCallback(() => {
+    if (!syncScrollRef.current) return;
+    if (isScrollingRef.current === 'editor') return;
+
+    const editorScroller = activeViewRef.current?.scrollDOM;
+    const previewEl = previewContainerRef.current;
+    if (!editorScroller || !previewEl) return;
+
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = requestAnimationFrame(() => {
+      const editorMax = editorScroller.scrollHeight - editorScroller.clientHeight;
+      const previewMax = previewEl.scrollHeight - previewEl.clientHeight;
+
+      if (editorMax > 0 && previewMax > 0) {
+        isScrollingRef.current = 'preview';
+        const ratio = Math.max(0, Math.min(1, previewEl.scrollTop / previewMax));
+        editorScroller.scrollTop = Math.round(ratio * editorMax);
+        resetScrollLock();
+      }
+    });
+  }, [resetScrollLock]);
+
+  // Bind scroll listeners to active editor view and preview container
+  useEffect(() => {
+    let cleanUpEditorScroll: (() => void) | null = null;
+
+    const unsubscribe = subscribeActiveEditorView((view) => {
+      if (cleanUpEditorScroll) {
+        cleanUpEditorScroll();
+        cleanUpEditorScroll = null;
+      }
+
+      activeViewRef.current = view;
+
+      if (view?.scrollDOM) {
+        const scroller = view.scrollDOM;
+        const onEditorScroll = () => syncFromEditor();
+        scroller.addEventListener('scroll', onEditorScroll, { passive: true });
+        cleanUpEditorScroll = () => {
+          scroller.removeEventListener('scroll', onEditorScroll);
+        };
+
+        // Perform initial synchronization
+        setTimeout(() => syncFromEditor(), 50);
+      }
+    });
+
+    const previewEl = previewContainerRef.current;
+    const onPreviewScroll = () => syncFromPreview();
+    if (previewEl) {
+      previewEl.addEventListener('scroll', onPreviewScroll, { passive: true });
+    }
+
+    return () => {
+      unsubscribe();
+      if (cleanUpEditorScroll) cleanUpEditorScroll();
+      if (previewEl) {
+        previewEl.removeEventListener('scroll', onPreviewScroll);
+      }
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, [syncFromEditor, syncFromPreview]);
+
+  // Re-sync when html content changes (e.g. typing or initial load)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      syncFromEditor();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [htmlContent, syncFromEditor]);
+
+  // Adjust scroll if images or dynamically sized elements resize the preview container
+  useEffect(() => {
+    if (!previewContentRef.current) return;
+    const ro = new ResizeObserver(() => {
+      if (isScrollingRef.current === 'none') {
+        syncFromEditor();
+      }
+    });
+    ro.observe(previewContentRef.current);
+    return () => ro.disconnect();
+  }, [syncFromEditor]);
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e] border-l border-[#2e2e2e] select-text text-gray-200">
@@ -162,7 +172,22 @@ export const MarkdownPreviewPane: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
+          {/* Synchronized Scrolling Toggle */}
+          <button
+            onClick={() => setSyncScroll((prev) => !prev)}
+            title={syncScroll ? 'Disable Synchronized Live Scrolling' : 'Enable Synchronized Live Scrolling'}
+            className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition-colors ${
+              syncScroll
+                ? 'text-[#569cd6] bg-[#264f78]/30 border border-[#569cd6]/40 hover:bg-[#264f78]/50'
+                : 'text-gray-400 hover:text-white hover:bg-[#333]'
+            }`}
+          >
+            <ArrowUpDown size={12} className={syncScroll ? 'text-[#569cd6]' : 'text-gray-400'} />
+            <span>{syncScroll ? 'Sync On' : 'Sync Off'}</span>
+          </button>
+
+          {/* Copy HTML Button */}
           <button
             onClick={handleCopyHtml}
             title="Copy Rendered HTML"
@@ -172,6 +197,7 @@ export const MarkdownPreviewPane: React.FC = () => {
             <span>{copied ? 'Copied HTML' : 'Copy HTML'}</span>
           </button>
 
+          {/* Close Preview Button */}
           <button
             onClick={closePreview}
             title="Close Preview"
@@ -183,8 +209,12 @@ export const MarkdownPreviewPane: React.FC = () => {
       </div>
 
       {/* Rendered Markdown Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white">
+      <div
+        ref={previewContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white scroll-smooth"
+      >
         <div
+          ref={previewContentRef}
           className="max-w-3xl mx-auto"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />

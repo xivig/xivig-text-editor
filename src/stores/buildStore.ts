@@ -9,12 +9,14 @@ export interface BuildTarget {
   id: string;
   name: string;
   command: string;
+  program?: string;
   args: string[];
   description: string;
   icon?: string;
   category?: RunnerCategory;
   secondaryCommand?: {
     command: string;
+    program?: string;
     args?: string[];
     cwd?: string;
   };
@@ -511,6 +513,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
 
       if (window.xivig?.buildRun) {
         await window.xivig.buildRun({
+          program: target.program || target.command,
           command: target.command,
           args: target.args,
           cwd,

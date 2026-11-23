@@ -19,7 +19,7 @@ export function watchWorkspace(folderPath: string, win: BrowserWindow | null): v
   stopWatching(winId);
 
   try {
-    assertPathAuthorized(folderPath, 'workspace:watch');
+    assertPathAuthorized(winId, folderPath, 'workspace:watch');
 
     const watcher = chokidar.watch(folderPath, {
       ignored: [

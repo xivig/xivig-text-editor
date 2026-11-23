@@ -18,14 +18,14 @@ export interface GitStatusResult {
   changes: GitFileChange[];
 }
 
-export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
+export async function getGitStatus(winId: number, cwd: string): Promise<GitStatusResult> {
   if (!cwd || typeof cwd !== 'string' || !fs.existsSync(cwd)) {
     return { isRepo: false, branch: '', changes: [] };
   }
 
   const safeCwd = path.resolve(cwd);
   try {
-    assertPathAuthorized(safeCwd, 'git:status');
+    assertPathAuthorized(winId, safeCwd, 'git:status');
   } catch {
     return { isRepo: false, branch: '', changes: [] };
   }
@@ -77,9 +77,9 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResult> {
   }
 }
 
-export async function stageFile(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+export async function stageFile(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:stageFile');
+  assertPathAuthorized(winId, safeCwd, 'git:stageFile');
 
   try {
     await execFileAsync('git', ['add', '--', filePath], { cwd: safeCwd });
@@ -89,9 +89,9 @@ export async function stageFile(cwd: string, filePath: string): Promise<{ succes
   }
 }
 
-export async function unstageFile(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+export async function unstageFile(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:unstageFile');
+  assertPathAuthorized(winId, safeCwd, 'git:unstageFile');
 
   try {
     await execFileAsync('git', ['restore', '--staged', '--', filePath], { cwd: safeCwd });
@@ -101,9 +101,9 @@ export async function unstageFile(cwd: string, filePath: string): Promise<{ succ
   }
 }
 
-export async function stageAll(cwd: string): Promise<{ success: boolean; error?: string }> {
+export async function stageAll(winId: number, cwd: string): Promise<{ success: boolean; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:stageAll');
+  assertPathAuthorized(winId, safeCwd, 'git:stageAll');
 
   try {
     await execFileAsync('git', ['add', '-A'], { cwd: safeCwd });
@@ -113,9 +113,9 @@ export async function stageAll(cwd: string): Promise<{ success: boolean; error?:
   }
 }
 
-export async function unstageAll(cwd: string): Promise<{ success: boolean; error?: string }> {
+export async function unstageAll(winId: number, cwd: string): Promise<{ success: boolean; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:unstageAll');
+  assertPathAuthorized(winId, safeCwd, 'git:unstageAll');
 
   try {
     await execFileAsync('git', ['restore', '--staged', '.'], { cwd: safeCwd });
@@ -125,9 +125,9 @@ export async function unstageAll(cwd: string): Promise<{ success: boolean; error
   }
 }
 
-export async function discardChanges(cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+export async function discardChanges(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:discardChanges');
+  assertPathAuthorized(winId, safeCwd, 'git:discardChanges');
 
   try {
     await execFileAsync('git', ['restore', '--', filePath], { cwd: safeCwd });
@@ -138,12 +138,13 @@ export async function discardChanges(cwd: string, filePath: string): Promise<{ s
 }
 
 export async function getGitDiff(
+  winId: number,
   cwd: string,
   filePath?: string,
   staged = false
 ): Promise<{ success: boolean; diff?: string; error?: string }> {
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:diff');
+  assertPathAuthorized(winId, safeCwd, 'git:diff');
 
   try {
     const args = ['diff'];
@@ -159,6 +160,7 @@ export async function getGitDiff(
 }
 
 export async function commitChanges(
+  winId: number,
   cwd: string,
   message: string
 ): Promise<{ success: boolean; output?: string; error?: string }> {
@@ -170,7 +172,7 @@ export async function commitChanges(
   }
 
   const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(safeCwd, 'git:commit');
+  assertPathAuthorized(winId, safeCwd, 'git:commit');
 
   try {
     // Check if there are staged changes; if not, do NOT silently commit everything.
