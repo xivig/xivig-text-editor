@@ -22,7 +22,7 @@ export const StatusBar: React.FC = () => {
   const totalErrors = useDiagnosticsStore((state) => state.totalErrors);
   const totalWarnings = useDiagnosticsStore((state) => state.totalWarnings);
 
-  const languageName = activeDoc ? detectLanguageName(activeDoc.name || activeDoc.language) : 'Plain Text';
+  const languageName = activeDoc ? detectLanguageName(activeDoc.language, activeDoc.name) : 'Plain Text';
   const line = activeDoc?.cursor.line || 1;
   const col = activeDoc?.cursor.col || 1;
   const fontSize = useSettingsStore((state) => state.settings.fontSize);

@@ -7,7 +7,7 @@ import { useBuildStore } from '../../stores/buildStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
-import { beautifyActiveEditor } from '../../utils/beautify';
+import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 
 interface MenuItem {
@@ -83,13 +83,19 @@ export const Menubar: React.FC = () => {
   const handleSaveFile = async () => {
     if (!activeDoc) return;
 
+    const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
+    const view = getActiveEditorView();
+    const contentToSave = autoIndentOnSave
+      ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
+      : (view ? view.state.doc.toString() : activeDoc.content);
+
     if (activeDoc.path && window.xivig?.saveFile) {
-      const res = await window.xivig.saveFile(activeDoc.path, activeDoc.content);
+      const res = await window.xivig.saveFile(activeDoc.path, contentToSave);
       if (res.success) {
         markDocumentSaved(activeDoc.id, activeDoc.path);
       }
     } else if (window.xivig?.saveFileDialog) {
-      const res = await window.xivig.saveFileDialog(activeDoc.name, activeDoc.content);
+      const res = await window.xivig.saveFileDialog(activeDoc.name, contentToSave);
       if (!res.canceled && res.filePath) {
         markDocumentSaved(activeDoc.id, res.filePath);
       }
@@ -98,7 +104,13 @@ export const Menubar: React.FC = () => {
 
   const handleSaveAs = async () => {
     if (!activeDoc || !window.xivig?.saveFileDialog) return;
-    const res = await window.xivig.saveFileDialog(activeDoc.name, activeDoc.content);
+    const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
+    const view = getActiveEditorView();
+    const contentToSave = autoIndentOnSave
+      ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
+      : (view ? view.state.doc.toString() : activeDoc.content);
+
+    const res = await window.xivig.saveFileDialog(activeDoc.name, contentToSave);
     if (!res.canceled && res.filePath) {
       markDocumentSaved(activeDoc.id, res.filePath);
     }

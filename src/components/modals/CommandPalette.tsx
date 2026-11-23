@@ -9,7 +9,7 @@ import { useExtensionStore } from '../../stores/extensionStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { goToDefinition } from '../editor/codeIntelligence';
-import { beautifyActiveEditor } from '../../utils/beautify';
+import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
@@ -90,13 +90,19 @@ export const CommandPalette: React.FC = () => {
 
   const handleSaveFile = async () => {
     if (!activeDoc) return;
+    const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
+    const view = getActiveEditorView();
+    const contentToSave = autoIndentOnSave
+      ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
+      : (view ? view.state.doc.toString() : activeDoc.content);
+
     if (activeDoc.path && window.xivig?.saveFile) {
-      const res = await window.xivig.saveFile(activeDoc.path, activeDoc.content);
+      const res = await window.xivig.saveFile(activeDoc.path, contentToSave);
       if (res.success) {
         markDocumentSaved(activeDoc.id, activeDoc.path);
       }
     } else if (window.xivig?.saveFileDialog) {
-      const res = await window.xivig.saveFileDialog(activeDoc.name, activeDoc.content);
+      const res = await window.xivig.saveFileDialog(activeDoc.name, contentToSave);
       if (!res.canceled && res.filePath) {
         markDocumentSaved(activeDoc.id, res.filePath);
       }
@@ -522,6 +528,60 @@ export const CommandPalette: React.FC = () => {
       category: 'Language',
       title: 'Change Language Mode to Python',
       action: () => setLanguage('python'),
+    },
+    {
+      id: 'lang:java',
+      category: 'Language',
+      title: 'Change Language Mode to Java',
+      action: () => setLanguage('java'),
+    },
+    {
+      id: 'lang:c',
+      category: 'Language',
+      title: 'Change Language Mode to C',
+      action: () => setLanguage('c'),
+    },
+    {
+      id: 'lang:cpp',
+      category: 'Language',
+      title: 'Change Language Mode to C++',
+      action: () => setLanguage('cpp'),
+    },
+    {
+      id: 'lang:csharp',
+      category: 'Language',
+      title: 'Change Language Mode to C#',
+      action: () => setLanguage('csharp'),
+    },
+    {
+      id: 'lang:go',
+      category: 'Language',
+      title: 'Change Language Mode to Go',
+      action: () => setLanguage('go'),
+    },
+    {
+      id: 'lang:php',
+      category: 'Language',
+      title: 'Change Language Mode to PHP',
+      action: () => setLanguage('php'),
+    },
+    {
+      id: 'lang:sql',
+      category: 'Language',
+      title: 'Change Language Mode to SQL',
+      action: () => setLanguage('sql'),
+    },
+    {
+      id: 'lang:yaml',
+      category: 'Language',
+      title: 'Change Language Mode to YAML',
+      action: () => setLanguage('yaml'),
+    },
+    {
+      id: 'lang:shell',
+      category: 'Language',
+      title: 'Change Language Mode to Shell Script',
+      action: () => setLanguage('shell'),
     },
     {
       id: 'lang:rust',

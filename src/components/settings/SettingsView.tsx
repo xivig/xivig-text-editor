@@ -196,6 +196,22 @@ export const SettingsView: React.FC = () => {
                 style={{ width: '18px', height: '18px', cursor: 'pointer' }}
               />
             </div>
+
+            {/* Auto Indent on Save Toggle */}
+            <div style={settingRowStyle}>
+              <div>
+                <label style={settingLabelStyle}>Auto Indent on Save</label>
+                <p style={settingDescStyle}>
+                  Automatically align indentation and format code based on file extension and selected language when saving.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.autoIndentOnSave !== false}
+                onChange={(e) => updateSettings({ autoIndentOnSave: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+            </div>
           </div>
         )}
 

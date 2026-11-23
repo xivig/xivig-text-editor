@@ -78,6 +78,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const lineNumbersCompartmentRef = useRef<Compartment>(new Compartment());
   const wordWrapCompartmentRef = useRef<Compartment>(new Compartment());
   const tabSizeCompartmentRef = useRef<Compartment>(new Compartment());
+  const languageCompartmentRef = useRef<Compartment>(new Compartment());
 
   const activeDoc = useEditorStore((state) =>
     pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
@@ -118,7 +119,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       viewRef.current.destroy();
     }
 
-    const langExtension = getLanguageExtension(activeDoc.name || activeDoc.language);
+    const langExtension = getLanguageExtension(activeDoc.language, activeDoc.name);
 
     const startState = EditorState.create({
       doc: activeDoc.content,
@@ -163,7 +164,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         hoverDocsExtension,
         parameterHintsExtension,
         codeIntelligenceKeymap,
-        langExtension,
+        languageCompartmentRef.current.of(langExtension),
         keymap.of([
           {
             key: 'Tab',
@@ -286,6 +287,17 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       });
     }
   }, [tabSize]);
+
+  // Dynamically reconfigure language parser and syntax highlighting when document language or file name changes
+  useEffect(() => {
+    if (viewRef.current && activeDoc) {
+      viewRef.current.dispatch({
+        effects: languageCompartmentRef.current.reconfigure(
+          getLanguageExtension(activeDoc.language, activeDoc.name)
+        ),
+      });
+    }
+  }, [activeDoc?.language, activeDoc?.name]);
 
   if (activeDoc?.id === 'settings') {
     return <SettingsView />;

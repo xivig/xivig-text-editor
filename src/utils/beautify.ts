@@ -1,5 +1,6 @@
 import beautify from 'js-beautify';
 import { EditorView } from '@codemirror/view';
+import { indentRange } from '@codemirror/language';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
@@ -19,7 +20,7 @@ export interface BeautifyOptions {
 export function detectFormatterLanguage(docName: string, lang = ''): 'html' | 'css' | 'js' {
   const ext = (docName || lang).split('.').pop()?.toLowerCase() || '';
 
-  if (['html', 'htm', 'xhtml', 'vue', 'svelte', 'xml', 'svg', 'php'].includes(ext)) {
+  if (['html', 'htm', 'xhtml', 'vue', 'svelte', 'xml', 'svg'].includes(ext)) {
     return 'html';
   }
   if (['css', 'scss', 'sass', 'less'].includes(ext)) {
@@ -102,4 +103,75 @@ export function beautifyActiveEditor(view: EditorView): boolean {
   }
 
   return true;
+}
+
+/**
+ * Auto-indents and formats code on save according to file extension and language selection.
+ * Handles Python without breaking indentation blocks, C-style languages (JS, TS, Java, C, C++, C#, JSON, PHP),
+ * and skips Plain Text and Markdown to preserve author formatting.
+ */
+export function autoIndentAndFormatEditor(
+  view?: EditorView | null,
+  docName?: string,
+  language?: string
+): string {
+  const activeDoc = useEditorStore.getState().getActiveDocument();
+  const targetDocName = docName || activeDoc?.name || '';
+  const targetLang = (language || activeDoc?.language || '').toLowerCase();
+  const ext = (targetDocName.split('.').pop() || '').toLowerCase();
+
+  const isPython = ext === 'py' || targetLang === 'python';
+  const isPlainText = ext === 'txt' || targetLang === 'text' || targetLang === 'plain text';
+  const isMarkdown = ext === 'md' || ext === 'markdown' || targetLang === 'markdown';
+  const isYaml = ext === 'yaml' || ext === 'yml' || targetLang === 'yaml';
+
+  // For plain text, markdown, or yaml, avoid disruptive reformatting on save
+  if (isPlainText || isMarkdown || isYaml) {
+    if (view) {
+      return view.state.doc.toString();
+    }
+    return activeDoc?.content || '';
+  }
+
+  const effectiveLangOrFile = targetLang || targetDocName || 'code.js';
+
+  if (view) {
+    // 1. If not python, format braces and structure with beautifyCode
+    if (!isPython) {
+      const currentDoc = view.state.doc.toString();
+      const formatted = beautifyCode(currentDoc, effectiveLangOrFile);
+      if (formatted !== currentDoc) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: formatted },
+        });
+      }
+    }
+
+    // 2. Apply CodeMirror's indentRange for precise language-aware block alignment
+    try {
+      const indentChanges = indentRange(view.state, 0, view.state.doc.length);
+      if (indentChanges && indentChanges.length > 0) {
+        view.dispatch({ changes: indentChanges });
+      }
+    } catch {
+      // Language may not have registered an indent context; ignore safely
+    }
+
+    const finalContent = view.state.doc.toString();
+    if (activeDoc && activeDoc.content !== finalContent) {
+      useEditorStore.getState().updateDocumentContent(activeDoc.id, finalContent);
+    }
+    return finalContent;
+  }
+
+  // Fallback when view is not actively mounted
+  if (!isPython && activeDoc) {
+    const formatted = beautifyCode(activeDoc.content, effectiveLangOrFile);
+    if (formatted !== activeDoc.content) {
+      useEditorStore.getState().updateDocumentContent(activeDoc.id, formatted);
+    }
+    return formatted;
+  }
+
+  return activeDoc?.content || '';
 }

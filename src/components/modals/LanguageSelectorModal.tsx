@@ -14,12 +14,22 @@ export const supportedLanguages: LanguageOption[] = [
   { id: 'typescript', name: 'TypeScript', extensions: ['.ts', '.mts', '.cts'] },
   { id: 'jsx', name: 'JavaScript (JSX)', extensions: ['.jsx'] },
   { id: 'tsx', name: 'TypeScript (TSX)', extensions: ['.tsx'] },
+  { id: 'java', name: 'Java', extensions: ['.java'] },
+  { id: 'c', name: 'C', extensions: ['.c', '.h'] },
+  { id: 'cpp', name: 'C++', extensions: ['.cpp', '.hpp', '.cc', '.cxx'] },
+  { id: 'csharp', name: 'C#', extensions: ['.cs'] },
+  { id: 'python', name: 'Python', extensions: ['.py'] },
+  { id: 'go', name: 'Go', extensions: ['.go'] },
+  { id: 'rust', name: 'Rust', extensions: ['.rs'] },
+  { id: 'php', name: 'PHP', extensions: ['.php', '.phtml'] },
   { id: 'html', name: 'HTML', extensions: ['.html', '.htm'] },
   { id: 'css', name: 'CSS', extensions: ['.css', '.scss', '.less'] },
   { id: 'json', name: 'JSON', extensions: ['.json'] },
+  { id: 'yaml', name: 'YAML', extensions: ['.yaml', '.yml'] },
+  { id: 'xml', name: 'XML', extensions: ['.xml', '.svg'] },
+  { id: 'sql', name: 'SQL', extensions: ['.sql'] },
+  { id: 'shell', name: 'Shell Script', extensions: ['.sh', '.bash', '.zsh'] },
   { id: 'markdown', name: 'Markdown', extensions: ['.md', '.markdown'] },
-  { id: 'python', name: 'Python', extensions: ['.py'] },
-  { id: 'rust', name: 'Rust', extensions: ['.rs'] },
   { id: 'text', name: 'Plain Text', extensions: ['.txt'] },
 ];
 
@@ -116,7 +126,10 @@ export const LanguageSelectorModal: React.FC = () => {
             filteredLanguages.map((lang, idx) => {
               const isSelected = idx === selectedIndex;
               const isCurrent =
-                activeDoc && (activeDoc.language === lang.id || activeDoc.name.endsWith(lang.extensions[0]));
+                activeDoc && (
+                  activeDoc.language === lang.id ||
+                  lang.extensions.some((ext) => activeDoc.name?.toLowerCase().endsWith(ext))
+                );
 
               return (
                 <div

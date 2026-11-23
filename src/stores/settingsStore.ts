@@ -13,6 +13,7 @@ export interface UserSettings {
   autoSave: boolean;
   fontLigatures: boolean;
   showWelcomeOnStartup: boolean;
+  autoIndentOnSave: boolean;
 }
 
 interface SettingsState {
@@ -37,9 +38,11 @@ const defaultSettings: UserSettings = {
   autoSave: true,
   fontLigatures: true,
   showWelcomeOnStartup: true,
+  autoIndentOnSave: true,
 };
 
 function applySettingsToDOM(settings: UserSettings) {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.style.setProperty('--xivig-font-size-code', `${settings.fontSize}px`);
   root.style.setProperty('--xivig-font-mono', settings.fontFamily);
@@ -62,7 +65,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ settings: updated });
     applySettingsToDOM(updated);
 
-    if (window.xivig?.setSetting) {
+    if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('user_settings', JSON.stringify(updated));
     }
   },
