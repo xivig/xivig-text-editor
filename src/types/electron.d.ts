@@ -121,7 +121,16 @@ export interface XivigAPI {
   onWorkspaceFilesChanged: (callback: (data: { event: string; path: string; folderPath: string }) => void) => () => void;
 
   // Build System & Task Runner
-  buildRun: (options: { command: string; args?: string[]; cwd?: string }) => Promise<{ success: boolean; error?: string }>;
+  buildRun: (options: {
+    command: string;
+    args?: string[];
+    cwd?: string;
+    secondaryCommand?: {
+      command: string;
+      args?: string[];
+      cwd?: string;
+    };
+  }) => Promise<{ success: boolean; error?: string }>;
   buildStop: () => Promise<boolean>;
   onBuildStart: (callback: (data: { command: string; args: string[]; cwd: string; timestamp: string }) => void) => () => void;
   onBuildData: (callback: (data: { type: 'stdout' | 'stderr'; text: string }) => void) => () => void;

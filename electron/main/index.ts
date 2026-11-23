@@ -27,7 +27,7 @@ import {
   discardChanges,
   getGitDiff,
 } from './git';
-import { runBuildProcess, stopBuildProcess, stopAllBuildProcesses } from './build';
+import { runBuildProcess, stopBuildProcess, stopAllBuildProcesses, RunBuildOptions } from './build';
 import {
   startLiveServer,
   stopLiveServer,
@@ -689,7 +689,7 @@ ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; mess
 });
 
 // Build System & Task Runner IPC (Per-window tracking & safe Windows execution)
-ipcMain.handle('build:run', async (event, options: { command: string; args?: string[]; cwd?: string }) => {
+ipcMain.handle('build:run', async (event, options: RunBuildOptions) => {
   if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC invocation' };
   const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
   return runBuildProcess(options, targetWin);

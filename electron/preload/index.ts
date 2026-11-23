@@ -57,8 +57,16 @@ const xivigAPI = {
   closeWorkspace: (folderPath?: string) => ipcRenderer.invoke('workspace:close', folderPath),
 
   // Build System & Task Runner
-  buildRun: (options: { command: string; args?: string[]; cwd?: string }) =>
-    ipcRenderer.invoke('build:run', options),
+  buildRun: (options: {
+    command: string;
+    args?: string[];
+    cwd?: string;
+    secondaryCommand?: {
+      command: string;
+      args?: string[];
+      cwd?: string;
+    };
+  }) => ipcRenderer.invoke('build:run', options),
   buildStop: () => ipcRenderer.invoke('build:stop'),
   onBuildStart: (callback: (data: { command: string; args: string[]; cwd: string; timestamp: string }) => void) => {
     const handler = (_: any, data: any) => callback(data);

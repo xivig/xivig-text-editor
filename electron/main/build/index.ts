@@ -11,6 +11,11 @@ export interface RunBuildOptions {
   command: string;
   args?: string[];
   cwd?: string;
+  secondaryCommand?: {
+    command: string;
+    args?: string[];
+    cwd?: string;
+  };
 }
 
 /**
@@ -103,6 +108,10 @@ export function runBuildProcess(
 
   try {
     validateCommandTokens([mainBinary, ...finalArgs]);
+    if (options.secondaryCommand) {
+      const secTokens = options.secondaryCommand.command.trim().split(/\s+/);
+      validateCommandTokens([...secTokens, ...(options.secondaryCommand.args || [])]);
+    }
   } catch (valErr: any) {
     return { success: false, error: valErr.message };
   }
@@ -128,24 +137,24 @@ export function runBuildProcess(
     // Avoid cmd.exe string concatenation and windowsVerbatimArguments vulnerabilities.
     let proc: ChildProcess;
 
+    const baseEnv = {
+      ...process.env,
+      FORCE_COLOR: '1',
+      PYTHONUNBUFFERED: '1',
+    };
+
     if (isWin && (targetBinary.endsWith('.cmd') || targetBinary.endsWith('.bat'))) {
       // For Windows batch/cmd wrappers, pass arguments as discrete array entries to cmd.exe
       proc = spawn('cmd.exe', ['/d', '/c', targetBinary, ...finalArgs], {
         cwd: safeCwd,
-        env: {
-          ...process.env,
-          FORCE_COLOR: '1',
-        },
+        env: baseEnv,
         shell: false,
       });
     } else {
       // Direct binary execution with shell: false
       proc = spawn(targetBinary, finalArgs, {
         cwd: safeCwd,
-        env: {
-          ...process.env,
-          FORCE_COLOR: '1',
-        },
+        env: baseEnv,
         shell: false,
       });
     }
@@ -170,21 +179,139 @@ export function runBuildProcess(
       }
     });
 
-    proc.on('error', (err: Error) => {
+    proc.on('error', (err: any) => {
       if (!win.isDestroyed()) {
+        let helpfulTip = '';
+        if (err.code === 'ENOENT') {
+          const binLower = mainBinary.toLowerCase();
+          if (binLower === 'python' || binLower === 'py' || binLower === 'python3') {
+            helpfulTip = '\r\n[Tip] Python interpreter was not found on PATH. Please ensure Python is installed and added to PATH (e.g. from python.org or Microsoft Store).\r\n';
+          } else if (binLower === 'gcc' || binLower === 'g++') {
+            helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. For C/C++ development on Windows, install MinGW-w64 (e.g. winlibs.com or MSYS2) and add its bin folder to PATH.\r\n`;
+          } else if (binLower === 'javac' || binLower === 'java') {
+            helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Java Development Kit (JDK 17+) and verify java/javac is in your environment PATH.\r\n`;
+          } else if (binLower === 'node' || binLower === 'npm' || binLower === 'npx') {
+            helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Node.js from nodejs.org and restart the editor.\r\n`;
+          }
+        }
+
+        win.webContents.send('build:data', {
+          type: 'stderr',
+          text: `Failed to launch runner [${targetBinary}]: ${err.message}${helpfulTip}`,
+        });
         win.webContents.send('build:error', {
-          error: `Failed to launch build process [${targetBinary}]: ${err.message}`,
+          error: `Failed to launch runner [${targetBinary}]: ${err.message}`,
+        });
+        win.webContents.send('build:done', {
+          exitCode: 1,
+          durationMs: Date.now() - startTime,
+        });
+        win.webContents.send('build:exit', {
+          code: 1,
+          duration: Math.round((Date.now() - startTime) / 1000),
         });
       }
       activeProcessesByWindow.delete(winId);
     });
 
     proc.on('close', (code: number | null) => {
-      const duration = Math.round((Date.now() - startTime) / 1000);
+      // If primary command succeeded and a secondary command was provided (e.g. compile & run)
+      if (code === 0 && options.secondaryCommand) {
+        const secOptions = options.secondaryCommand;
+        const secTokens = secOptions.command.trim().split(/\s+/);
+        const secBinary = secTokens[0];
+        const secRawArgs = [...secTokens.slice(1), ...(secOptions.args || [])];
+        const secFinalArgs = secRawArgs.map((arg) => {
+          if (typeof arg === 'string' && ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'")))) {
+            return arg.slice(1, -1);
+          }
+          return arg;
+        });
+
+        const secCwd = secOptions.cwd ? path.resolve(secOptions.cwd) : safeCwd;
+        let resolvedSecBinary = resolveWindowsBinary(secBinary);
+        if (!path.isAbsolute(resolvedSecBinary) && fs.existsSync(path.join(secCwd, resolvedSecBinary))) {
+          resolvedSecBinary = path.join(secCwd, resolvedSecBinary);
+        }
+
+        if (!win.isDestroyed()) {
+          win.webContents.send('build:data', {
+            type: 'stdout',
+            text: `\r\n[Compilation successful. Launching: ${path.basename(resolvedSecBinary)}]\r\n`,
+          });
+        }
+
+        const secProc = spawn(resolvedSecBinary, secFinalArgs, {
+          cwd: secCwd,
+          env: baseEnv,
+          shell: false,
+        });
+
+        activeProcessesByWindow.set(winId, { process: secProc, startTime });
+
+        secProc.stdout?.on('data', (chunk: Buffer) => {
+          if (!win.isDestroyed()) {
+            win.webContents.send('build:data', {
+              type: 'stdout',
+              text: chunk.toString('utf-8'),
+            });
+          }
+        });
+
+        secProc.stderr?.on('data', (chunk: Buffer) => {
+          if (!win.isDestroyed()) {
+            win.webContents.send('build:data', {
+              type: 'stderr',
+              text: chunk.toString('utf-8'),
+            });
+          }
+        });
+
+        secProc.on('error', (secErr: any) => {
+          if (!win.isDestroyed()) {
+            win.webContents.send('build:data', {
+              type: 'stderr',
+              text: `\r\n[Runner Error: Failed to execute compiled binary: ${secErr.message}]\r\n`,
+            });
+            win.webContents.send('build:done', {
+              exitCode: 1,
+              durationMs: Date.now() - startTime,
+            });
+            win.webContents.send('build:exit', {
+              code: 1,
+              duration: Math.round((Date.now() - startTime) / 1000),
+            });
+          }
+          activeProcessesByWindow.delete(winId);
+        });
+
+        secProc.on('close', (secCode: number | null) => {
+          const durationMs = Date.now() - startTime;
+          if (!win.isDestroyed()) {
+            win.webContents.send('build:done', {
+              exitCode: secCode ?? 0,
+              durationMs,
+            });
+            win.webContents.send('build:exit', {
+              code: secCode ?? 0,
+              duration: Math.round(durationMs / 1000),
+            });
+          }
+          activeProcessesByWindow.delete(winId);
+        });
+        return;
+      }
+
+      // Normal single command completion
+      const durationMs = Date.now() - startTime;
       if (!win.isDestroyed()) {
+        win.webContents.send('build:done', {
+          exitCode: code ?? 0,
+          durationMs,
+        });
         win.webContents.send('build:exit', {
           code: code ?? 0,
-          duration,
+          duration: Math.round(durationMs / 1000),
         });
       }
       activeProcessesByWindow.delete(winId);

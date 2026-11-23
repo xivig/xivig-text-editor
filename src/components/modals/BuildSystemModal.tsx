@@ -1,7 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Terminal, X, Search, Check, Cpu } from 'lucide-react';
+import { Play, Terminal, X, Search, Check, Cpu, Coffee, Code2, Layers } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
-import { useBuildStore, BuildTarget } from '../../stores/buildStore';
+import { useBuildStore, BuildTarget, RunnerCategory } from '../../stores/buildStore';
+
+function getCategoryInfo(category?: RunnerCategory) {
+  switch (category) {
+    case 'python':
+      return { label: 'Python', color: '#4b8bbe', bg: 'rgba(75, 139, 190, 0.15)', icon: <Terminal size={13} color="#4b8bbe" /> };
+    case 'c':
+      return { label: 'C', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: <Cpu size={13} color="#3b82f6" /> };
+    case 'cpp':
+      return { label: 'C++', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: <Cpu size={13} color="#8b5cf6" /> };
+    case 'java':
+      return { label: 'Java', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.15)', icon: <Coffee size={13} color="#ea580c" /> };
+    case 'nodejs':
+      return { label: 'Node.js', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: <Code2 size={13} color="#10b981" /> };
+    case 'workspace':
+      return { label: 'Workspace', color: '#cb3837', bg: 'rgba(203, 56, 55, 0.15)', icon: <Layers size={13} color="#cb3837" /> };
+    default:
+      return { label: 'Runner', color: 'var(--xivig-accent)', bg: 'rgba(108, 140, 255, 0.15)', icon: <Play size={13} color="var(--xivig-accent)" /> };
+  }
+}
 
 export const BuildSystemModal: React.FC = () => {
   const isOpen = useUIStore((state) => state.isBuildSystemModalOpen);
@@ -11,20 +30,29 @@ export const BuildSystemModal: React.FC = () => {
   const activeTarget = useBuildStore((state) => state.activeTarget);
 
   const [query, setQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'python' | 'cpp' | 'java' | 'nodejs'>('all');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const targets = getAvailableTargets();
-  const filteredTargets = targets.filter(
-    (t) =>
+  const filteredTargets = targets.filter((t) => {
+    const matchesCategory =
+      selectedCategory === 'all' ||
+      (selectedCategory === 'cpp' && (t.category === 'c' || t.category === 'cpp')) ||
+      t.category === selectedCategory;
+
+    const matchesQuery =
       t.name.toLowerCase().includes(query.toLowerCase()) ||
       t.command.toLowerCase().includes(query.toLowerCase()) ||
-      t.description.toLowerCase().includes(query.toLowerCase())
-  );
+      t.description.toLowerCase().includes(query.toLowerCase());
+
+    return matchesCategory && matchesQuery;
+  });
 
   useEffect(() => {
     if (isOpen) {
       setQuery('');
+      setSelectedCategory('all');
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -32,7 +60,7 @@ export const BuildSystemModal: React.FC = () => {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [query]);
+  }, [query, selectedCategory]);
 
   if (!isOpen) return null;
 
@@ -67,11 +95,43 @@ export const BuildSystemModal: React.FC = () => {
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Cpu size={16} color="var(--xivig-accent)" />
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>Select Build System & Task (Ctrl+Shift+B)</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>Select Task & Runner (Ctrl+Shift+B)</span>
           </div>
           <button onClick={close} style={{ color: 'var(--xivig-text-dim)' }}>
             <X size={15} />
           </button>
+        </div>
+
+        {/* Category Filter Pills */}
+        <div style={{ display: 'flex', gap: '6px', padding: '10px 16px', borderBottom: '1px solid var(--xivig-border-subtle)', backgroundColor: 'var(--xivig-sidebar)' }}>
+          {[
+            { id: 'all', label: 'All Runners' },
+            { id: 'python', label: 'Python' },
+            { id: 'cpp', label: 'C / C++' },
+            { id: 'java', label: 'Java' },
+            { id: 'nodejs', label: 'Node.js' },
+          ].map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id as any)}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  border: isActive ? '1px solid var(--xivig-accent)' : '1px solid transparent',
+                  backgroundColor: isActive ? 'var(--xivig-accent)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--xivig-text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Search */}
@@ -82,7 +142,7 @@ export const BuildSystemModal: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type to search build targets (e.g. Node, Python, npm, Cargo)..."
+            placeholder="Search Python, C, C++, Java, Node.js runners or build tasks..."
             style={inputStyle}
           />
         </div>
@@ -93,6 +153,7 @@ export const BuildSystemModal: React.FC = () => {
             filteredTargets.map((target, idx) => {
               const isSelected = idx === selectedIndex;
               const isActive = activeTarget?.id === target.id;
+              const catInfo = getCategoryInfo(target.category);
 
               return (
                 <div
@@ -111,20 +172,31 @@ export const BuildSystemModal: React.FC = () => {
                         width: '26px',
                         height: '26px',
                         borderRadius: '4px',
-                        backgroundColor: 'rgba(108, 140, 255, 0.12)',
+                        backgroundColor: catInfo.bg,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'var(--xivig-accent)',
                         flexShrink: 0,
                       }}
                     >
-                      <Play size={13} fill="currentColor" />
+                      {catInfo.icon}
                     </div>
                     <div style={{ overflow: 'hidden' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: 600, color: 'var(--xivig-text)', fontSize: '13px' }}>
                           {target.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '9.5px',
+                            padding: '1px 5px',
+                            backgroundColor: catInfo.bg,
+                            color: catInfo.color,
+                            borderRadius: '3px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {catInfo.label}
                         </span>
                         {isActive && (
                           <span
@@ -179,7 +251,7 @@ export const BuildSystemModal: React.FC = () => {
             })
           ) : (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--xivig-text-dim)', fontSize: '12.5px' }}>
-              No matching build systems found.
+              No matching build systems or runners found.
             </div>
           )}
         </div>

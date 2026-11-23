@@ -505,9 +505,9 @@ export const BottomPanel: React.FC = () => {
           <div style={outputContainerStyle}>
             {/* Output Sub-header Bar */}
             <div style={outputSubHeaderStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px' }}>
-                <span style={{ color: 'var(--xivig-text-dim)' }}>Target:</span>
-                <span style={{ fontWeight: 600, color: 'var(--xivig-accent)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', overflow: 'hidden' }}>
+                <span style={{ color: 'var(--xivig-text-dim)', flexShrink: 0 }}>Runner:</span>
+                <span style={{ fontWeight: 600, color: 'var(--xivig-accent)', flexShrink: 0 }}>
                   {currentBuildTarget.name}
                 </span>
                 <code
@@ -517,9 +517,14 @@ export const BottomPanel: React.FC = () => {
                     borderRadius: '3px',
                     fontSize: '11px',
                     color: 'var(--xivig-text-muted)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
+                  title={`${currentBuildTarget.command} ${currentBuildTarget.args.join(' ')}${currentBuildTarget.secondaryCommand ? ` && ${currentBuildTarget.secondaryCommand.command}` : ''}`}
                 >
-                  {currentBuildTarget.command} {currentBuildTarget.args.join(' ')}
+                  {currentBuildTarget.command} {currentBuildTarget.args.slice(0, 3).join(' ')}
+                  {currentBuildTarget.secondaryCommand ? ` → ${currentBuildTarget.secondaryCommand.command}` : ''}
                 </code>
               </div>
 

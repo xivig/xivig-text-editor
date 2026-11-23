@@ -3,6 +3,8 @@ import { useUIStore } from './uiStore';
 import { useEditorStore } from './editorStore';
 import { useFileStore } from './fileStore';
 
+export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'workspace' | 'general';
+
 export interface BuildTarget {
   id: string;
   name: string;
@@ -10,6 +12,12 @@ export interface BuildTarget {
   args: string[];
   description: string;
   icon?: string;
+  category?: RunnerCategory;
+  secondaryCommand?: {
+    command: string;
+    args?: string[];
+    cwd?: string;
+  };
 }
 
 export interface OutputLine {
@@ -112,50 +120,208 @@ export const useBuildStore = create<BuildState>((set, get) => {
     lastCommand: '',
 
     detectDefaultTarget: () => {
+      const activeDoc = useEditorStore.getState().getActiveDocument();
+      const ext = activeDoc?.name?.split('.').pop()?.toLowerCase();
       const targets = get().getAvailableTargets();
+
+      if (ext === 'py' || ext === 'pyw') {
+        const py = targets.find((t) => t.category === 'python');
+        if (py) return py;
+      } else if (ext === 'c') {
+        const cTarget = targets.find((t) => t.id === 'c-compile-run');
+        if (cTarget) return cTarget;
+      } else if (ext === 'cpp' || ext === 'cxx' || ext === 'cc' || ext === 'c++') {
+        const cppTarget = targets.find((t) => t.id === 'cpp-compile-run');
+        if (cppTarget) return cppTarget;
+      } else if (ext === 'java') {
+        const javaTarget = targets.find((t) => t.category === 'java');
+        if (javaTarget) return javaTarget;
+      } else if (ext === 'js' || ext === 'mjs' || ext === 'cjs' || ext === 'ts' || ext === 'mts' || ext === 'cts') {
+        const nodeTarget = targets.find((t) => t.category === 'nodejs');
+        if (nodeTarget) return nodeTarget;
+      }
+
       return targets[0] || {
-        id: 'default',
-        name: 'Default Node.js Runner',
+        id: 'default-node',
+        name: 'Node.js Runner',
         command: 'node',
         args: [],
-        description: 'Execute with Node.js',
+        description: 'Execute with Node.js runtime',
+        category: 'nodejs',
       };
     },
 
     getAvailableTargets: () => {
       const activeDoc = useEditorStore.getState().getActiveDocument();
       const workspacePath = useFileStore.getState().currentFolderPath;
+      const fileTree = useFileStore.getState().fileTree;
       const targets: BuildTarget[] = [];
 
       const docPath = activeDoc?.path;
       const docName = activeDoc?.name || '';
       const ext = docName.split('.').pop()?.toLowerCase();
+      const isWin = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase().includes('windows') : true;
+      const exeSuffix = isWin ? '.exe' : '';
 
       // 1. Current File execution targets
       if (docPath) {
-        if (ext === 'js' || ext === 'mjs' || ext === 'cjs') {
+        const fileDir = docPath.replace(/[/\\][^/\\]+$/, '');
+        const baseName = docName.replace(/\.[^.]+$/, '');
+        const outExe = `${baseName}${exeSuffix}`;
+
+        // --- Python Runner ---
+        if (ext === 'py' || ext === 'pyw') {
           targets.push({
-            id: 'node-file',
+            id: 'python-run-file',
+            name: `Python: Run ${docName}`,
+            command: 'python',
+            args: ['-u', docPath],
+            description: `Execute current script (${docName}) with Python interpreter`,
+            category: 'python',
+          });
+          targets.push({
+            id: 'python-test-file',
+            name: `Python: Test ${docName} (unittest)`,
+            command: 'python',
+            args: ['-u', '-m', 'unittest', docPath],
+            description: `Run unit tests in ${docName} with Python unittest module`,
+            category: 'python',
+          });
+        }
+
+        // --- C Runner ---
+        else if (ext === 'c') {
+          targets.push({
+            id: 'c-compile-run',
+            name: `C: Compile & Run ${docName}`,
+            command: 'gcc',
+            args: ['-Wall', docPath, '-o', outExe],
+            secondaryCommand: {
+              command: outExe,
+              args: [],
+              cwd: fileDir,
+            },
+            description: `Compile ${docName} with GCC and immediately execute ${outExe}`,
+            category: 'c',
+          });
+          targets.push({
+            id: 'c-compile-only',
+            name: `C: Compile ${docName} (GCC)`,
+            command: 'gcc',
+            args: ['-Wall', '-O2', docPath, '-o', outExe],
+            description: `Compile ${docName} with optimization (-O2)`,
+            category: 'c',
+          });
+          targets.push({
+            id: 'c-run-binary',
+            name: `C: Run ${outExe}`,
+            command: outExe,
+            args: [],
+            description: `Execute compiled binary ${outExe}`,
+            category: 'c',
+          });
+        }
+
+        // --- C++ Runner ---
+        else if (ext === 'cpp' || ext === 'cxx' || ext === 'cc' || ext === 'c++') {
+          targets.push({
+            id: 'cpp-compile-run',
+            name: `C++: Compile & Run ${docName}`,
+            command: 'g++',
+            args: ['-Wall', '-std=c++17', docPath, '-o', outExe],
+            secondaryCommand: {
+              command: outExe,
+              args: [],
+              cwd: fileDir,
+            },
+            description: `Compile ${docName} with G++ (C++17) and immediately execute ${outExe}`,
+            category: 'cpp',
+          });
+          targets.push({
+            id: 'cpp-compile-only',
+            name: `C++: Compile ${docName} (G++ -std=c++17)`,
+            command: 'g++',
+            args: ['-Wall', '-std=c++17', '-O2', docPath, '-o', outExe],
+            description: `Compile ${docName} with C++17 standards into binary`,
+            category: 'cpp',
+          });
+          targets.push({
+            id: 'cpp-run-binary',
+            name: `C++: Run ${outExe}`,
+            command: outExe,
+            args: [],
+            description: `Execute compiled binary ${outExe}`,
+            category: 'cpp',
+          });
+        }
+
+        // --- Java Runner ---
+        else if (ext === 'java') {
+          targets.push({
+            id: 'java-run-source',
+            name: `Java: Run ${docName} (Source Code)`,
+            command: 'java',
+            args: [docPath],
+            description: `Execute ${docName} directly with Java runtime (Java 11+)`,
+            category: 'java',
+          });
+          targets.push({
+            id: 'java-compile-run',
+            name: `Java: Compile & Run ${docName}`,
+            command: 'javac',
+            args: [docPath],
+            secondaryCommand: {
+              command: 'java',
+              args: ['-cp', fileDir, baseName],
+              cwd: fileDir,
+            },
+            description: `Compile with javac and execute ${baseName}.class with java`,
+            category: 'java',
+          });
+          targets.push({
+            id: 'java-compile-only',
+            name: `Java: Compile ${docName} (javac)`,
+            command: 'javac',
+            args: [docPath],
+            description: `Compile ${docName} into JVM bytecode (.class)`,
+            category: 'java',
+          });
+        }
+
+        // --- Node.js & TypeScript Runner ---
+        else if (ext === 'js' || ext === 'mjs' || ext === 'cjs') {
+          targets.push({
+            id: 'node-run-file',
             name: `Node.js: Run ${docName}`,
             command: 'node',
             args: [docPath],
             description: `Execute current file (${docName}) with Node.js runtime`,
+            category: 'nodejs',
           });
-        } else if (ext === 'ts') {
           targets.push({
-            id: 'tsx-file',
-            name: `TypeScript: Run ${docName}`,
+            id: 'node-run-trace',
+            name: `Node.js: Run with Warnings (${docName})`,
+            command: 'node',
+            args: ['--trace-warnings', docPath],
+            description: `Execute with detailed stack trace warnings`,
+            category: 'nodejs',
+          });
+        } else if (ext === 'ts' || ext === 'mts' || ext === 'cts') {
+          targets.push({
+            id: 'tsx-run-file',
+            name: `TypeScript: Run ${docName} (tsx)`,
             command: 'npx',
             args: ['--yes', 'tsx', docPath],
-            description: `Execute TypeScript file (${docName}) directly with tsx`,
+            description: `Execute TypeScript file (${docName}) directly with tsx loader`,
+            category: 'nodejs',
           });
-        } else if (ext === 'py') {
           targets.push({
-            id: 'python-file',
-            name: `Python: Run ${docName}`,
-            command: 'python',
-            args: [docPath],
-            description: `Execute current script (${docName}) with Python interpreter`,
+            id: 'ts-check-file',
+            name: `TypeScript: Typecheck ${docName}`,
+            command: 'npx',
+            args: ['--yes', 'tsc', '--noEmit', docPath],
+            description: `Run TypeScript type-checker in check-only mode`,
+            category: 'nodejs',
           });
         } else if (ext === 'rs') {
           targets.push({
@@ -164,51 +330,90 @@ export const useBuildStore = create<BuildState>((set, get) => {
             command: 'cargo',
             args: ['run'],
             description: 'Build and run Rust application with cargo',
-          });
-          targets.push({
-            id: 'rust-cargo-check',
-            name: 'Cargo: Check',
-            command: 'cargo',
-            args: ['check'],
-            description: 'Fast compile-check Rust package without producing binaries',
-          });
-        } else if (ext === 'cpp' || ext === 'cxx' || ext === 'cc') {
-          const outName = docName.replace(/\.[^.]+$/, '');
-          targets.push({
-            id: 'cpp-build-run',
-            name: `C++: Compile ${docName}`,
-            command: 'g++',
-            args: [docPath, '-o', `${outName}.exe`],
-            description: `Compile ${docName} with g++`,
-          });
-        } else if (ext === 'c') {
-          const outName = docName.replace(/\.[^.]+$/, '');
-          targets.push({
-            id: 'c-build-run',
-            name: `C: Compile ${docName}`,
-            command: 'gcc',
-            args: [docPath, '-o', `${outName}.exe`],
-            description: `Compile ${docName} with gcc`,
+            category: 'general',
           });
         } else if (ext === 'html') {
           targets.push({
             id: 'open-html',
             name: `Browser: Preview ${docName}`,
-            command: 'start',
+            command: isWin ? 'start' : 'open',
             args: [docPath],
             description: `Open HTML document in default browser`,
+            category: 'general',
           });
         }
       }
 
-      // 2. Workspace npm targets if in a project
+      // 2. Discover runnable project files in workspace root
+      if (fileTree && fileTree.length > 0) {
+        const rootFiles = fileTree.filter((f) => !f.isDirectory && f.path !== docPath);
+
+        for (const f of rootFiles) {
+          const fExt = f.name.split('.').pop()?.toLowerCase();
+          const fBase = f.name.replace(/\.[^.]+$/, '');
+          const fDir = f.path.replace(/[/\\][^/\\]+$/, '');
+          const fExe = `${fBase}${exeSuffix}`;
+
+          if (fExt === 'py') {
+            targets.push({
+              id: `ws-py-${f.name}`,
+              name: `Python: Run ${f.name}`,
+              command: 'python',
+              args: ['-u', f.path],
+              description: `Execute workspace script ${f.name} with Python`,
+              category: 'python',
+            });
+          } else if (fExt === 'js') {
+            targets.push({
+              id: `ws-node-${f.name}`,
+              name: `Node.js: Run ${f.name}`,
+              command: 'node',
+              args: [f.path],
+              description: `Execute workspace script ${f.name} with Node.js`,
+              category: 'nodejs',
+            });
+          } else if (fExt === 'c') {
+            targets.push({
+              id: `ws-c-${f.name}`,
+              name: `C: Compile & Run ${f.name}`,
+              command: 'gcc',
+              args: ['-Wall', f.path, '-o', fExe],
+              secondaryCommand: { command: fExe, args: [], cwd: fDir },
+              description: `Compile and run workspace C program ${f.name}`,
+              category: 'c',
+            });
+          } else if (fExt === 'cpp' || fExt === 'cc' || fExt === 'cxx') {
+            targets.push({
+              id: `ws-cpp-${f.name}`,
+              name: `C++: Compile & Run ${f.name}`,
+              command: 'g++',
+              args: ['-Wall', '-std=c++17', f.path, '-o', fExe],
+              secondaryCommand: { command: fExe, args: [], cwd: fDir },
+              description: `Compile and run workspace C++ program ${f.name}`,
+              category: 'cpp',
+            });
+          } else if (fExt === 'java') {
+            targets.push({
+              id: `ws-java-${f.name}`,
+              name: `Java: Run ${f.name}`,
+              command: 'java',
+              args: [f.path],
+              description: `Execute workspace Java source file ${f.name}`,
+              category: 'java',
+            });
+          }
+        }
+      }
+
+      // 3. Workspace npm targets if in a project
       if (workspacePath) {
         targets.push({
-          id: 'npm-build',
-          name: 'npm: run build',
+          id: 'npm-start',
+          name: 'npm: start',
           command: 'npm',
-          args: ['run', 'build'],
-          description: 'Execute build script in package.json',
+          args: ['start'],
+          description: 'Start application via npm start',
+          category: 'workspace',
         });
         targets.push({
           id: 'npm-test',
@@ -216,24 +421,65 @@ export const useBuildStore = create<BuildState>((set, get) => {
           command: 'npm',
           args: ['test'],
           description: 'Run project test suite via npm',
+          category: 'workspace',
         });
         targets.push({
-          id: 'npm-start',
-          name: 'npm: start',
+          id: 'npm-build',
+          name: 'npm: run build',
           command: 'npm',
-          args: ['start'],
-          description: 'Start application via npm start',
+          args: ['run', 'build'],
+          description: 'Execute build script in package.json',
+          category: 'workspace',
         });
       }
 
-      // Fallback if no specific target detected
-      if (targets.length === 0) {
+      // 4. Always provide standard runner presets so all 4 runners are directly discoverable
+      const hasNode = targets.some((t) => t.category === 'nodejs');
+      const hasPy = targets.some((t) => t.category === 'python');
+      const hasC = targets.some((t) => t.category === 'c' || t.category === 'cpp');
+      const hasJava = targets.some((t) => t.category === 'java');
+
+      if (!hasNode) {
         targets.push({
-          id: 'system-echo',
-          name: 'Xivig Shell Task',
-          command: 'echo',
-          args: ['Ready to execute build command.'],
-          description: 'Echo test task',
+          id: 'generic-node',
+          name: 'Node.js Runner',
+          command: 'node',
+          args: docPath && ext?.match(/^(js|mjs|cjs)$/) ? [docPath] : ['-v'],
+          description: 'Execute JavaScript with Node.js',
+          category: 'nodejs',
+        });
+      }
+
+      if (!hasPy) {
+        targets.push({
+          id: 'generic-python',
+          name: 'Python Runner',
+          command: 'python',
+          args: docPath && ext === 'py' ? ['-u', docPath] : ['--version'],
+          description: 'Execute Python scripts with real-time output',
+          category: 'python',
+        });
+      }
+
+      if (!hasC) {
+        targets.push({
+          id: 'generic-c-cpp',
+          name: 'C/C++ Runner (GCC/G++)',
+          command: 'gcc',
+          args: ['--version'],
+          description: 'Compile and run C and C++ source programs',
+          category: 'c',
+        });
+      }
+
+      if (!hasJava) {
+        targets.push({
+          id: 'generic-java',
+          name: 'Java Runner',
+          command: 'java',
+          args: docPath && ext === 'java' ? [docPath] : ['-version'],
+          description: 'Run Java source code directly (Java 11+)',
+          category: 'java',
         });
       }
 
@@ -261,6 +507,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
           command: target.command,
           args: target.args,
           cwd,
+          secondaryCommand: target.secondaryCommand,
         });
       } else {
         console.warn('[BuildStore] window.xivig.buildRun not available');
