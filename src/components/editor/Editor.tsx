@@ -225,12 +225,12 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     });
 
     viewRef.current = view;
-    setActiveEditorView(view);
+    setActiveEditorView(view, pane);
 
     return () => {
       view.destroy();
       viewRef.current = null;
-      setActiveEditorView(null);
+      setActiveEditorView(null, pane);
     };
   }, [activeDocumentId]);
 
@@ -499,7 +499,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     <div
       onMouseDown={() => {
         setActivePane(pane);
-        if (viewRef.current) setActiveEditorView(viewRef.current);
+        if (viewRef.current) setActiveEditorView(viewRef.current, pane);
       }}
       onContextMenu={(e) => {
         if (activeDoc) {

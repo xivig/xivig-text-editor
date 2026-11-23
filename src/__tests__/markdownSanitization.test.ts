@@ -52,4 +52,13 @@ describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
     expect(output).toContain('const x = 10;');
     expect(output).toContain('<li');
   });
+
+  it('tags headings and sections with data-line for live scroll synchronization', () => {
+    const markdown = '# Main Title\n\nIntro paragraph\n\n## Section Two\n\n```js\nconsole.log(1);\n```';
+    const output = renderAndSanitizeMarkdown(markdown);
+
+    expect(output).toContain('<h1 data-line="1"');
+    expect(output).toContain('data-line=');
+    expect(output).toContain('<h2 data-line="5"');
+  });
 });

@@ -44,15 +44,19 @@ export function sanitizeMarkdownHtml(rawHtml: string): string {
     ],
     ALLOWED_ATTR: [
       'href', 'src', 'alt', 'title', 'class',
-      'type', 'checked', 'disabled', 'target', 'rel',
+      'type', 'checked', 'disabled', 'target', 'rel', 'id', 'data-line',
     ],
     FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'style', 'base', 'link', 'meta', 'applet'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
     // Disallow javascript:, vbscript:, and data: schemes for links
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|#):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-    ALLOW_DATA_ATTR: false,
+    ALLOW_DATA_ATTR: true,
     ADD_ATTR: ['target', 'rel'],
   });
+}
+
+function getLineNumber(text: string, index: number): number {
+  return text.slice(0, index).split('\n').length;
 }
 
 /**
@@ -65,18 +69,18 @@ export function renderAndSanitizeMarkdown(markdownContent: string): string {
     return '<p class="text-gray-500 italic">No content to preview.</p>';
   }
 
-  let md = markdownContent;
+  // Normalize line endings
+  const normalizedSource = markdownContent.replace(/\r\n/g, '\n');
+  let md = normalizedSource;
 
-  // 1. Normalize line endings
-  md = md.replace(/\r\n/g, '\n');
-
-  // 2. Code blocks with syntax container
-  md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+  // 2. Code blocks with syntax container and data-line tracking
+  md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
     const escapedCode = code
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-    return `<div class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
+    return `<div data-line="${line}" class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
       <div class="px-3 py-1 bg-[#252526] text-gray-400 text-xs font-mono border-b border-[#3e3e42] flex justify-between select-none">
         <span>${lang || 'text'}</span>
         <span>code</span>
@@ -88,13 +92,14 @@ export function renderAndSanitizeMarkdown(markdownContent: string): string {
   // 3. Inline code
   md = md.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#2d2d2d] text-[#ce9178] font-mono text-xs border border-[#3c3c3c]">$1</code>');
 
-  // 4. Tables
+  // 4. Tables with data-line tracking
   const tableRegex = /((?:\|[^\n]+\|\r?\n)+)/g;
-  md = md.replace(tableRegex, (tableBlock) => {
+  md = md.replace(tableRegex, (tableBlock, _, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
     const rows = tableBlock.trim().split('\n').map((row) => row.trim());
     if (rows.length < 2) return tableBlock;
 
-    let html = '<div class="overflow-x-auto my-4"><table class="w-full text-xs text-left border-collapse border border-[#3e3e42]">';
+    let html = `<div data-line="${line}" class="overflow-x-auto my-4"><table class="w-full text-xs text-left border-collapse border border-[#3e3e42]">`;
     rows.forEach((row, idx) => {
       if (idx === 1 && /^[|\s-:]+$/.test(row)) return;
 
@@ -121,16 +126,37 @@ export function renderAndSanitizeMarkdown(markdownContent: string): string {
     return html;
   });
 
-  // 5. Blockquotes
-  md = md.replace(/^>\s?(.*)$/gm, '<blockquote class="border-l-4 border-[#007acc] pl-3 py-1 my-2 text-gray-400 bg-[#20252b] rounded-r italic">$1</blockquote>');
+  // 5. Blockquotes with data-line tracking
+  md = md.replace(/^>\s?(.*)$/gm, (match, content, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<blockquote data-line="${line}" class="border-l-4 border-[#007acc] pl-3 py-1 my-2 text-gray-400 bg-[#20252b] rounded-r italic">${content}</blockquote>`;
+  });
 
-  // 6. Headers
-  md = md.replace(/^######\s+(.*)$/gm, '<h6 class="text-xs font-bold text-gray-400 mt-4 mb-2 uppercase tracking-wider">$1</h6>');
-  md = md.replace(/^#####\s+(.*)$/gm, '<h5 class="text-sm font-bold text-gray-300 mt-4 mb-2">$1</h5>');
-  md = md.replace(/^####\s+(.*)$/gm, '<h4 class="text-base font-semibold text-gray-200 mt-5 mb-2">$1</h4>');
-  md = md.replace(/^###\s+(.*)$/gm, '<h3 class="text-lg font-semibold text-[#569cd6] mt-6 mb-2 border-b border-[#2e2e2e] pb-1">$1</h3>');
-  md = md.replace(/^##\s+(.*)$/gm, '<h2 class="text-xl font-bold text-[#4ec9b0] mt-7 mb-3 border-b border-[#333] pb-1.5">$1</h2>');
-  md = md.replace(/^#\s+(.*)$/gm, '<h1 class="text-2xl font-bold text-white mt-8 mb-4 border-b border-[#444] pb-2">$1</h1>');
+  // 6. Headers with data-line tracking
+  md = md.replace(/^######\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h6 data-line="${line}" class="text-xs font-bold text-gray-400 mt-4 mb-2 uppercase tracking-wider">${title}</h6>`;
+  });
+  md = md.replace(/^#####\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h5 data-line="${line}" class="text-sm font-bold text-gray-300 mt-4 mb-2">${title}</h5>`;
+  });
+  md = md.replace(/^####\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h4 data-line="${line}" class="text-base font-semibold text-gray-200 mt-5 mb-2">${title}</h4>`;
+  });
+  md = md.replace(/^###\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h3 data-line="${line}" class="text-lg font-semibold text-[#569cd6] mt-6 mb-2 border-b border-[#2e2e2e] pb-1">${title}</h3>`;
+  });
+  md = md.replace(/^##\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h2 data-line="${line}" class="text-xl font-bold text-[#4ec9b0] mt-7 mb-3 border-b border-[#333] pb-1.5">${title}</h2>`;
+  });
+  md = md.replace(/^#\s+(.*)$/gm, (match, title, offset) => {
+    const line = getLineNumber(normalizedSource, offset);
+    return `<h1 data-line="${line}" class="text-2xl font-bold text-white mt-8 mb-4 border-b border-[#444] pb-2">${title}</h1>`;
+  });
 
   // 7. Horizontal rule
   md = md.replace(/^(?:---|\*\*\*|___)$/gm, '<hr class="my-6 border-t border-[#3e3e42]" />');
