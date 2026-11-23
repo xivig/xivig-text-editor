@@ -52,6 +52,7 @@ import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } f
 import { beautifyActiveEditor } from '../../utils/beautify';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
+import { WelcomeView } from '../welcome/WelcomeView';
 import { FileContextMenu } from '../common/FileContextMenu';
 import { AlertTriangle, Zap } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
@@ -279,6 +280,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
 
   if (activeDoc?.id === 'settings') {
     return <SettingsView />;
+  }
+
+  if (activeDoc?.id === 'welcome-tab') {
+    return <WelcomeView />;
   }
 
   if (!activeDoc) {

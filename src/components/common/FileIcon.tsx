@@ -40,6 +40,17 @@ export const FileIcon: React.FC<FileIconProps> = ({
     );
   }
 
+  if (filename.toLowerCase() === 'welcome' || filename.toLowerCase() === 'welcome.md') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} style={style}>
+        <path
+          d="M8 1.5L9.6 5.5L14 6L10.7 9.2L11.6 14L8 11.7L4.4 14L5.3 9.2L2 6L6.4 5.5L8 1.5Z"
+          fill="var(--xivig-accent)"
+        />
+      </svg>
+    );
+  }
+
   const name = filename.toLowerCase();
 
   // 1. Exact Filename Matches

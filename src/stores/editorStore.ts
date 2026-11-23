@@ -43,7 +43,37 @@ interface EditorState {
   handleExternalFileChange: (filePath: string) => Promise<void>;
   reloadDocumentFromDisk: (docId: string) => Promise<void>;
   dismissConflict: (docId: string) => void;
+  openWelcomeDocument: () => void;
 }
+
+export const WELCOME_MARKDOWN_CONTENT = `# Xivig Editor
+
+A modern, lightweight, high-performance desktop code editor inspired by Sublime Text.
+
+### 🚀 Keyboard Shortcuts
+* **Ctrl + Shift + P**: Command Palette
+* **Ctrl + P**: Quick Open File
+* **Ctrl + F**: Find / Search
+* **Ctrl + H**: Replace
+* **Ctrl + N**: New File
+* **Ctrl + O**: Open File
+* **Ctrl + S**: Save File
+* **Ctrl + Shift + S**: Save As
+* **Ctrl + W**: Close Tab
+* **Ctrl + B**: Toggle Sidebar
+* **Ctrl + \`**: Toggle Terminal
+* **Ctrl + Shift + B**: Select Build Target
+
+### 🛠️ Architecture:
+* **Electron 45** + **Node.js**
+* **SQLite & Session Persistence**
+* **React 18** + **TypeScript**
+* **CodeMirror 6** (Multi-cursor, syntax highlighting & transactions)
+* **Vite** (Ultra-fast HMR)
+* **Zustand** (UI & Document State)
+* **Seamless In-Place Auto-Updater**
+
+*Start editing or open a folder to explore your project!*`;
 
 let saveDebounceTimer: NodeJS.Timeout | null = null;
 
@@ -82,8 +112,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     {
       id: 'welcome-tab',
       path: null,
-      name: 'Welcome.md',
-      content: `# Xivig Editor\n\nA modern, lightweight, high-performance desktop code editor inspired by Sublime Text.\n\n### 🚀 Keyboard Shortcuts\n* **Ctrl + Shift + P**: Command Palette\n* **Ctrl + P**: Quick Open File\n* **Ctrl + F**: Find / Search\n* **Ctrl + H**: Replace\n* **Ctrl + N**: New File\n* **Ctrl + O**: Open File\n* **Ctrl + S**: Save File\n* **Ctrl + Shift + S**: Save As\n* **Ctrl + W**: Close Tab\n* **Ctrl + B**: Toggle Sidebar\n\n### 🛠️ Architecture:\n* **Electron 45** + **Node.js**\n* **SQLite & Session Persistence**\n* **React 18** + **TypeScript**\n* **CodeMirror 6** (Multi-cursor, syntax highlighting & transactions)\n* **Vite** (Ultra-fast HMR)\n* **Zustand** (UI & Document State)\n\n*Start editing or open a folder to explore your project!*`,
+      name: 'Welcome',
+      content: WELCOME_MARKDOWN_CONTENT,
       language: 'markdown',
       isDirty: false,
       cursor: { line: 1, col: 1 },
@@ -98,6 +128,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isPreviewOpen: false,
   previewMode: 'live-web',
   externalConflictDocId: null,
+
+  openWelcomeDocument: () => {
+    const { documents } = get();
+    const existing = documents.find((d) => d.id === 'welcome-tab');
+    if (existing) {
+      set({ activeDocumentId: 'welcome-tab' });
+      return;
+    }
+    const welcomeDoc: EditorDocument = {
+      id: 'welcome-tab',
+      path: null,
+      name: 'Welcome',
+      content: WELCOME_MARKDOWN_CONTENT,
+      language: 'markdown',
+      isDirty: false,
+      cursor: { line: 1, col: 1 },
+    };
+    set({
+      documents: [welcomeDoc, ...documents],
+      activeDocumentId: 'welcome-tab',
+    });
+    triggerAutoSave();
+  },
 
   persistSessionDebounced: triggerAutoSave,
 

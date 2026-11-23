@@ -12,6 +12,7 @@ export interface UserSettings {
   theme: ThemeId;
   autoSave: boolean;
   fontLigatures: boolean;
+  showWelcomeOnStartup: boolean;
 }
 
 interface SettingsState {
@@ -35,6 +36,7 @@ const defaultSettings: UserSettings = {
   theme: 'xivig-dark',
   autoSave: true,
   fontLigatures: true,
+  showWelcomeOnStartup: true,
 };
 
 function applySettingsToDOM(settings: UserSettings) {

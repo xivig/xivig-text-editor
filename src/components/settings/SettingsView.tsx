@@ -261,6 +261,22 @@ export const SettingsView: React.FC = () => {
               />
             </div>
 
+            {/* Show Welcome on Startup */}
+            <div style={settingRowStyle}>
+              <div>
+                <label style={settingLabelStyle}>Show Welcome Page on Startup</label>
+                <p style={settingDescStyle}>
+                  Open the modern Welcome startup dashboard when launching Xivig Editor.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.showWelcomeOnStartup !== false}
+                onChange={(e) => updateSettings({ showWelcomeOnStartup: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+            </div>
+
             {/* Storage Info */}
             <div style={{ ...settingRowStyle, borderBottom: 'none' }}>
               <div>

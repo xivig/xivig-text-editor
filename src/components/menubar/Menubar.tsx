@@ -328,6 +328,10 @@ export const Menubar: React.FC = () => {
     ],
     Help: [
       {
+        label: 'Welcome',
+        action: () => useEditorStore.getState().openWelcomeDocument(),
+      },
+      {
         label: 'Documentation',
         action: () => window.open('https://github.com/xivig/xivig-text-editor#readme', '_blank'),
       },

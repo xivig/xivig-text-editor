@@ -93,17 +93,18 @@ export const App: React.FC = () => {
 
   // Restore Session and Settings on Mount
   useEffect(() => {
-    // Load persisted user settings & extensions
-    useSettingsStore.getState().loadSettings();
-    useExtensionStore.getState().loadInstalledExtensions();
-
     async function initSession() {
+      // 1. Load persisted settings and extensions first
+      await useSettingsStore.getState().loadSettings();
+      useExtensionStore.getState().loadInstalledExtensions();
+      const settings = useSettingsStore.getState().settings;
+
       if (!window.xivig?.restoreSession) return;
 
       try {
         const session = await window.xivig.restoreSession();
         if (session && session.documents && session.documents.length > 0) {
-          const restoredDocs: EditorDocument[] = session.documents.map((d) => ({
+          let restoredDocs: EditorDocument[] = session.documents.map((d) => ({
             id: d.id,
             path: d.path,
             name: d.name,
@@ -113,7 +114,22 @@ export const App: React.FC = () => {
             cursor: { line: d.cursorLine || 1, col: d.cursorCol || 1 },
           }));
 
-          setRestoredSession(restoredDocs, session.activeDocId);
+          // If the user disabled showWelcomeOnStartup, remove the welcome tab
+          if (settings.showWelcomeOnStartup === false) {
+            restoredDocs = restoredDocs.filter((d) => d.id !== 'welcome-tab');
+          }
+
+          if (restoredDocs.length > 0) {
+            const nextActiveId = restoredDocs.some((d) => d.id === session.activeDocId)
+              ? session.activeDocId
+              : restoredDocs[0].id;
+
+            setRestoredSession(restoredDocs, nextActiveId);
+          } else {
+            setRestoredSession([], null);
+            useEditorStore.getState().createNewDocument();
+          }
+
           setInitialSession(
             session.activeFolder,
             session.isSidebarOpen ?? true,
@@ -126,6 +142,12 @@ export const App: React.FC = () => {
             if (res.success && res.items) {
               setCurrentFolder(session.activeFolder, res.items);
             }
+          }
+        } else {
+          // If no saved session, check showWelcomeOnStartup
+          if (settings.showWelcomeOnStartup === false) {
+            setRestoredSession([], null);
+            useEditorStore.getState().createNewDocument();
           }
         }
       } catch (err) {
