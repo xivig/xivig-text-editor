@@ -37,6 +37,15 @@ export interface GitStatusResult {
   changes: GitFileChange[];
 }
 
+export interface AppInfo {
+  name: string;
+  version: string;
+  electron?: string;
+  node?: string;
+  chrome?: string;
+  platform?: string;
+}
+
 export interface UpdateCheckResult {
   updateAvailable: boolean;
   currentVersion: string;
@@ -115,6 +124,9 @@ export interface XivigAPI {
   checkForUpdates?: () => Promise<UpdateCheckResult>;
   openReleasePage?: (url?: string) => Promise<boolean>;
   onUpdateAvailable?: (callback: (info: UpdateCheckResult) => void) => () => void;
+
+  // Application info
+  getAppInfo?: () => Promise<AppInfo | null>;
 
   // System info
   platform: string;

@@ -2,11 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import logoUrl from '../../assets/logo.png';
+import pkg from '../../../package.json';
+import { AppInfo } from '../../types/electron';
 
 export const AboutModal: React.FC = () => {
   const isOpen = useUIStore((state) => state.isAboutModalOpen);
   const close = useUIStore((state) => state.closeAboutModal);
-  const [buildTimestamp] = useState(() => new Date().toISOString());
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+  const [buildTimestamp] = useState<string>(() =>
+    typeof __BUILD_TIMESTAMP__ !== 'undefined' ? __BUILD_TIMESTAMP__ : new Date().toISOString()
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -18,7 +23,22 @@ export const AboutModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, close]);
 
+  useEffect(() => {
+    if (isOpen && window.xivig?.getAppInfo) {
+      window.xivig.getAppInfo().then((info) => {
+        if (info) {
+          setAppInfo(info);
+        }
+      }).catch(() => {});
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const currentVersion = appInfo?.version || pkg.version || '1.1.0';
+  const releaseMajorMinor = currentVersion.includes('.')
+    ? currentVersion.split('.').slice(0, 2).join('.')
+    : currentVersion;
 
   return (
     <div
@@ -132,11 +152,16 @@ export const AboutModal: React.FC = () => {
                 Xivig Text Editor
               </div>
               <div style={{ fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>
-                Release 1.0
+                Release {releaseMajorMinor} (v{currentVersion})
               </div>
               <div style={{ fontSize: '12px', color: '#9ca3af', lineHeight: 1.5 }}>
                 build timestamp: {buildTimestamp}
               </div>
+              {appInfo?.electron && (
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '3px', lineHeight: 1.4 }}>
+                  Runtime: Electron {appInfo.electron} • Node {appInfo.node} • Chromium {appInfo.chrome}
+                </div>
+              )}
             </div>
 
             {/* Release Credits */}

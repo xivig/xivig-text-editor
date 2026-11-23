@@ -707,3 +707,16 @@ ipcMain.handle('updater:openRelease', async (event, releaseUrl?: string) => {
   openReleaseUrl(releaseUrl);
   return true;
 });
+
+// Application Metadata IPC
+ipcMain.handle('app:info', async (event) => {
+  if (!validateIpcSender(event)) return null;
+  return {
+    name: app.getName() || 'Xivig Text Editor',
+    version: app.getVersion() || '1.1.0',
+    electron: process.versions.electron,
+    node: process.versions.node,
+    chrome: process.versions.chrome,
+    platform: process.platform,
+  };
+});

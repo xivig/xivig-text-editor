@@ -29,6 +29,10 @@ export default defineConfig({
       renderer: {},
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.1.0'),
+    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

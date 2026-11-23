@@ -307,7 +307,7 @@ export const UpdateCheckModal: React.FC = () => {
               </div>
 
               <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '6px', lineHeight: 1.5 }}>
-                You are running the newest version available: <strong>Release 1.1 (v{result?.currentVersion || '1.1.0'})</strong>.
+                You are running the newest version available: <strong>Release {(result?.currentVersion || '1.1.0').split('.').slice(0, 2).join('.')} (v{result?.currentVersion || '1.1.0'})</strong>.
               </div>
 
               <div

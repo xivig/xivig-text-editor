@@ -118,6 +118,9 @@ const xivigAPI = {
     };
   },
 
+  // Application Metadata
+  getAppInfo: () => ipcRenderer.invoke('app:info'),
+
   // Environment
   platform: process.platform,
 };
