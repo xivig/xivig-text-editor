@@ -131,8 +131,14 @@ export const BottomPanel: React.FC = () => {
         window.xivig?.terminalWrite?.(data);
       });
 
-      // Initialize shell backend
-      window.xivig?.terminalInit?.(currentFolderPath || undefined);
+      // Initialize shell backend with PTY dimensions
+      const initialCols = term.cols || 80;
+      const initialRows = term.rows || 24;
+      window.xivig?.terminalInit?.({
+        cwd: currentFolderPath || undefined,
+        cols: initialCols,
+        rows: initialRows,
+      });
     }
 
     // Subscribe to shell stdout/stderr
@@ -144,6 +150,10 @@ export const BottomPanel: React.FC = () => {
       if (fitAddonRef.current && xtermRef.current) {
         try {
           fitAddonRef.current.fit();
+          const { cols, rows } = xtermRef.current;
+          if (cols && rows) {
+            window.xivig?.terminalResize?.({ cols, rows });
+          }
         } catch {}
       }
     };

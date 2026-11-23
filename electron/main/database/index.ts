@@ -54,15 +54,102 @@ let inMemoryStore: LocalStoreSchema = {
 let persistPromise: Promise<boolean> | null = null;
 let pendingPersist = false;
 
-function migrateStore(raw: any): LocalStoreSchema {
+function validateRecentItem(item: any): RecentItem | null {
+  if (!item || typeof item !== 'object') return null;
+  if (typeof item.id !== 'string' || !item.id.trim()) return null;
+  if (typeof item.path !== 'string' || !item.path.trim()) return null;
+  if (typeof item.name !== 'string' || !item.name.trim()) return null;
+  const lastOpened = typeof item.lastOpened === 'string' && !isNaN(Date.parse(item.lastOpened))
+    ? item.lastOpened
+    : new Date().toISOString();
+
+  return {
+    id: item.id.trim(),
+    path: item.path.trim(),
+    name: item.name.trim(),
+    lastOpened,
+  };
+}
+
+function validateSavedDocument(doc: any): SavedDocumentState | null {
+  if (!doc || typeof doc !== 'object') return null;
+  if (typeof doc.id !== 'string' || !doc.id.trim()) return null;
+  if (typeof doc.name !== 'string') return null;
+
+  return {
+    id: doc.id.trim(),
+    path: typeof doc.path === 'string' && doc.path.trim() ? doc.path.trim() : null,
+    name: doc.name.trim(),
+    content: typeof doc.content === 'string' ? doc.content : '',
+    language: typeof doc.language === 'string' ? doc.language.trim() : 'plaintext',
+    isDirty: Boolean(doc.isDirty),
+    cursorLine: typeof doc.cursorLine === 'number' && doc.cursorLine >= 1 ? doc.cursorLine : 1,
+    cursorCol: typeof doc.cursorCol === 'number' && doc.cursorCol >= 1 ? doc.cursorCol : 1,
+    orderIndex: typeof doc.orderIndex === 'number' ? doc.orderIndex : 0,
+  };
+}
+
+function validateSavedSession(rawSession: any): SavedSession | null {
+  if (!rawSession || typeof rawSession !== 'object') return null;
+
+  const documents: SavedDocumentState[] = [];
+  if (Array.isArray(rawSession.documents)) {
+    for (const d of rawSession.documents) {
+      const validDoc = validateSavedDocument(d);
+      if (validDoc) documents.push(validDoc);
+    }
+  }
+
+  return {
+    activeDocId: typeof rawSession.activeDocId === 'string' ? rawSession.activeDocId : null,
+    activeFolder: typeof rawSession.activeFolder === 'string' ? rawSession.activeFolder : null,
+    isSidebarOpen: typeof rawSession.isSidebarOpen === 'boolean' ? rawSession.isSidebarOpen : true,
+    activeSidebarView: typeof rawSession.activeSidebarView === 'string' ? rawSession.activeSidebarView : 'explorer',
+    documents,
+  };
+}
+
+export function migrateStore(raw: any): LocalStoreSchema {
   const version = typeof raw?.version === 'number' ? raw.version : 1;
+
+  // 1. Deeply validate settings
+  const safeSettings: Record<string, string> = {};
+  if (raw?.settings && typeof raw.settings === 'object' && !Array.isArray(raw.settings)) {
+    for (const [k, v] of Object.entries(raw.settings)) {
+      if (typeof k === 'string' && typeof v === 'string') {
+        safeSettings[k] = v;
+      }
+    }
+  }
+
+  // 2. Deeply validate workspaces
+  const safeWorkspaces: RecentItem[] = [];
+  if (Array.isArray(raw?.workspaces)) {
+    for (const w of raw.workspaces) {
+      const validW = validateRecentItem(w);
+      if (validW) safeWorkspaces.push(validW);
+    }
+  }
+
+  // 3. Deeply validate recent files
+  const safeRecentFiles: RecentItem[] = [];
+  if (Array.isArray(raw?.recentFiles)) {
+    for (const f of raw.recentFiles) {
+      const validF = validateRecentItem(f);
+      if (validF) safeRecentFiles.push(validF);
+    }
+  }
+
+  // 4. Deeply validate saved session
+  const safeSession = validateSavedSession(raw?.session);
+
   const migrated: LocalStoreSchema = {
     version: CURRENT_STORE_SCHEMA_VERSION,
-    settings: (raw?.settings && typeof raw.settings === 'object') ? raw.settings : {},
-    workspaces: Array.isArray(raw?.workspaces) ? raw.workspaces : [],
-    recentFiles: Array.isArray(raw?.recentFiles) ? raw.recentFiles : [],
-    session: (raw?.session && typeof raw.session === 'object') ? raw.session : null,
-    lastCheckpoint: raw?.lastCheckpoint || new Date().toISOString(),
+    settings: safeSettings,
+    workspaces: safeWorkspaces,
+    recentFiles: safeRecentFiles,
+    session: safeSession,
+    lastCheckpoint: typeof raw?.lastCheckpoint === 'string' ? raw.lastCheckpoint : new Date().toISOString(),
   };
 
   if (version < CURRENT_STORE_SCHEMA_VERSION) {
@@ -162,10 +249,10 @@ export function initDatabase(): void {
   }
 }
 
-export function saveSession(session: SavedSession): boolean {
-  inMemoryStore.session = session;
-  schedulePersist();
-  return true;
+export async function saveSession(session: SavedSession): Promise<boolean> {
+  const safeSession = validateSavedSession(session);
+  inMemoryStore.session = safeSession;
+  return await schedulePersist();
 }
 
 export function restoreSession(): SavedSession | null {

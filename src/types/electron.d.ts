@@ -102,8 +102,10 @@ export interface XivigAPI {
   setSetting: (key: string, value: string) => Promise<boolean>;
 
   // Terminal
-  terminalInit: (cwd?: string) => Promise<boolean>;
-  terminalWrite: (data: string) => void;
+  terminalInit: (options?: string | { cwd?: string; shell?: string; cols?: number; rows?: number; terminalId?: string }) => Promise<boolean>;
+  terminalWrite: (data: string | { data: string; terminalId?: string }) => void;
+  terminalResize?: (options: { cols: number; rows: number; terminalId?: string }) => Promise<boolean>;
+  getAvailableShells?: () => Promise<Array<{ name: string; path: string; executable: string }>>;
   onTerminalData: (callback: (data: string) => void) => () => void;
 
   // Git

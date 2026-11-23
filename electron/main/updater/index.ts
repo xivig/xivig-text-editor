@@ -37,27 +37,111 @@ let activeDownloadResult: UpdateCheckResult | null = null;
 let downloadedUpdate: DownloadedUpdateInfo | null = null;
 let isDownloading = false;
 
+export interface ParsedSemVer {
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease: Array<string | number>;
+  build?: string;
+}
+
 /**
- * Compares two semver strings (e.g. "1.1.0" and "1.2.0" or "v1.2.0").
- * Returns true if latest is strictly newer than current.
+ * Parses a Semantic Versioning 2.0.0 compliant string.
+ * Strips leading 'v', ignores build metadata in precedence,
+ * and splits dot-separated pre-release identifiers into numeric/string parts.
+ */
+export function parseSemVer(v: string): ParsedSemVer {
+  const cleaned = v.trim().replace(/^v/i, '');
+  // Ignore build metadata (+...) for precedence
+  const [withoutBuild, build] = cleaned.split('+');
+  const [versionPart, prereleasePart] = withoutBuild.split('-');
+
+  const [majorStr = '0', minorStr = '0', patchStr = '0'] = versionPart.split('.');
+  const major = parseInt(majorStr, 10) || 0;
+  const minor = parseInt(minorStr, 10) || 0;
+  const patch = parseInt(patchStr, 10) || 0;
+
+  const prerelease: Array<string | number> = [];
+  if (prereleasePart) {
+    const rawIdentifiers = prereleasePart.split('.');
+    for (const id of rawIdentifiers) {
+      if (/^\d+$/.test(id)) {
+        prerelease.push(parseInt(id, 10));
+      } else {
+        prerelease.push(id);
+      }
+    }
+  }
+
+  return { major, minor, patch, prerelease, build };
+}
+
+/**
+ * Compares two SemVer 2.0.0 versions according to specification precedence rules:
+ * 1. Compare major, minor, and patch numerically.
+ * 2. When major.minor.patch are equal, a normal release has higher precedence than a pre-release.
+ * 3. Precedence for two pre-release versions with the same major.minor.patch:
+ *    - Identifiers consisting of only digits are compared numerically.
+ *    - Identifiers with letters or hyphens are compared lexically in ASCII sort order.
+ *    - Numeric identifiers always have lower precedence than non-numeric identifiers.
+ *    - A larger set of pre-release fields has a higher precedence than a smaller set.
+ * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if v1 === v2.
+ */
+export function compareSemVer(v1: string, v2: string): number {
+  const p1 = parseSemVer(v1);
+  const p2 = parseSemVer(v2);
+
+  if (p1.major !== p2.major) return p1.major > p2.major ? 1 : -1;
+  if (p1.minor !== p2.minor) return p1.minor > p2.minor ? 1 : -1;
+  if (p1.patch !== p2.patch) return p1.patch > p2.patch ? 1 : -1;
+
+  // Rule 9: When major.minor.patch are equal, pre-release version has lower precedence than normal version
+  const hasPre1 = p1.prerelease.length > 0;
+  const hasPre2 = p2.prerelease.length > 0;
+
+  if (!hasPre1 && hasPre2) return 1;  // normal > pre-release
+  if (hasPre1 && !hasPre2) return -1; // pre-release < normal
+  if (!hasPre1 && !hasPre2) return 0; // both normal releases equal
+
+  // Both have pre-release identifiers; compare step-by-step
+  const maxLen = Math.max(p1.prerelease.length, p2.prerelease.length);
+  for (let i = 0; i < maxLen; i++) {
+    const id1 = p1.prerelease[i];
+    const id2 = p2.prerelease[i];
+
+    if (id1 === undefined) return -1; // p2 has larger set of fields -> p2 > p1
+    if (id2 === undefined) return 1;  // p1 has larger set of fields -> p1 > p2
+
+    const isNum1 = typeof id1 === 'number';
+    const isNum2 = typeof id2 === 'number';
+
+    if (isNum1 && isNum2) {
+      if (id1 !== id2) return (id1 as number) > (id2 as number) ? 1 : -1;
+    } else if (isNum1 && !isNum2) {
+      // Numeric identifiers have lower precedence than non-numeric
+      return -1;
+    } else if (!isNum1 && isNum2) {
+      // Non-numeric identifiers have higher precedence than numeric
+      return 1;
+    } else {
+      // Both non-numeric: ASCII lexical comparison
+      const str1 = String(id1);
+      const str2 = String(id2);
+      if (str1 !== str2) {
+        return str1 > str2 ? 1 : -1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Compares two semver strings (e.g. "1.1.0" and "1.2.0" or "v1.2.0-rc.1").
+ * Returns true if latest is strictly newer than current according to SemVer 2.0.0 rules.
  */
 export function isNewerVersion(current: string, latest: string): boolean {
-  const parse = (v: string) =>
-    v
-      .replace(/^v/i, '')
-      .split('.')
-      .map((n) => parseInt(n, 10) || 0);
-
-  const [currMajor = 0, currMinor = 0, currPatch = 0] = parse(current);
-  const [latMajor = 0, latMinor = 0, latPatch = 0] = parse(latest);
-
-  if (latMajor > currMajor) return true;
-  if (latMajor < currMajor) return false;
-
-  if (latMinor > currMinor) return true;
-  if (latMinor < currMinor) return false;
-
-  return latPatch > currPatch;
+  return compareSemVer(latest, current) > 0;
 }
 
 /**

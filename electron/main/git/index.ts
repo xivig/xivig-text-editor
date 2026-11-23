@@ -6,6 +6,32 @@ import { assertPathAuthorized } from '../security';
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Validates that a git target file path resolves strictly within the repository boundary.
+ * Rejects path traversal attempts (e.g. '../secret', null bytes, absolute paths outside repo).
+ * Returns the normalized POSIX repository-relative path.
+ */
+export function validateRepoRelativePath(repoRoot: string, filePath: string): string {
+  if (!filePath || typeof filePath !== 'string' || !filePath.trim()) {
+    throw new Error('Invalid git target path: must be a non-empty string');
+  }
+  if (filePath.includes('\0')) {
+    throw new Error('Invalid git target path: null byte detected');
+  }
+
+  const safeRoot = path.resolve(repoRoot);
+  const resolved = path.isAbsolute(filePath)
+    ? path.resolve(filePath)
+    : path.resolve(safeRoot, filePath);
+
+  const rel = path.relative(safeRoot, resolved);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error(`Git target path '${filePath}' escapes repository root '${safeRoot}'`);
+  }
+
+  return rel.replace(/\\/g, '/');
+}
+
 export interface GitFileChange {
   path: string;
   status: 'M' | 'A' | 'D' | 'U' | '?';
@@ -78,11 +104,13 @@ export async function getGitStatus(winId: number, cwd: string): Promise<GitStatu
 }
 
 export async function stageFile(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:stageFile');
-
   try {
-    await execFileAsync('git', ['add', '--', filePath], { cwd: safeCwd });
+    const safeCwd = path.resolve(cwd);
+    const safeRel = validateRepoRelativePath(safeCwd, filePath);
+    assertPathAuthorized(winId, safeCwd, 'git:stageFile');
+    assertPathAuthorized(winId, path.resolve(safeCwd, safeRel), 'git:stageFile');
+
+    await execFileAsync('git', ['add', '--', safeRel], { cwd: safeCwd });
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -90,11 +118,13 @@ export async function stageFile(winId: number, cwd: string, filePath: string): P
 }
 
 export async function unstageFile(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:unstageFile');
-
   try {
-    await execFileAsync('git', ['restore', '--staged', '--', filePath], { cwd: safeCwd });
+    const safeCwd = path.resolve(cwd);
+    const safeRel = validateRepoRelativePath(safeCwd, filePath);
+    assertPathAuthorized(winId, safeCwd, 'git:unstageFile');
+    assertPathAuthorized(winId, path.resolve(safeCwd, safeRel), 'git:unstageFile');
+
+    await execFileAsync('git', ['restore', '--staged', '--', safeRel], { cwd: safeCwd });
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -102,10 +132,10 @@ export async function unstageFile(winId: number, cwd: string, filePath: string):
 }
 
 export async function stageAll(winId: number, cwd: string): Promise<{ success: boolean; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:stageAll');
-
   try {
+    const safeCwd = path.resolve(cwd);
+    assertPathAuthorized(winId, safeCwd, 'git:stageAll');
+
     await execFileAsync('git', ['add', '-A'], { cwd: safeCwd });
     return { success: true };
   } catch (err: any) {
@@ -114,10 +144,10 @@ export async function stageAll(winId: number, cwd: string): Promise<{ success: b
 }
 
 export async function unstageAll(winId: number, cwd: string): Promise<{ success: boolean; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:unstageAll');
-
   try {
+    const safeCwd = path.resolve(cwd);
+    assertPathAuthorized(winId, safeCwd, 'git:unstageAll');
+
     await execFileAsync('git', ['restore', '--staged', '.'], { cwd: safeCwd });
     return { success: true };
   } catch (err: any) {
@@ -126,11 +156,13 @@ export async function unstageAll(winId: number, cwd: string): Promise<{ success:
 }
 
 export async function discardChanges(winId: number, cwd: string, filePath: string): Promise<{ success: boolean; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:discardChanges');
-
   try {
-    await execFileAsync('git', ['restore', '--', filePath], { cwd: safeCwd });
+    const safeCwd = path.resolve(cwd);
+    const safeRel = validateRepoRelativePath(safeCwd, filePath);
+    assertPathAuthorized(winId, safeCwd, 'git:discardChanges');
+    assertPathAuthorized(winId, path.resolve(safeCwd, safeRel), 'git:discardChanges');
+
+    await execFileAsync('git', ['restore', '--', safeRel], { cwd: safeCwd });
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -143,14 +175,16 @@ export async function getGitDiff(
   filePath?: string,
   staged = false
 ): Promise<{ success: boolean; diff?: string; error?: string }> {
-  const safeCwd = path.resolve(cwd);
-  assertPathAuthorized(winId, safeCwd, 'git:diff');
-
   try {
+    const safeCwd = path.resolve(cwd);
+    assertPathAuthorized(winId, safeCwd, 'git:diff');
+
     const args = ['diff'];
     if (staged) args.push('--cached');
     if (filePath) {
-      args.push('--', filePath);
+      const safeRel = validateRepoRelativePath(safeCwd, filePath);
+      assertPathAuthorized(winId, path.resolve(safeCwd, safeRel), 'git:diff');
+      args.push('--', safeRel);
     }
     const { stdout } = await execFileAsync('git', args, { cwd: safeCwd });
     return { success: true, diff: stdout };

@@ -61,6 +61,21 @@ function isSensitivePath(filePath: string): boolean {
   return SENSITIVE_FILE_PATTERNS.some((pattern) => pattern.test(filePath));
 }
 
+/**
+ * Denies hidden files and directories (starting with '.') by default,
+ * alongside sensitive patterns (.git, .env, private keys, node_modules).
+ */
+export function isHiddenOrSensitive(targetPath: string): boolean {
+  const normalized = targetPath.replace(/\\/g, '/');
+  const segments = normalized.split('/').filter(Boolean);
+  for (const seg of segments) {
+    if (seg.startsWith('.') && seg !== '.' && seg !== '..') {
+      return true;
+    }
+  }
+  return isSensitivePath(targetPath);
+}
+
 function getReloadScript(sessionToken: string): string {
   return `
 <!-- Injected by Xivig Live Server -->
@@ -109,8 +124,15 @@ export function getLiveServerStatus(winId?: number): LiveServerStatus {
         rootPath: instance.rootPath,
       };
     }
+    // Strict isolation: do not return another window's status when the requested window has no server
+    return {
+      isRunning: false,
+      port: 0,
+      url: '',
+      rootPath: '',
+    };
   }
-  // Fallback to first active server
+  // Global query fallback
   const first = serversByWindow.values().next().value;
   if (first) {
     return {
@@ -154,6 +176,11 @@ export async function startLiveServer(
     return { success: false, port: 0, url: '', error: 'Active window required' };
   }
 
+  // Validate port input range
+  if (typeof preferredPort !== 'number' || !Number.isInteger(preferredPort) || preferredPort < 1024 || preferredPort > 65535) {
+    return { success: false, port: 0, url: '', error: 'Preferred port must be an integer between 1024 and 65535' };
+  }
+
   const winId = win.id;
   await stopLiveServer(win);
 
@@ -181,16 +208,10 @@ export async function startLiveServer(
   const tryStartServer = (portToTry: number): Promise<{ success: boolean; port: number; url: string; error?: string }> => {
     return new Promise((resolve) => {
       const server = http.createServer((req, res) => {
-        // Enforce maximum header & URL limits
-        const parsedUrl = url.parse(req.url || '/', true);
-
-        // Safe URL decoding to protect against malformed URL encoding attacks
-        let pathname = '/';
-        try {
-          pathname = decodeURIComponent(parsedUrl.pathname || '/');
-        } catch {
-          res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('400 Bad Request: Malformed URI encoding.');
+        // 1. Explicitly enforce URL character length limit
+        if ((req.url || '').length > 2048) {
+          res.writeHead(414, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('414 URI Too Long: URL exceeds 2048 characters.');
           return;
         }
 
@@ -202,13 +223,36 @@ export async function startLiveServer(
           'Access-Control-Allow-Headers': 'Content-Type',
         };
 
+        // 2. Reject unsupported HTTP methods (only GET, HEAD, OPTIONS allowed)
+        if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+          res.writeHead(405, {
+            'Content-Type': 'text/plain; charset=utf-8',
+            Allow: 'GET, HEAD, OPTIONS',
+            ...securityHeaders,
+          });
+          res.end('405 Method Not Allowed: Live Server only accepts GET, HEAD, and OPTIONS.');
+          return;
+        }
+
         if (req.method === 'OPTIONS') {
           res.writeHead(204, securityHeaders);
           res.end();
           return;
         }
 
-        // 1. SSE Live reload endpoint with mandatory session token validation
+        const parsedUrl = url.parse(req.url || '/', true);
+
+        // Safe URL decoding to protect against malformed URL encoding attacks
+        let pathname = '/';
+        try {
+          pathname = decodeURIComponent(parsedUrl.pathname || '/');
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('400 Bad Request: Malformed URI encoding.');
+          return;
+        }
+
+        // 3. SSE Live reload endpoint with mandatory session token validation
         if (pathname === '/__xivig_live_reload') {
           const clientToken = parsedUrl.query.token;
           if (!clientToken || clientToken !== sessionToken) {
@@ -238,14 +282,14 @@ export async function startLiveServer(
           return;
         }
 
-        // 2. Sensitive file access restriction
-        if (isSensitivePath(pathname)) {
+        // 4. Deny hidden and sensitive files by default
+        if (isHiddenOrSensitive(pathname)) {
           res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
-          res.end('403 Forbidden: Access to sensitive project files is restricted.');
+          res.end('403 Forbidden: Access to hidden or sensitive project files is restricted.');
           return;
         }
 
-        // 3. Strict directory boundary and symlink escape validation
+        // 5. Strict directory boundary and symlink escape validation
         const cleanPath = path.normalize(pathname).replace(/^([a-zA-Z]:|[/\\])+/, '');
         const targetCandidate = path.resolve(canonicalRoot, cleanPath);
 
@@ -266,9 +310,9 @@ export async function startLiveServer(
               res.end('403 Forbidden: Symlink destination outside workspace.');
               return;
             }
-            if (isSensitivePath(relativeCanonical)) {
+            if (isHiddenOrSensitive(relativeCanonical)) {
               res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
-              res.end('403 Forbidden: Access to sensitive file is restricted.');
+              res.end('403 Forbidden: Access to hidden or sensitive file is restricted.');
               return;
             }
             safePath = canonicalTarget;
@@ -311,11 +355,42 @@ export async function startLiveServer(
           return;
         }
 
+        // 6. Recheck the canonical destination immediately before serving files
+        try {
+          const finalRealpath = fs.realpathSync(safePath);
+          const relativeFinal = path.relative(canonicalRoot, finalRealpath);
+          if (relativeFinal.startsWith('..') || path.isAbsolute(relativeFinal)) {
+            res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('403 Forbidden: Destination outside workspace root.');
+            return;
+          }
+          if (isHiddenOrSensitive(relativeFinal)) {
+            res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+            res.end('403 Forbidden: Access to hidden or sensitive file is restricted.');
+            return;
+          }
+          safePath = finalRealpath;
+        } catch {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('404 Not Found');
+          return;
+        }
+
         const ext = path.extname(safePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
         // For HTML files, inject the live reload snippet with authenticating session token
         if (ext === '.html' || ext === '.htm') {
+          if (req.method === 'HEAD') {
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              ...securityHeaders,
+            });
+            res.end();
+            return;
+          }
+
           try {
             let html = fs.readFileSync(safePath, 'utf-8');
             const reloadSnippet = getReloadScript(sessionToken);
@@ -343,6 +418,16 @@ export async function startLiveServer(
         // Non-HTML static files
         try {
           const stat = fs.statSync(safePath);
+          if (req.method === 'HEAD') {
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Content-Length': stat.size,
+              ...securityHeaders,
+            });
+            res.end();
+            return;
+          }
+
           res.writeHead(200, {
             'Content-Type': contentType,
             'Content-Length': stat.size,

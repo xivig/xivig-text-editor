@@ -34,8 +34,12 @@ const xivigAPI = {
   setSetting: (key: string, value: string) => ipcRenderer.invoke('settings:set', { key, value }),
 
   // Terminal operations
-  terminalInit: (cwd?: string) => ipcRenderer.invoke('terminal:init', cwd),
-  terminalWrite: (data: string) => ipcRenderer.send('terminal:write', data),
+  terminalInit: (options?: string | { cwd?: string; shell?: string; cols?: number; rows?: number; terminalId?: string }) =>
+    ipcRenderer.invoke('terminal:init', options),
+  terminalWrite: (data: string | { data: string; terminalId?: string }) => ipcRenderer.send('terminal:write', data),
+  terminalResize: (options: { cols: number; rows: number; terminalId?: string }) =>
+    ipcRenderer.invoke('terminal:resize', options),
+  getAvailableShells: () => ipcRenderer.invoke('terminal:shells'),
   onTerminalData: (callback: (data: string) => void) => {
     const handler = (_: any, data: string) => callback(data);
     ipcRenderer.on('terminal:data', handler);

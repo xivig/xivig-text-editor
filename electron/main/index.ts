@@ -16,7 +16,14 @@ import {
   SavedSession,
 } from './database';
 import { watchWorkspace, stopWatching } from './watcher';
-import { initTerminalSession, writeToTerminal, stopTerminal } from './terminal';
+import {
+  initTerminalSession,
+  writeToTerminal,
+  stopTerminal,
+  resizeTerminal,
+  getAvailableShells,
+  TerminalSessionOptions,
+} from './terminal';
 import {
   getGitStatus,
   commitChanges,
@@ -450,11 +457,15 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
     assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:create');
 
     if (isDirectory) {
+      if (fsSync.existsSync(safePath)) {
+        return { success: false, error: `Directory already exists: ${safePath}` };
+      }
       await fs.mkdir(safePath, { recursive: true });
     } else {
       const parentDir = path.dirname(safePath);
       await fs.mkdir(parentDir, { recursive: true });
-      await fs.writeFile(safePath, '', { flag: 'w' });
+      // Use 'wx' (exclusive write) to fail if the file already exists, preventing truncation
+      await fs.writeFile(safePath, '', { flag: 'wx' });
     }
     addApprovedFile(targetWin.id, safePath);
     return { success: true };
@@ -508,7 +519,8 @@ ipcMain.handle('file:duplicate', async (event, { sourcePath, targetPath }: { sou
     assertPathAuthorized(targetWin.id, safeSource, 'file:duplicate (source)');
     assertImmediateDestructiveAuthorization(targetWin.id, safeTarget, 'file:duplicate (destination)');
 
-    await fs.copyFile(safeSource, safeTarget);
+    // COPYFILE_EXCL ensures duplicate does not silently overwrite an existing destination
+    await fs.copyFile(safeSource, safeTarget, fsSync.constants.COPYFILE_EXCL);
     addApprovedFile(targetWin.id, safeTarget);
     return { success: true };
   } catch (error: any) {
@@ -532,7 +544,7 @@ ipcMain.handle('file:revealInExplorer', async (event, targetPath: string) => {
 // Database & Session IPC
 ipcMain.handle('session:save', async (event, session: SavedSession) => {
   if (!validateIpcSender(event)) return false;
-  return saveSession(session);
+  return await saveSession(session);
 });
 
 ipcMain.handle('session:restore', async (event) => {
@@ -594,56 +606,118 @@ ipcMain.handle('workspace:close', async (event, folderPath?: string) => {
   return true;
 });
 
-// Terminal IPC (Per-window session management)
-ipcMain.handle('terminal:init', async (event, cwd?: string) => {
+// Terminal IPC (Per-window pseudoterminal session management, resize, and multi-instance)
+ipcMain.handle('terminal:init', async (event, optionsOrCwd?: string | TerminalSessionOptions) => {
   const targetWin = getValidatedWindow(event);
-  return initTerminalSession(cwd || null, targetWin);
+  return initTerminalSession(optionsOrCwd || null, targetWin);
 });
 
-ipcMain.on('terminal:write', (event, data: string) => {
+ipcMain.on('terminal:write', (event, payload: string | { data: string; terminalId?: string }) => {
   const targetWin = getValidatedWindow(event);
-  writeToTerminal(targetWin.id, data);
+  if (typeof payload === 'string') {
+    writeToTerminal(targetWin.id, payload);
+  } else if (payload && typeof payload.data === 'string') {
+    writeToTerminal(targetWin.id, payload.data, payload.terminalId);
+  }
 });
 
-// Git IPC (Selective staging, diffing, and safe commit)
+ipcMain.handle('terminal:resize', async (event, { cols, rows, terminalId }: { cols: number; rows: number; terminalId?: string }) => {
+  const targetWin = getValidatedWindow(event);
+  return resizeTerminal(targetWin.id, cols, rows, terminalId);
+});
+
+ipcMain.handle('terminal:shells', async (event) => {
+  if (!validateIpcSender(event)) return [];
+  return getAvailableShells();
+});
+
+// Git IPC (Strictly enforce workspace authorization at the IPC boundary)
 ipcMain.handle('git:status', async (event, cwd: string) => {
   const targetWin = getValidatedWindow(event);
-  return getGitStatus(targetWin.id, cwd);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:status');
+    return await getGitStatus(targetWin.id, safeCwd);
+  } catch (err: any) {
+    return { isRepo: false, branch: '', changes: [], error: err.message };
+  }
 });
 
 ipcMain.handle('git:stage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
   const targetWin = getValidatedWindow(event);
-  return stageFile(targetWin.id, cwd, filePath);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:stage');
+    return await stageFile(targetWin.id, safeCwd, filePath);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('git:unstage', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
   const targetWin = getValidatedWindow(event);
-  return unstageFile(targetWin.id, cwd, filePath);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:unstage');
+    return await unstageFile(targetWin.id, safeCwd, filePath);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('git:stageAll', async (event, cwd: string) => {
   const targetWin = getValidatedWindow(event);
-  return stageAll(targetWin.id, cwd);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:stageAll');
+    return await stageAll(targetWin.id, safeCwd);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('git:unstageAll', async (event, cwd: string) => {
   const targetWin = getValidatedWindow(event);
-  return unstageAll(targetWin.id, cwd);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:unstageAll');
+    return await unstageAll(targetWin.id, safeCwd);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('git:discard', async (event, { cwd, filePath }: { cwd: string; filePath: string }) => {
   const targetWin = getValidatedWindow(event);
-  return discardChanges(targetWin.id, cwd, filePath);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertImmediateDestructiveAuthorization(targetWin.id, safeCwd, 'git:discard');
+    return await discardChanges(targetWin.id, safeCwd, filePath);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('git:diff', async (event, { cwd, filePath, staged }: { cwd: string; filePath?: string; staged?: boolean }) => {
   const targetWin = getValidatedWindow(event);
-  return getGitDiff(targetWin.id, cwd, filePath, staged);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:diff');
+    return await getGitDiff(targetWin.id, safeCwd, filePath, staged);
+  } catch (err: any) {
+    return { diff: '', error: err.message };
+  }
 });
 
 ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; message: string }) => {
   const targetWin = getValidatedWindow(event);
-  return commitChanges(targetWin.id, cwd, message);
+  try {
+    const safeCwd = validatePathInput(cwd);
+    assertPathAuthorized(targetWin.id, safeCwd, 'git:commit');
+    return await commitChanges(targetWin.id, safeCwd, message);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 // Build System & Task Runner IPC (Per-window tracking & safe Windows execution)
