@@ -526,6 +526,55 @@ div class = "wrapper row3" >`;
       expect(formatted).not.toContain('# 000000');
     });
 
+    it('heals broken CSS percentage units like 50 % in Blade connector pseudo-elements', () => {
+      const brokenConnectorCss = `<style>
+/*We will use ::before and ::after to draw the connectors*/
+.tree li::before,
+.tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50 %;
+    border-top: 1px solid #ccc;
+    width: 50 %;
+    height: 15px;
+}
+
+.tree li::after {
+    right: auto;
+    left: 50 %;
+    border-left: 1px solid #ccc;
+}
+</style>`;
+
+      let currentDoc = brokenConnectorCss;
+      const mockView = {
+        state: {
+          doc: {
+            length: currentDoc.length,
+            toString: () => currentDoc,
+          },
+        },
+        dispatch: (action: any) => {
+          if (action.changes?.insert) {
+            currentDoc = action.changes.insert;
+          }
+        },
+      } as any;
+
+      const formatted = autoIndentAndFormatEditor(mockView, 'treeConnectors.blade.php', 'blade');
+
+      // 1. Percentage must be 50% not 50 %
+      expect(formatted).toContain('right: 50%;');
+      expect(formatted).not.toContain('50 %');
+      expect(formatted).toContain('width: 50%;');
+      expect(formatted).toContain('left: 50%;');
+
+      // 2. Connector borders must remain intact
+      expect(formatted).toContain('border-top: 1px solid #ccc;');
+      expect(formatted).toContain('border-left: 1px solid #ccc;');
+    });
+
     it('safely repairs standalone CSS files with beautifyCode', () => {
       const rawCss = `.box { padding: 10 px; - webkit-transform: scale(1); border - radius: 4 px; color: # F45B69; }`;
       const formatted = beautifyCode(rawCss, 'styles.css');

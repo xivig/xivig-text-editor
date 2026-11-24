@@ -56,8 +56,10 @@ export function repairCss(css: string): string {
     .replace(/(^|[\{\;\n\r])\s*-\s+([a-zA-Z])/g, '$1\n  -$2')
     // Fix hyphenated CSS words/properties/values: "table - cell" -> "table-cell", "list - style" -> "list-style"
     .replace(/([a-zA-Z0-9_]+)\s*-\s*([a-zA-Z0-9_]+)/g, '$1-$2')
-    // Fix CSS numbers and units: "3 px" -> "3px", "0.5 s" -> "0.5s", "20 px" -> "20px", "100 %" -> "100%"
-    .replace(/(\b\d+(?:\.\d+)?)\s+(px|em|rem|s|ms|%|pt|vh|vw|vmin|vmax|deg|rad|grad|turn|fr|ch|ex|cm|mm|in|dpi|dpcm|dppx)\b/gi, '$1$2')
+    // Fix percentage values with spaces: "50 %" -> "50%", "100 %" -> "100%"
+    .replace(/(\b\d+(?:\.\d+)?)\s*%(?!\w)/g, '$1%')
+    // Fix CSS numbers and units: "3 px" -> "3px", "0.5 s" -> "0.5s", "20 px" -> "20px"
+    .replace(/(\b\d+(?:\.\d+)?)\s+(px|em|rem|s|ms|pt|vh|vw|vmin|vmax|deg|rad|grad|turn|fr|ch|ex|cm|mm|in|dpi|dpcm|dppx|cqw|cqh|cqi|cqb|cqmin|cqmax|dvh|dvw|lvh|lvw|svh|svw)\b/gi, '$1$2')
     // Fix pseudo-elements and pseudo-classes: ":: before" -> "::before", ": hover" -> ":hover"
     .replace(/::\s+([a-zA-Z\-]+)/g, '::$1')
     .replace(/:\s+(hover|focus|active|visited|disabled|checked|first-child|last-child|nth-child|not|root)\b/gi, ':$1')
