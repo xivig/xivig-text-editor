@@ -3,6 +3,7 @@ import { EditorState, EditorSelection } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import { useEditorStore } from '../../stores/editorStore';
 import { PHP_DOCS } from '../../extensions/builtin/php-intelligence/docs/phpDocs';
+import { LARAVEL_DOCS } from '../../extensions/builtin/laravel-all-in-one/completions/laravelDocs';
 
 // ============================================================================
 // 1. KNOWLEDGE BASE FOR HOVER DOCUMENTATION & PARAMETER HINTS
@@ -511,7 +512,12 @@ export const hoverDocsExtension = hoverTooltip((view: EditorView, pos: number, s
   const word = text.slice(wordStart, wordEnd);
 
   // Look up documentation
-  let info: DocItem | undefined = JS_TS_DOCS[word] || (PHP_DOCS as any)[word] || CSS_DOCS[word] || HTML_TAG_DOCS[word];
+  let info: DocItem | undefined =
+    JS_TS_DOCS[word] ||
+    (PHP_DOCS as any)[word] ||
+    (LARAVEL_DOCS as any)[word] ||
+    CSS_DOCS[word] ||
+    HTML_TAG_DOCS[word];
 
   // If not in standard library, search for local symbol definition in document
   if (!info) {
@@ -650,7 +656,7 @@ export const parameterHintsExtension = hoverTooltip((view: EditorView, pos: numb
   if (!funcNameMatch) return null;
 
   const funcName = funcNameMatch[1];
-  const info = JS_TS_DOCS[funcName] || (PHP_DOCS as any)[funcName];
+  const info = JS_TS_DOCS[funcName] || (PHP_DOCS as any)[funcName] || (LARAVEL_DOCS as any)[funcName];
   if (!info || !info.parameters || info.parameters.length === 0) return null;
 
   return {

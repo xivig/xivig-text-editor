@@ -58,3 +58,11 @@ export class LaravelExtension implements BuiltinExtensionModule {
 }
 
 export const laravelExtension = new LaravelExtension();
+
+export { laravelCompletionSource } from './completions/laravelCompletionSource';
+export { FACADE_COMPLETIONS, LARAVEL_FACADE_NAMES } from './completions/facadeCompletions';
+export { ELOQUENT_QUERY_COMPLETIONS, BLUEPRINT_COLUMN_COMPLETIONS } from './completions/eloquentCompletions';
+export { LARAVEL_HELPER_COMPLETIONS } from './completions/helperCompletions';
+export { ALL_BLADE_DIRECTIVES } from './completions/bladeCompletions';
+export { LARAVEL_DOCS } from './completions/laravelDocs';
+

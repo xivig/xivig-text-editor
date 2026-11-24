@@ -45,6 +45,7 @@ import { bookmarkField, bookmarkGutter } from './bookmarks';
 import { autoRenameTagExtension } from './autoRenameTag';
 import { cssColorHighlighterExtension } from './colorHighlighter';
 import { getCustomSnippetSource } from './snippets';
+import { createLanguageCompletionSource } from './completions';
 import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } from './emmet';
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
@@ -153,6 +154,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         autocompletion({
           override: [
             createEmmetCompletionSource(() => detectEmmetSyntax(activeDoc.name || activeDoc.language)),
+            createLanguageCompletionSource(() => activeDoc.name || activeDoc.language),
             getCustomSnippetSource(activeDoc.language || activeDoc.name),
             completeAnyWord,
           ],

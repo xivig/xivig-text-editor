@@ -25,21 +25,29 @@ export type FormatterLanguage = 'html' | 'css' | 'js' | 'php' | null;
  */
 export function repairPhpCode(code: string): string {
   if (!code) return '';
-  return code
+  let repaired = code
     // Fix broken opening PHP tag "< ? php", "<? php", "< ?php" -> "<?php"
     .replace(/<\s*\?\s*php\b/gi, '<?php')
     // Fix broken closing PHP tag "? >" -> "?>"
     .replace(/\?\s*>/g, '?>')
-    // Fix broken object operator "$this - > property" or "$var - > prop" -> "$this->property"
-    .replace(/(\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*-\s*>\s*/g, '$1->')
+    // Fix broken object operator "$this - > property", "$var - > prop", ") - > method" -> "$this->property"
+    .replace(/([$a-zA-Z0-9_\x7f-\xff\)\]\}])\s*-\s*>\s*([a-zA-Z_\x7f-\xff$])/g, '$1->$2')
     // Fix broken static operator "::" -> "::"
-    .replace(/([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*:\s*:\s*/g, '$1::')
+    .replace(/([a-zA-Z0-9_\x7f-\xff\)\]\}])\s*:\s*:\s*([a-zA-Z_\x7f-\xff$])/g, '$1::$2')
     // Fix broken arrow array operator "=>" -> "=>"
     .replace(/=\s*>\s*/g, '=> ')
-    // Fix broken method/class modifier line breaks: "public \n function", "private \n function"
-    .replace(/\b(public|private|protected|static|abstract|final)\s*\n\s*(function|class|\$)/g, '$1 $2')
-    // Fix broken string concatenation with newline: "$class .\n"<br>";" -> "$class . "<br>";"
-    .replace(/(\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*\.\s*\n\s*(['"])/g, '$1 . $2');
+    // Fix broken string concatenation across newlines: "$class .\n"<br>";" or "$class.\n"<br>";" -> "$class . "<br>";"
+    .replace(/([$a-zA-Z0-9_\x7f-\xff"'`\)\]\}])\s*\.\s*[\r\n]+\s*(['"`$a-zA-Z0-9_\(])/g, '$1 . $2');
+
+  // Fix broken method/class modifier line breaks: "public \n function", "public \n\n function", "public \n static \n function"
+  for (let pass = 0; pass < 3; pass++) {
+    repaired = repaired.replace(
+      /\b(public|private|protected|static|abstract|final|readonly|var)\s*[\r\n]+\s*(public|private|protected|static|abstract|final|readonly|var|function|class|\$)/gi,
+      '$1 $2'
+    );
+  }
+
+  return repaired;
 }
 
 /**
@@ -48,14 +56,20 @@ export function repairPhpCode(code: string): string {
  */
 export function repairCss(css: string): string {
   if (!css) return '';
-  return css
+  let repaired = css
     // Fix hex colors with space after # or between hex parts: "# F45B69" -> "#F45B69", "# 000000" -> "#000000", "# 94 a0b4" -> "#94a0b4"
     .replace(/#\s*([0-9a-fA-F]{1,4})\s+([0-9a-fA-F]{1,4})\b/g, '#$1$2')
     .replace(/#\s+([0-9a-fA-F]{3,8})\b/g, '#$1')
     // Fix vendor prefix leading dash: "- webkit" -> "-webkit", "- moz" -> "-moz", "- ms" -> "-ms", "- o" -> "-o"
-    .replace(/(^|[\{\;\n\r])\s*-\s+([a-zA-Z])/g, '$1\n  -$2')
-    // Fix hyphenated CSS words/properties/values: "table - cell" -> "table-cell", "list - style" -> "list-style"
-    .replace(/([a-zA-Z0-9_]+)\s*-\s*([a-zA-Z0-9_]+)/g, '$1-$2')
+    .replace(/(^|[\{\;\n\r])\s*-\s+([a-zA-Z])/g, '$1\n  -$2');
+
+  // Fix hyphenated CSS words/properties/values: "table - cell" -> "table-cell", "list - style - type" -> "list-style-type"
+  for (let pass = 0; pass < 5; pass++) {
+    if (!/([a-zA-Z0-9_]+)(?:\s+-\s*|\s*-\s+)([a-zA-Z0-9_]+)/.test(repaired)) break;
+    repaired = repaired.replace(/([a-zA-Z0-9_]+)(?:\s+-\s*|\s*-\s+)([a-zA-Z0-9_]+)/g, '$1-$2');
+  }
+
+  return repaired
     // Fix percentage values with spaces: "50 %" -> "50%", "100 %" -> "100%"
     .replace(/(\b\d+(?:\.\d+)?)\s*%(?!\w)/g, '$1%')
     // Fix CSS numbers and units: "3 px" -> "3px", "0.5 s" -> "0.5s", "20 px" -> "20px"
@@ -77,12 +91,14 @@ export function repairBrokenMarkup(code: string): string {
   if (!code) return '';
   let repaired = code
     // Fix broken opening tags across newlines or with excessive spaces: "<\ndiv class = "..." >" -> "<div class = "..." >"
-    .replace(/<\s*\n\s*([a-zA-Z0-9_\-]+)/g, '<$1')
+    .replace(/<\s*[\r\n]+\s*([a-zA-Z0-9_\-]+)/g, '<$1')
     .replace(/<\s+([a-zA-Z0-9_\-]+)(\s|>)/g, '<$1$2')
     // Fix broken closing tag after closing brace: "} <\n/style>" or "} </style>" -> "}\n</style>"
-    .replace(/\}\s*<\s*\n?\s*\/\s*([a-zA-Z0-9_\-]+)\s*>/gi, '}\n</$1>')
-    // Fix broken closing tags across newlines: "< /\ndiv >" or "< /p>" -> "</div >" or "</p>"
-    .replace(/<\s*\n?\s*\/\s*([a-zA-Z0-9_\-]+)\s*>/g, '</$1>')
+    .replace(/\}\s*<\s*[\r\n]*\s*\/\s*([a-zA-Z0-9_\-]+)\s*>/gi, '}\n</$1>')
+    // Fix broken closing tags across newlines or spaces: "< /\ndiv >", "< / \ndiv >", "< /p>" -> "</div >" or "</p>"
+    .replace(/<\s*[\r\n]*\s*\/\s*[\r\n]*\s*([a-zA-Z0-9_\-]+)\s*>/g, '</$1>')
+    // Fix joined broken tags with newline: "div > <\n/div>" or "/div> <\ndiv" -> "div >\n</div >"
+    .replace(/>\s*<\s*[\r\n]+\s*/g, '>\n<')
     // Fix broken attributes: class = "..." -> class="..."
     .replace(/([a-zA-Z0-9_\-]+)\s*=\s*(".*?"|'.*?'|`.*?`)/g, '$1=$2')
     // Fix spaces before > in tags: <div ... > -> <div ...>
