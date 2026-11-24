@@ -135,4 +135,46 @@ test.describe('Xivig Editor Application Workflows', () => {
       path: 'C:/Users/CyberWord/.gemini/antigravity/brain/c1f6cb44-9b8f-4859-a490-88dce2fd3052/scratch/html_preview_debug.png',
     });
   });
+
+  test('renders rainbow brackets and indent guides in active editor', async () => {
+    const window = await app.firstWindow();
+    await window.waitForLoadState('domcontentloaded');
+    await window.waitForTimeout(1000);
+
+    // Click into CodeMirror editor
+    const cmEditor = await window.$('.cm-content');
+    expect(cmEditor).toBeTruthy();
+
+    // Type nested code with multiple bracket levels and indentation
+    await cmEditor.click();
+    await window.keyboard.press('Control+A');
+    await window.keyboard.press('Backspace');
+    await window.keyboard.type('const application = {\n  user: {\n    profile: {\n      name: "Xivig"\n    }\n  }\n};\n');
+    await window.waitForTimeout(1000);
+
+    // Evaluate DOM for rainbow bracket and indent guide classes
+    const rainbowResults = await window.evaluate(() => {
+      const redBrackets = document.querySelectorAll('.xivig-rainbow-bracket-red');
+      const orangeBrackets = document.querySelectorAll('.xivig-rainbow-bracket-orange');
+      const yellowBrackets = document.querySelectorAll('.xivig-rainbow-bracket-yellow');
+      const indentGuides = document.querySelectorAll('.xivig-indent-guide');
+
+      return {
+        redCount: redBrackets.length,
+        orangeCount: orangeBrackets.length,
+        yellowCount: yellowBrackets.length,
+        indentGuideCount: indentGuides.length,
+      };
+    });
+
+    console.log('RAINBOW_RESULTS:', JSON.stringify(rainbowResults));
+    expect(rainbowResults.redCount).toBeGreaterThan(0);
+    expect(rainbowResults.orangeCount).toBeGreaterThan(0);
+    expect(rainbowResults.yellowCount).toBeGreaterThan(0);
+
+    // Take screenshot of rainbow brackets in action
+    await window.screenshot({
+      path: 'C:/Users/CyberWord/.gemini/antigravity/brain/c1f6cb44-9b8f-4859-a490-88dce2fd3052/rainbow_brackets_live.png',
+    });
+  });
 });

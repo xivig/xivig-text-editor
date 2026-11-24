@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "./variables.css";
+@import "../extensions/builtin/rainbow-brackets/styles.css";
 
 *, *::before, *::after {
   box-sizing: border-box;

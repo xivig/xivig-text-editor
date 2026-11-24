@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ThemeId } from '../styles/themes';
 import { useSettingsStore } from './settingsStore';
+import { extensionManager } from '../extensions/runtime/extensionManager';
 
 export type ExtensionCategory = 'All' | 'Themes' | 'Languages' | 'Productivity' | 'Formatters';
 
@@ -232,8 +233,8 @@ interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>((set, get) => ({
   marketplace: MARKETPLACE_EXTENSIONS,
-  installedIds: ['xivig-theme-nord', 'xivig-tool-todo'],
-  enabledIds: ['xivig-theme-nord', 'xivig-tool-todo'],
+  installedIds: ['xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
+  enabledIds: ['xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
   selectedExtension: null,
 
   selectExtension: (pkg) => set({ selectedExtension: pkg }),
@@ -245,6 +246,9 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
     const newInstalled = Array.from(new Set([...get().installedIds, id]));
     const newEnabled = Array.from(new Set([...get().enabledIds, id]));
     set({ installedIds: newInstalled, enabledIds: newEnabled });
+
+    // Activate extension in extensionManager
+    await extensionManager.activateExtension(id);
 
     // If it's a theme, automatically prompt or activate it!
     if (pkg.themeId) {
@@ -263,6 +267,9 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
     const newInstalled = get().installedIds.filter((item) => item !== id);
     const newEnabled = get().enabledIds.filter((item) => item !== id);
     set({ installedIds: newInstalled, enabledIds: newEnabled });
+
+    // Deactivate extension in extensionManager
+    await extensionManager.deactivateExtension(id);
 
     // If active theme was this uninstalled theme, switch back to xivig-dark
     if (pkg?.themeId && useSettingsStore.getState().settings.theme === pkg.themeId) {
@@ -283,6 +290,13 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
 
     set({ enabledIds: newEnabled });
 
+    // Activate or deactivate in extension runtime
+    if (isEnabled) {
+      await extensionManager.deactivateExtension(id);
+    } else {
+      await extensionManager.activateExtension(id);
+    }
+
     const pkg = get().marketplace.find((m) => m.id === id);
     if (pkg?.themeId) {
       if (!isEnabled) {
@@ -298,6 +312,9 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
   },
 
   loadInstalledExtensions: async () => {
+    let installed = get().installedIds;
+    let enabled = get().enabledIds;
+
     if (window.xivig?.getSetting) {
       const savedInstalled = await window.xivig.getSetting('installed_extensions');
       const savedEnabled = await window.xivig.getSetting('enabled_extensions');
@@ -305,6 +322,7 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
         try {
           const parsed = JSON.parse(savedInstalled);
           if (Array.isArray(parsed)) {
+            installed = parsed;
             set({ installedIds: parsed });
           }
         } catch {}
@@ -313,10 +331,19 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
         try {
           const parsed = JSON.parse(savedEnabled);
           if (Array.isArray(parsed)) {
+            enabled = parsed;
             set({ enabledIds: parsed });
           }
         } catch {}
       }
     }
+
+    await extensionManager.init(installed, enabled);
   },
 }));
+
+// Bootstrap extension manager with initial store state
+extensionManager.init(
+  useExtensionStore.getState().installedIds,
+  useExtensionStore.getState().enabledIds
+);

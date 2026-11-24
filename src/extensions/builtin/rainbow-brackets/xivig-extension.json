@@ -1,0 +1,41 @@
+{
+  "$schema": "https://xivig.dev/schemas/extension-v1.json",
+  "id": "xivig-tool-rainbow",
+  "name": "Rainbow Brackets & Indent",
+  "displayName": "Rainbow Brackets & Indent",
+  "publisher": "xivig",
+  "version": "1.0.0",
+  "description": "Color matching brackets and indentation depths with cyclical rainbow hues.",
+  "categories": [
+    "Productivity"
+  ],
+  "engines": {
+    "xivig": ">=1.2.0"
+  },
+  "activationEvents": [
+    "onEditorCreated"
+  ],
+  "permissions": [],
+  "contributes": {
+    "settings": [
+      {
+        "id": "rainbow.enabled",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable rainbow colorization for matching brackets"
+      },
+      {
+        "id": "rainbow.indentGuides",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable vertical rainbow indentation guide lines"
+      },
+      {
+        "id": "rainbow.brackets",
+        "type": "boolean",
+        "default": true,
+        "description": "Color matching (), {}, [] pairs by depth"
+      }
+    ]
+  }
+}

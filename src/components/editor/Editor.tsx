@@ -50,6 +50,7 @@ import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
 import { beautifyActiveEditor } from '../../utils/beautify';
+import { extensionManager } from '../../extensions/runtime/extensionManager';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import { WelcomeView } from '../welcome/WelcomeView';
@@ -79,6 +80,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const wordWrapCompartmentRef = useRef<Compartment>(new Compartment());
   const tabSizeCompartmentRef = useRef<Compartment>(new Compartment());
   const languageCompartmentRef = useRef<Compartment>(new Compartment());
+  const extensionCompartmentRef = useRef<Compartment>(new Compartment());
 
   const activeDoc = useEditorStore((state) =>
     pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
@@ -165,6 +167,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         parameterHintsExtension,
         codeIntelligenceKeymap,
         languageCompartmentRef.current.of(langExtension),
+        extensionCompartmentRef.current.of(extensionManager.getActiveCodeMirrorExtensions()),
         keymap.of([
           {
             key: 'Tab',
@@ -226,6 +229,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
 
     viewRef.current = view;
     setActiveEditorView(view, pane);
+    extensionManager.triggerActivationEvent('onEditorCreated');
 
     return () => {
       view.destroy();
@@ -298,6 +302,25 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       });
     }
   }, [activeDoc?.language, activeDoc?.name]);
+
+  // Dynamically reconfigure runtime extensions (e.g. rainbow brackets toggled)
+  useEffect(() => {
+    const unsubscribe = extensionManager.subscribe(() => {
+      if (viewRef.current) {
+        viewRef.current.dispatch({
+          effects: extensionCompartmentRef.current.reconfigure(
+            extensionManager.getActiveCodeMirrorExtensions()
+          ),
+        });
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // Sync tab size setting with rainbow extension
+  useEffect(() => {
+    extensionManager.setSetting('rainbow.tabSize', tabSize);
+  }, [tabSize]);
 
   if (activeDoc?.id === 'settings') {
     return <SettingsView />;

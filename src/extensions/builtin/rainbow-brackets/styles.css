@@ -1,0 +1,66 @@
+/* Rainbow Brackets: 6 Cyclical Depth Colors */
+.xivig-rainbow-bracket-red {
+  color: #ff5370 !important;
+  font-weight: 600;
+}
+
+.xivig-rainbow-bracket-orange {
+  color: #ff9e64 !important;
+  font-weight: 600;
+}
+
+.xivig-rainbow-bracket-yellow {
+  color: #e6c07b !important;
+  font-weight: 600;
+}
+
+.xivig-rainbow-bracket-green {
+  color: #c3e88d !important;
+  font-weight: 600;
+}
+
+.xivig-rainbow-bracket-cyan {
+  color: #89ddff !important;
+  font-weight: 600;
+}
+
+.xivig-rainbow-bracket-purple {
+  color: #c792ea !important;
+  font-weight: 600;
+}
+
+/* Rainbow Indentation Guides */
+.xivig-indent-guide {
+  display: inline-block;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.xivig-indent-guide-red {
+  border-left: 1px solid rgba(255, 83, 112, 0.45);
+}
+
+.xivig-indent-guide-orange {
+  border-left: 1px solid rgba(255, 158, 100, 0.45);
+}
+
+.xivig-indent-guide-yellow {
+  border-left: 1px solid rgba(230, 192, 123, 0.45);
+}
+
+.xivig-indent-guide-green {
+  border-left: 1px solid rgba(195, 232, 141, 0.45);
+}
+
+.xivig-indent-guide-cyan {
+  border-left: 1px solid rgba(137, 221, 255, 0.45);
+}
+
+.xivig-indent-guide-purple {
+  border-left: 1px solid rgba(199, 146, 234, 0.45);
+}
+
+.xivig-indent-guide-active {
+  border-left-width: 1.5px;
+  filter: brightness(1.3);
+}
