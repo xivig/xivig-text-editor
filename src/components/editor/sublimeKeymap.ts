@@ -344,6 +344,7 @@ export const yankMark: StateCommand = ({ state, dispatch }) => {
 
 /**
  * Sublime Text Ctrl+K Ctrl+U: Transform selection to UPPERCASE
+ * (If no text is selected, transforms the word under the cursor)
  */
 export const transformToUppercase: StateCommand = ({ state, dispatch }) => {
   const changes: { from: number; to: number; insert: string }[] = [];
@@ -352,6 +353,17 @@ export const transformToUppercase: StateCommand = ({ state, dispatch }) => {
     if (!range.empty) {
       const text = state.sliceDoc(range.from, range.to);
       changes.push({ from: range.from, to: range.to, insert: text.toUpperCase() });
+    } else {
+      const line = state.doc.lineAt(range.head);
+      const col = range.head - line.from;
+      let start = col;
+      let end = col;
+      while (start > 0 && /[\w$]/.test(line.text[start - 1])) start--;
+      while (end < line.text.length && /[\w$]/.test(line.text[end])) end++;
+      if (start < end) {
+        const text = line.text.slice(start, end);
+        changes.push({ from: line.from + start, to: line.from + end, insert: text.toUpperCase() });
+      }
     }
   }
 
@@ -364,6 +376,7 @@ export const transformToUppercase: StateCommand = ({ state, dispatch }) => {
 
 /**
  * Sublime Text Ctrl+K Ctrl+L: Transform selection to lowercase
+ * (If no text is selected, transforms the word under the cursor)
  */
 export const transformToLowercase: StateCommand = ({ state, dispatch }) => {
   const changes: { from: number; to: number; insert: string }[] = [];
@@ -372,6 +385,17 @@ export const transformToLowercase: StateCommand = ({ state, dispatch }) => {
     if (!range.empty) {
       const text = state.sliceDoc(range.from, range.to);
       changes.push({ from: range.from, to: range.to, insert: text.toLowerCase() });
+    } else {
+      const line = state.doc.lineAt(range.head);
+      const col = range.head - line.from;
+      let start = col;
+      let end = col;
+      while (start > 0 && /[\w$]/.test(line.text[start - 1])) start--;
+      while (end < line.text.length && /[\w$]/.test(line.text[end])) end++;
+      if (start < end) {
+        const text = line.text.slice(start, end);
+        changes.push({ from: line.from + start, to: line.from + end, insert: text.toLowerCase() });
+      }
     }
   }
 
@@ -559,6 +583,17 @@ export const transformSelection = (transform: (text: string) => string): StateCo
     if (!range.empty) {
       const text = state.sliceDoc(range.from, range.to);
       changes.push({ from: range.from, to: range.to, insert: transform(text) });
+    } else {
+      const line = state.doc.lineAt(range.head);
+      const col = range.head - line.from;
+      let start = col;
+      let end = col;
+      while (start > 0 && /[\w$]/.test(line.text[start - 1])) start--;
+      while (end < line.text.length && /[\w$]/.test(line.text[end])) end++;
+      if (start < end) {
+        const text = line.text.slice(start, end);
+        changes.push({ from: line.from + start, to: line.from + end, insert: transform(text) });
+      }
     }
   }
 

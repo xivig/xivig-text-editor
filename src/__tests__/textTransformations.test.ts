@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { EditorState } from '@codemirror/state';
+import { transformToUppercase, transformToLowercase } from '../components/editor/sublimeKeymap';
 import {
   removeDuplicateLines,
   reverseLines,
@@ -114,6 +116,53 @@ describe('textTransformations utilities', () => {
       const res = transposeWords('const alpha = beta;', 14); // between alpha and beta
       expect(res).not.toBeNull();
       expect(res?.text).toBe('const beta = alpha;');
+    });
+  });
+
+  describe('transformToUppercase and transformToLowercase commands', () => {
+    it('transforms selection to uppercase', () => {
+      const state = EditorState.create({
+        doc: 'hello world',
+        selection: { anchor: 0, head: 5 },
+      });
+      let updatedDoc = '';
+      transformToUppercase({
+        state,
+        dispatch: (tr) => {
+          updatedDoc = tr.state.doc.toString();
+        },
+      });
+      expect(updatedDoc).toBe('HELLO world');
+    });
+
+    it('transforms word under cursor to uppercase when selection is empty', () => {
+      const state = EditorState.create({
+        doc: 'hello world',
+        selection: { anchor: 2 },
+      });
+      let updatedDoc = '';
+      transformToUppercase({
+        state,
+        dispatch: (tr) => {
+          updatedDoc = tr.state.doc.toString();
+        },
+      });
+      expect(updatedDoc).toBe('HELLO world');
+    });
+
+    it('transforms word under cursor to lowercase when selection is empty', () => {
+      const state = EditorState.create({
+        doc: 'HELLO world',
+        selection: { anchor: 2 },
+      });
+      let updatedDoc = '';
+      transformToLowercase({
+        state,
+        dispatch: (tr) => {
+          updatedDoc = tr.state.doc.toString();
+        },
+      });
+      expect(updatedDoc).toBe('hello world');
     });
   });
 });

@@ -246,16 +246,23 @@ export const App: React.FC = () => {
 
       // Multi-key chord handling (Sublime Text Ctrl+K ...)
       if (chordRef.current === 'k') {
+        // Ignore standalone modifier key presses so chord is NOT cancelled when holding or pressing Ctrl/Shift/Alt/Meta
+        if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') {
+          return;
+        }
+
         const k = e.key.toLowerCase();
         chordRef.current = null;
         if (chordTimeoutRef.current) clearTimeout(chordTimeoutRef.current);
 
         if (k === 's') {
           e.preventDefault();
+          e.stopPropagation();
           openKeymapModal();
           return;
         } else if (k === 'o') {
           e.preventDefault();
+          e.stopPropagation();
           if (window.xivig?.openFolderDialog) {
             const res = await window.xivig.openFolderDialog();
             if (!res.canceled && res.folderPath && res.files) {
@@ -265,31 +272,37 @@ export const App: React.FC = () => {
           return;
         } else if (k === 'u') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) transformToUppercase(view);
           return;
         } else if (k === 'l') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) transformToLowercase(view);
           return;
         } else if (k === 'k') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) deleteToLineEnd(view);
           return;
         } else if (e.key === 'Backspace') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) deleteToLineStart(view);
           return;
         } else if (k === 'c') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) centerCursor(view);
           return;
         } else if (k === 'w') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view && deleteToMark(view)) {
             return;
@@ -298,48 +311,58 @@ export const App: React.FC = () => {
           return;
         } else if (k === 'b') {
           e.preventDefault();
+          e.stopPropagation();
           toggleSidebar();
           return;
         } else if (k === '0' || k === 'j') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) unfoldAll(view);
           return;
         } else if (k === 'd') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) skipAndSelectNextOccurrence(view);
           return;
         } else if (e.key === ' ') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) setMark(view);
           return;
         } else if (k === 'a') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) selectToMark(view);
           return;
         } else if (k === 'x') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) swapWithMark(view);
           return;
         } else if (k === 'y') {
           e.preventDefault();
+          e.stopPropagation();
           const view = getActiveEditorView();
           if (view) yankMark(view);
           return;
         } else if (k === 'v') {
           e.preventDefault();
+          e.stopPropagation();
           useEditorStore.getState().togglePreview();
           return;
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
+          e.stopPropagation();
           setSplitLayout('two-columns');
           return;
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
+          e.stopPropagation();
           setSplitLayout('single');
           return;
         }
@@ -347,11 +370,12 @@ export const App: React.FC = () => {
 
       if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
+        e.stopPropagation();
         chordRef.current = 'k';
         if (chordTimeoutRef.current) clearTimeout(chordTimeoutRef.current);
         chordTimeoutRef.current = setTimeout(() => {
           chordRef.current = null;
-        }, 1500);
+        }, 2500);
         return;
       }
 
@@ -689,8 +713,8 @@ export const App: React.FC = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [
     activeDoc,
     createNewDocument,
