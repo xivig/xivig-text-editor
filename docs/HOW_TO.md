@@ -1,6 +1,6 @@
 # Xivig Text Editor — Comprehensive How-To Guide 📖
 
-Welcome to the official user manual and how-to guide for **Xivig Text Editor** (Release 1.1). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
+Welcome to the official user manual and how-to guide for **Xivig Text Editor** (Release 1.3 — Build 1.3.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
 
 ---
 
@@ -16,7 +16,10 @@ Welcome to the official user manual and how-to guide for **Xivig Text Editor** (
 9. [Font Ligatures & Appearance Settings](#9-font-ligatures--appearance-settings)
 10. [Git Version Control](#10-git-version-control)
 11. [Command Palette & Quick Open](#11-command-palette--quick-open)
-12. [Troubleshooting & FAQs](#12-troubleshooting--faqs)
+12. [Rainbow Brackets & Indentation Guides](#12-rainbow-brackets--indentation-guides)
+13. [Themes & Graphical Settings](#13-themes--graphical-settings)
+14. [Seamless In-Place Auto-Updater](#14-seamless-in-place-auto-updater)
+15. [Troubleshooting & FAQs](#15-troubleshooting--faqs)
 
 ---
 
@@ -25,7 +28,7 @@ Welcome to the official user manual and how-to guide for **Xivig Text Editor** (
 ### Launching the Application
 - **Windows**: Run `Xivig Text Editor.exe` or launch from the Start Menu / Desktop shortcut.
 - **Linux**: Execute the `.AppImage` (ensure executable permission: `chmod +x Xivig-Text-Editor-*.AppImage`) or install the `.deb` package (`sudo dpkg -i xivig-text-editor_*.deb`).
-- **macOS**: Extract `Xivig-Text-Editor-1.2.0-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
+- **macOS**: Extract `Xivig-Text-Editor-1.3.0-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
 
 ### First-Run Overview
 When you open Xivig Text Editor for the first time, you will be greeted by the **Welcome** screen.
@@ -231,13 +234,64 @@ Access every single feature, command, modal, and setting without touching the mo
 
 ---
 
-## 12. Troubleshooting & FAQs
+## 12. Rainbow Brackets & Indentation Guides
+
+Xivig 1.3 includes built-in syntax-aware Rainbow Brackets and Indentation Guides:
+* **Bracket Depth Matching**: Opening and closing brackets (`()`, `{}`, `[]`) are matched based on the language's Lezer syntax tree. Both matching ends share identical colors from a 6-tier cyclic rainbow palette (Red ➔ Orange ➔ Yellow ➔ Green ➔ Cyan ➔ Purple).
+* **Indentation Guides**: Colored vertical guides align with code blocks according to their nesting level, making complex multi-nested structures immediately understandable.
+* **Toggling**:
+  1. Open Settings (`Ctrl+,`).
+  2. Navigate to **Extensions ➔ Rainbow Brackets**.
+  3. Toggle **Rainbow Brackets** or **Rainbow Indentation Guides** on/off without restarting the editor.
+
+---
+
+## 13. Themes & Graphical Settings
+
+### Color Themes (10 Official Themes)
+* **Opening Theme Selector**: Press `Ctrl+K Ctrl+T` or navigate to Settings (`Ctrl+,`) ➔ **Color Themes**.
+* **Available Themes**:
+  1. **Xivig Dark (Default)**: Balanced high-contrast dark theme.
+  2. **Dracula (Official)**: Official Dracula color palette with refined token contrast and optical ligature alignment.
+  3. **Monokai Pro**: Classic Sublime Text high-contrast palette.
+  4. **One Dark Pro**: Atom-inspired warm dark theme.
+  5. **Solarized Light**: Clean, low-contrast daylight theme.
+  6. **Nord Theme**: Arctic blue-tinted cool palette.
+  7. **Tokyo Night**: Vibrant neon Japanese evening aesthetic.
+  8. **Cyberpunk 2077**: Electric yellow and deep blue high-contrast cyberpunk styling.
+  9. **GitHub Dark**: Professional dark grey GitHub interface styling.
+  10. **SynthWave '84**: 80s retro neon aesthetic.
+
+### VS Code-Style Settings (`Ctrl+,`)
+* **Live Search**: Type into the top search bar to filter settings dynamically.
+* **Category Tree**: Navigate between *Text Editor*, *Workbench*, *Window*, *Features*, *Application*, and *Extensions*.
+* **Customization**: Configure Font Size, Font Family, Tab Size, Format On Save, Auto Save Delay, Word Wrap, and more.
+
+---
+
+## 14. Seamless In-Place Auto-Updater
+
+Xivig features a VS Code-style auto-update workflow:
+* **Background Check & Download**: Xivig checks for updates on startup or when manually invoked. When an update is detected, it downloads silently in the background.
+* **Update Notifications**:
+  * **Top Banner**: Displays download progress (`0% - 100%`) and transitions to a "Restart Xivig to Update" banner upon completion.
+  * **Activity Bar Badge**: A green badge dot appears on the Settings gear button when an update is downloaded and ready.
+  * **Status Bar Indicator**: An interactive `[⟳ Restart to Update]` indicator appears in the status bar.
+  * **Command Palette**: Run `Help: Restart to Update (Apply Downloaded Update)` anytime.
+* **In-Place Application**: Clicking restart silently applies the update (using Windows NSIS `/S --force-run`) and immediately relaunches Xivig into the latest version without showing an installation wizard.
+
+---
+
+## 15. Troubleshooting & FAQs
 
 ### Q: Why are ligatures not showing up?
 **A**: Ensure **Font Ligatures** is toggled ON in Settings (`Ctrl+,`). Also make sure your chosen font is set to a ligature-supporting family such as `Fira Code`, `JetBrains Mono`, or `Cascadia Code`.
 
 ### Q: How do I change the indentation from 2 spaces to 4 spaces?
 **A**: Open Settings (`Ctrl+,`), navigate to the **Editor** tab, and under **Tab Size**, click **4 Spaces**.
+
+### Q: How do I update Xivig to the latest version?
+**A**: When an update is ready, simply click **Restart to Update** on the status bar, activity bar gear icon, or notification banner. Xivig will restart into the updated version in-place.
 
 ### Q: My Live Server port 5500 is in use. How does it handle conflicts?
 **A**: The Xivig Live Server automatically detects occupied ports and seamlessly shifts to the next available port (e.g. 5501, 5502) without interruption.

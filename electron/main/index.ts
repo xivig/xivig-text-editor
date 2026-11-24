@@ -772,8 +772,8 @@ ipcMain.handle('updater:check', async (event) => {
   if (!validateIpcSender(event)) {
     return {
       updateAvailable: false,
-      currentVersion: app.getVersion() || '1.2.0',
-      latestVersion: app.getVersion() || '1.2.0',
+      currentVersion: app.getVersion() || '1.3.0',
+      latestVersion: app.getVersion() || '1.3.0',
       error: 'Unauthorized IPC invocation',
     };
   }
@@ -811,7 +811,7 @@ ipcMain.handle('app:info', async (event) => {
   if (!validateIpcSender(event)) return null;
   return {
     name: app.getName() || 'Xivig Text Editor',
-    version: app.getVersion() || '1.2.0',
+    version: app.getVersion() || '1.3.0',
     electron: process.versions.electron,
     node: process.versions.node,
     chrome: process.versions.chrome,

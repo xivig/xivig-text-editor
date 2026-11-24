@@ -7,6 +7,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useBuildStore } from '../../stores/buildStore';
 import { useExtensionStore } from '../../stores/extensionStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
+import { useUpdateStore } from '../../stores/updateStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { goToDefinition } from '../editor/codeIntelligence';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
@@ -284,7 +285,18 @@ export const CommandPalette: React.FC = () => {
       id: 'help:update',
       category: 'Help',
       title: 'Help: Check for Updates...',
-      action: openUpdateCheckModal,
+      action: () => {
+        openUpdateCheckModal();
+        useUpdateStore.getState().checkForUpdates(true);
+      },
+    },
+    {
+      id: 'help:restart-update',
+      category: 'Help',
+      title: 'Help: Restart to Update (Apply Downloaded Update)',
+      action: () => {
+        useUpdateStore.getState().applyAndRestart();
+      },
     },
     {
       id: 'view:sidebar',

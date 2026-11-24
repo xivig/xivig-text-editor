@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GitBranch, AlertCircle, AlertTriangle, Radio, Check } from 'lucide-react';
+import { GitBranch, AlertCircle, AlertTriangle, Radio, Check, RotateCw, RefreshCw } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useDiagnosticsStore } from '../../stores/diagnosticsStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
+import { useUpdateStore } from '../../stores/updateStore';
 import { detectLanguageName } from '../editor/languageSupport';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 
@@ -31,6 +32,11 @@ export const StatusBar: React.FC = () => {
   const resetZoom = useSettingsStore((state) => state.resetZoom);
 
   const { isRunning: isLiveRunning, port: livePort, toggleServer: toggleLiveServer, openInBrowser: openLiveBrowser } = useLiveServerStore();
+
+  const downloadedInfo = useUpdateStore((state) => state.downloadedInfo);
+  const isDownloading = useUpdateStore((state) => state.isDownloading);
+  const downloadProgress = useUpdateStore((state) => state.downloadProgress);
+  const applyAndRestart = useUpdateStore((state) => state.applyAndRestart);
 
   const [indentMenuOpen, setIndentMenuOpen] = useState(false);
   const [encodingMenuOpen, setEncodingMenuOpen] = useState(false);
@@ -104,6 +110,39 @@ export const StatusBar: React.FC = () => {
 
       {/* Right items */}
       <div style={sectionStyle}>
+        {downloadedInfo && (
+          <div
+            onClick={() => applyAndRestart()}
+            style={{
+              ...interactiveItemStyle,
+              color: '#35b779',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title={`Restart Xivig to apply update v${downloadedInfo.version} (Click to Restart)`}
+          >
+            <RotateCw size={11} className="animate-spin-slow" />
+            <span>Restart to Update</span>
+          </div>
+        )}
+        {isDownloading && (
+          <div
+            style={{
+              ...itemStyle,
+              color: 'var(--xivig-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title={`Downloading update: ${downloadProgress?.percent ? Math.round(downloadProgress.percent) : 0}%`}
+          >
+            <RefreshCw size={11} className="animate-spin" />
+            <span>Updating {downloadProgress?.percent ? Math.round(downloadProgress.percent) : 0}%</span>
+          </div>
+        )}
+
         <div
           onClick={(e) => {
             if (e.altKey && isLiveRunning) {

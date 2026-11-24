@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-11-24 — *Extension System, Theme Suite & Seamless In-Place Auto-Updater Release*
+
+### 🌈 Rainbow Brackets & Indentation Guides Extension
+* **Syntax-Tree Driven Matching**:
+  - Implemented CodeMirror 6 ViewPlugin using AST parsing (`ensureSyntaxTree`) to match bracket pairs `()`, `{}`, and `[]` across document blocks.
+  - Paired matching opening and closing brackets with the exact same depth color across 6 cyclic color tiers (Red, Orange, Yellow, Green, Cyan, Purple).
+  - Skips brackets in string literals, comments, and non-code tokens via syntax tree node name inspection.
+* **Rainbow Indentation Guides**:
+  - Implemented real-time line decoration rendering vertical indent guide lines mirroring indentation depth and whitespace scopes.
+  - Zero editor lag and minimal memory footprint on large source files.
+* **Live Dynamic Toggle**:
+  - Toggle brackets and guides on the fly from Settings or the Extension Manager without restarting the editor or losing undo/redo history.
+
+### 🎨 Official Color Theme Suite & Typographic Polish
+* **Dracula (Official) Theme**:
+  - Implemented official Dracula color palette (`#282a36`, `#f8f8f2`, `#bd93f9`, `#ff79c6`, `#50fa7b`, `#8be9fd`, `#f1fa8c`, `#ffb86c`, `#6272a4`) matching the official Dracula specification.
+  - Applied across editor, sidebar, activity bar, status bar, tabs, modals, and context menus.
+* **10 Curated Theme Palettes**:
+  - Integrated 10 color themes: Xivig Dark (Default), Dracula (Official), Monokai Pro, One Dark Pro, Solarized Light, Nord Theme, Tokyo Night, Cyberpunk 2077, GitHub Dark, and SynthWave '84.
+* **Font Ligature Optical Alignment Fix**:
+  - Resolved Fira Code contextual ligature gaps in HTML closing tags (`</`, `</form>`, `</script>`) by isolating angle bracket font features (`fontVariantLigatures: 'none'`, `fontFeatureSettings: '"liga" 0, "calt" 0'`) while retaining normal letter spacing across all tags.
+
+### ⚙️ VS Code-Style Graphical Settings Interface
+* **Comprehensive Configuration Hub**:
+  - Redesigned the Settings modal into a full-featured, VS Code-modeled preferences view with sidebar category tree (*Text Editor*, *Workbench*, *Window*, *Features*, *Application*, *Extensions*).
+  - Added live search filtering across all setting IDs, descriptions, and values.
+  - Added visual color theme cards with color chips, selection checks, and instant preview.
+
+### 🔄 Seamless In-Place Auto-Updater (VS Code Experience)
+* **Zero-Wizard Background Updates**:
+  - Automatically queries release feeds and downloads updates silently in the background.
+  - Silently applies updates on application restart without displaying manual installer wizards or requiring manual file replacement.
+* **Windows NSIS Silent Execution**:
+  - Configured NSIS launcher flags `['/S', '--force-run']` and `quitAndInstall(false, true)` for automatic in-place upgrades.
+  - Added graceful relaunch fallbacks for portable executables and development environments.
+* **Multi-Surface Status Awareness**:
+  - Top notification banner with direct "Restart Xivig to Update" action button and download progress indicator.
+  - Green indicator badge dot on the Activity Bar Settings gear icon when an update is downloaded.
+  - Interactive `[⟳ Restart to Update]` indicator in the status bar.
+  - Command Palette actions: `Help: Check for Updates...` and `Help: Restart to Update (Apply Downloaded Update)`.
+
+---
+
 ## [1.2.0] - 2026-11-24 — *Developer Tooling & Security Architecture Release*
 
 ### 🛡️ Core Security Architecture & Isolation (P0)

@@ -212,7 +212,7 @@ function downloadFile(
       rawUrl,
       {
         headers: {
-          'User-Agent': `Xivig-Update-Downloader/${app.getVersion() || '1.2.0'}`,
+          'User-Agent': `Xivig-Update-Downloader/${app.getVersion() || '1.3.0'}`,
           Accept: 'application/octet-stream',
         },
       },
@@ -308,7 +308,7 @@ function downloadFile(
  * Queries GitHub Releases API for the latest release tag and metadata.
  */
 export async function checkGitHubRelease(): Promise<UpdateCheckResult> {
-  const currentVersion = app.getVersion() || '1.2.0';
+  const currentVersion = app.getVersion() || '1.3.0';
 
   return new Promise((resolve) => {
     const options = {
@@ -490,8 +490,8 @@ export function applyUpdateAndRestart(): { success: boolean; error?: string } {
   try {
     if (isWin && filePath.toLowerCase().endsWith('.exe')) {
       // NSIS installer with /S flag installs seamlessly in-place without showing installer wizard prompts.
-      // Detach the installer process so it executes as the current application process quits.
-      const child = spawn(filePath, ['/S'], {
+      // Detach the installer process with --force-run so it completes in-place and launches the updated IDE.
+      const child = spawn(filePath, ['/S', '--force-run'], {
         detached: true,
         stdio: 'ignore',
       });

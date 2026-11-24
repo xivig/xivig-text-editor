@@ -62,8 +62,8 @@ export const UpdateCheckModal: React.FC = () => {
         .catch((err) => {
           setResult({
             updateAvailable: false,
-            currentVersion: '1.2.0',
-            latestVersion: '1.2.0',
+            currentVersion: '1.3.0',
+            latestVersion: '1.3.0',
             error: err.message || 'Network error',
           });
           setIsLoading(false);
@@ -72,8 +72,8 @@ export const UpdateCheckModal: React.FC = () => {
       setTimeout(() => {
         setResult({
           updateAvailable: false,
-          currentVersion: '1.2.0',
-          latestVersion: '1.2.0',
+          currentVersion: '1.3.0',
+          latestVersion: '1.3.0',
         });
         setIsLoading(false);
       }, 500);

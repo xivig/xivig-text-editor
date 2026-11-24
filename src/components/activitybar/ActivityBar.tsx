@@ -1,13 +1,17 @@
 import React from 'react';
-import { Files, Search, GitBranch, Package, Settings } from 'lucide-react';
+import { Files, Search, GitBranch, Package, Settings, RotateCw } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
+import { useUpdateStore } from '../../stores/updateStore';
 import { ActiveSidebarView } from '../../types/editor';
 
 export const ActivityBar: React.FC = () => {
   const activeView = useFileStore((state) => state.activeSidebarView);
   const isSidebarOpen = useFileStore((state) => state.isSidebarOpen);
   const setActiveSidebarView = useFileStore((state) => state.setActiveSidebarView);
+  const downloadedInfo = useUpdateStore((state) => state.downloadedInfo);
+  const isDownloading = useUpdateStore((state) => state.isDownloading);
+  const applyAndRestart = useUpdateStore((state) => state.applyAndRestart);
 
   const topItems: Array<{ id: ActiveSidebarView; icon: React.ReactNode; label: string }> = [
     { id: 'explorer', icon: <Files size={20} />, label: 'Explorer (Ctrl+Shift+E)' },
@@ -39,14 +43,46 @@ export const ActivityBar: React.FC = () => {
       </div>
 
       <div style={itemsGroupStyle}>
+        {downloadedInfo && (
+          <button
+            onClick={() => applyAndRestart()}
+            title={`Update Ready: Click to Restart Xivig and apply v${downloadedInfo.version}`}
+            style={{
+              ...iconBtnStyle,
+              color: '#35b779',
+            }}
+          >
+            <RotateCw size={18} className="animate-spin-slow" />
+          </button>
+        )}
         <button
           onClick={() => {
             useEditorStore.getState().openSettings();
           }}
-          title="Settings (Ctrl+,)"
-          style={iconBtnStyle}
+          title={downloadedInfo ? `Settings (Ctrl+,) • Update v${downloadedInfo.version} ready to install` : 'Settings (Ctrl+,)'}
+          style={{
+            ...iconBtnStyle,
+            position: 'relative',
+          }}
         >
-          <Settings size={20} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Settings size={20} />
+            {(downloadedInfo || isDownloading) && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: downloadedInfo ? '#35b779' : 'var(--xivig-accent)',
+                  border: '1.5px solid var(--xivig-activity-bar)',
+                  boxShadow: downloadedInfo ? '0 0 6px rgba(53, 183, 121, 0.6)' : 'none',
+                }}
+              />
+            )}
+          </div>
         </button>
       </div>
     </aside>

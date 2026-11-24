@@ -1,141 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ArrowUpCircle, ExternalLink, X, CheckCircle, RefreshCw, Download, RotateCw } from 'lucide-react';
-import { UpdateCheckResult, UpdateProgress, DownloadedUpdateInfo } from '../../types/electron';
+import { useUpdateStore } from '../../stores/updateStore';
 
 interface UpdateBannerProps {
   manualCheckTrigger?: number;
 }
 
 export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCheckTrigger }) => {
-  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null);
-  const [downloadedInfo, setDownloadedInfo] = useState<DownloadedUpdateInfo | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [upToDateMessage, setUpToDateMessage] = useState<string | null>(null);
+  const isChecking = useUpdateStore((state) => state.isChecking);
+  const isDownloading = useUpdateStore((state) => state.isDownloading);
+  const isApplying = useUpdateStore((state) => state.isApplying);
+  const updateInfo = useUpdateStore((state) => state.updateInfo);
+  const downloadProgress = useUpdateStore((state) => state.downloadProgress);
+  const downloadedInfo = useUpdateStore((state) => state.downloadedInfo);
+  const statusMessage = useUpdateStore((state) => state.statusMessage);
+  const isDismissed = useUpdateStore((state) => state.isBannerDismissed);
 
-  // Check if an update was already downloaded and listen for update events
+  const setBannerDismissed = useUpdateStore((state) => state.setBannerDismissed);
+  const setStatusMessage = useUpdateStore((state) => state.setStatusMessage);
+  const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
+  const startDownload = useUpdateStore((state) => state.startDownload);
+  const applyAndRestart = useUpdateStore((state) => state.applyAndRestart);
+  const initializeListeners = useUpdateStore((state) => state.initializeListeners);
+
+  // Initialize Electron update events listener once on mount
   useEffect(() => {
-    // Check initial downloaded status
-    if (window.xivig?.getDownloadedUpdateInfo) {
-      window.xivig.getDownloadedUpdateInfo().then((info) => {
-        if (info) {
-          setDownloadedInfo(info);
-          setIsDismissed(false);
-        }
-      }).catch(() => {});
-    }
+    const cleanup = initializeListeners();
+    return cleanup;
+  }, [initializeListeners]);
 
-    if (!window.xivig) return;
-
-    const unsubAvailable = window.xivig.onUpdateAvailable?.((info) => {
-      if (info.updateAvailable) {
-        setUpdateInfo(info);
-        setIsDismissed(false);
-      }
-    });
-
-    const unsubProgress = window.xivig.onUpdateDownloadProgress?.((progress) => {
-      setIsDownloading(true);
-      setDownloadProgress(progress);
-    });
-
-    const unsubDownloaded = window.xivig.onUpdateDownloaded?.((info) => {
-      setIsDownloading(false);
-      setDownloadProgress(null);
-      setDownloadedInfo(info);
-      setIsDismissed(false);
-    });
-
-    return () => {
-      unsubAvailable?.();
-      unsubProgress?.();
-      unsubDownloaded?.();
-    };
-  }, []);
-
-  // Handle manual update checks
+  // Handle manual update check trigger if prop changes
   useEffect(() => {
-    if (!manualCheckTrigger || manualCheckTrigger <= 0) return;
-
-    let mounted = true;
-    setIsChecking(true);
-    setUpToDateMessage(null);
-    setIsDismissed(false);
-
-    if (window.xivig?.checkForUpdates) {
-      window.xivig
-        .checkForUpdates()
-        .then((info) => {
-          if (!mounted) return;
-          setIsChecking(false);
-          if (info.updateAvailable) {
-            setUpdateInfo(info);
-          } else {
-            setUpToDateMessage(`You are running the latest version of Xivig (v${info.currentVersion})!`);
-            setTimeout(() => {
-              if (mounted) setUpToDateMessage(null);
-            }, 5000);
-          }
-        })
-        .catch((err) => {
-          if (!mounted) return;
-          setIsChecking(false);
-          setUpToDateMessage(`Could not check for updates: ${err.message || 'Offline'}`);
-          setTimeout(() => {
-            if (mounted) setUpToDateMessage(null);
-          }, 5000);
-        });
+    if (manualCheckTrigger && manualCheckTrigger > 0) {
+      checkForUpdates(true);
     }
-
-    return () => {
-      mounted = false;
-    };
-  }, [manualCheckTrigger]);
-
-  const handleStartDownload = async () => {
-    if (!window.xivig?.startUpdateDownload) return;
-    setIsDownloading(true);
-    try {
-      const res = await window.xivig.startUpdateDownload();
-      if (!res.success && res.error) {
-        setIsDownloading(false);
-      }
-    } catch {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleApplyAndRestart = async () => {
-    if (!window.xivig?.applyUpdateAndRestart) return;
-    setIsApplying(true);
-    try {
-      await window.xivig.applyUpdateAndRestart();
-    } catch {
-      setIsApplying(false);
-    }
-  };
+  }, [manualCheckTrigger, checkForUpdates]);
 
   if (isChecking) {
     return (
-      <div style={bannerContainerStyle}>
+      <div style={bannerContainerStyle} role="status">
         <div style={bannerContentStyle}>
-          <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--xivig-accent)', marginRight: '8px' }} />
+          <RefreshCw size={13} className="animate-spin" style={{ color: 'var(--xivig-accent)', marginRight: '8px' }} />
           <span style={{ fontSize: '12px', color: 'var(--xivig-text)' }}>Checking for Xivig updates...</span>
         </div>
       </div>
     );
   }
 
-  if (upToDateMessage) {
+  if (statusMessage) {
     return (
-      <div style={{ ...bannerContainerStyle, backgroundColor: 'rgba(78, 201, 176, 0.15)', borderColor: 'var(--xivig-accent)' }}>
+      <div
+        style={{
+          ...bannerContainerStyle,
+          backgroundColor: statusMessage.includes('Could not')
+            ? 'rgba(239, 68, 68, 0.15)'
+            : 'rgba(78, 201, 176, 0.15)',
+          borderColor: statusMessage.includes('Could not')
+            ? 'var(--xivig-error)'
+            : 'var(--xivig-accent)',
+        }}
+        role="status"
+      >
         <div style={bannerContentStyle}>
           <CheckCircle size={14} style={{ color: 'var(--xivig-accent)', marginRight: '8px' }} />
-          <span style={{ fontSize: '12px', color: 'var(--xivig-text)' }}>{upToDateMessage}</span>
-          <button onClick={() => setUpToDateMessage(null)} style={iconButtonStyle} aria-label="Dismiss">
+          <span style={{ fontSize: '12px', color: 'var(--xivig-text)' }}>{statusMessage}</span>
+          <button onClick={() => setStatusMessage(null)} style={iconButtonStyle} aria-label="Dismiss">
             <X size={13} />
           </button>
         </div>
@@ -143,29 +72,42 @@ export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCh
     );
   }
 
-  // 1. If update is downloaded and ready to restart
+  // 1. If update is downloaded and ready to restart (VS Code style seamless reload)
   if (downloadedInfo && !isDismissed) {
     return (
-      <div style={{ ...bannerContainerStyle, borderColor: '#35b779', backgroundColor: 'rgba(53, 183, 121, 0.12)' }} role="alert">
+      <div
+        style={{
+          ...bannerContainerStyle,
+          borderColor: '#35b779',
+          backgroundColor: 'rgba(53, 183, 121, 0.15)',
+        }}
+        role="alert"
+        aria-live="assertive"
+      >
         <div style={bannerContentStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
             <CheckCircle size={15} style={{ color: '#35b779', flexShrink: 0 }} />
             <span style={{ fontSize: '12px', color: 'var(--xivig-text)' }}>
-              <strong>Update Ready:</strong> Xivig <strong>v{downloadedInfo.version}</strong> has been downloaded. Reload to update seamlessly without manual installation.
+              <strong>Update Ready:</strong> Xivig <strong>v{downloadedInfo.version}</strong> has been downloaded. Restart the IDE to update seamlessly without manual installation.
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
-              onClick={handleApplyAndRestart}
+              onClick={() => applyAndRestart()}
               disabled={isApplying}
               style={{ ...actionButtonStyle, backgroundColor: '#35b779' }}
-              title="Restart Xivig and apply update in-place without installer prompts"
+              title="Restart Xivig and apply update in-place without manual installer prompts"
             >
               <RotateCw size={12} style={{ marginRight: '5px' }} className={isApplying ? 'animate-spin' : ''} />
-              <span>{isApplying ? 'Restarting...' : 'Reload & Apply Update'}</span>
+              <span>{isApplying ? 'Restarting IDE...' : 'Restart Xivig to Update'}</span>
             </button>
-            <button onClick={() => setIsDismissed(true)} style={iconButtonStyle} title="Dismiss notice" aria-label="Dismiss">
+            <button
+              onClick={() => setBannerDismissed(true)}
+              style={iconButtonStyle}
+              title="Dismiss notice (update will apply on next restart)"
+              aria-label="Dismiss"
+            >
               <X size={14} />
             </button>
           </div>
@@ -174,7 +116,7 @@ export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCh
     );
   }
 
-  // 2. If update is available
+  // 2. If update is available (downloading or ready to download)
   if (updateInfo?.updateAvailable && !isDismissed) {
     return (
       <div style={bannerContainerStyle} role="alert" aria-live="polite">
@@ -182,7 +124,7 @@ export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCh
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
             <ArrowUpCircle size={15} style={{ color: 'var(--xivig-accent)', flexShrink: 0 }} />
             <span style={{ fontSize: '12px', color: 'var(--xivig-text)' }}>
-              <strong>Update Available:</strong> Xivig <strong>v{updateInfo.latestVersion}</strong> is ready (Current: v{updateInfo.currentVersion}).
+              <strong>Update Available:</strong> Xivig <strong>v{updateInfo.latestVersion}</strong> is available (Current: v{updateInfo.currentVersion}).
             </span>
             {isDownloading && downloadProgress && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px' }}>
@@ -200,13 +142,13 @@ export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCh
             {isDownloading ? (
               <span style={{ fontSize: '11px', color: 'var(--xivig-accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <RefreshCw size={11} className="animate-spin" />
-                Downloading update...
+                Downloading update in background...
               </span>
             ) : updateInfo.downloadUrl ? (
               <button
-                onClick={handleStartDownload}
+                onClick={() => startDownload()}
                 style={actionButtonStyle}
-                title="Download update package in background"
+                title="Download update in background"
               >
                 <Download size={12} style={{ marginRight: '4px' }} />
                 <span>Download Update</span>
@@ -215,14 +157,19 @@ export const UpdateNotificationBanner: React.FC<UpdateBannerProps> = ({ manualCh
 
             <button
               onClick={() => window.xivig?.openReleasePage?.(updateInfo.htmlUrl)}
-              style={{ ...actionButtonStyle, backgroundColor: 'transparent', border: '1px solid var(--xivig-border)', color: 'var(--xivig-text)' }}
+              style={{
+                ...actionButtonStyle,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--xivig-border)',
+                color: 'var(--xivig-text)',
+              }}
               title="View release notes on GitHub"
             >
-              <span>Notes</span>
+              <span>Release Notes</span>
               <ExternalLink size={11} style={{ marginLeft: '4px' }} />
             </button>
             <button
-              onClick={() => setIsDismissed(true)}
+              onClick={() => setBannerDismissed(true)}
               style={iconButtonStyle}
               title="Dismiss update notice"
               aria-label="Dismiss update notice"
@@ -251,21 +198,22 @@ const bannerContainerStyle: React.CSSProperties = {
 };
 
 const bannerContentStyle: React.CSSProperties = {
-  maxWidth: '1200px',
-  width: '100%',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
+  width: '100%',
+  maxWidth: '1200px',
+  gap: '12px',
 };
 
 const actionButtonStyle: React.CSSProperties = {
-  display: 'flex',
+  display: 'inline-flex',
   alignItems: 'center',
+  padding: '4px 10px',
+  borderRadius: '4px',
+  border: 'none',
   backgroundColor: 'var(--xivig-accent)',
   color: '#ffffff',
-  border: 'none',
-  borderRadius: '4px',
-  padding: '4px 10px',
   fontSize: '11px',
   fontWeight: 600,
   cursor: 'pointer',
@@ -273,20 +221,22 @@ const actionButtonStyle: React.CSSProperties = {
 };
 
 const iconButtonStyle: React.CSSProperties = {
-  background: 'none',
+  background: 'transparent',
   border: 'none',
   color: 'var(--xivig-text-dim)',
   cursor: 'pointer',
-  padding: '4px',
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'center',
+  padding: '4px',
   borderRadius: '4px',
+  transition: 'color 0.15s ease',
 };
 
 const progressTrackStyle: React.CSSProperties = {
-  width: '80px',
+  width: '70px',
   height: '6px',
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  backgroundColor: 'var(--xivig-border)',
   borderRadius: '3px',
   overflow: 'hidden',
 };
@@ -295,5 +245,5 @@ const progressBarStyle: React.CSSProperties = {
   height: '100%',
   backgroundColor: 'var(--xivig-accent)',
   borderRadius: '3px',
-  transition: 'width 0.15s ease',
+  transition: 'width 0.2s ease',
 };

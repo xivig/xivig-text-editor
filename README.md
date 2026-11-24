@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-1.2-6c8cff.svg" alt="Release 1.2" /></a>
+  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-1.3-6c8cff.svg" alt="Release 1.3" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/Electron-45-47848f.svg" alt="Electron 45" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/CodeMirror-6-black.svg" alt="CodeMirror 6" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/React-18-61dafb.svg" alt="React 18" /></a>
@@ -33,20 +33,40 @@ Download the official release binaries for your operating system:
 
 | Platform | Format | Direct Download Link | Description |
 |---|---|---|---|
-| **Windows** | `.exe` (Installer) | [**Download Setup (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig.Text.Editor.Setup.1.2.0.exe) | NSIS Installer with desktop and start menu shortcuts |
-| **Windows** | `.exe` (Portable) | [**Download Portable (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig.Text.Editor.1.2.0.exe) | Zero-install standalone executable |
-| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig-Text-Editor-1.2.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
-| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig-Text-Editor-1.2.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
-| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig-Text-Editor-1.2.0.AppImage) | Standalone Linux x64 AppImage |
-| **Linux** | `.deb` (x64) | [**Download DEB (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/xivig-text-editor_1.2.0_amd64.deb) | Debian / Ubuntu amd64 package |
-| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig-Text-Editor-1.2.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
-| **Linux** | `.zip` (x64) | [**Download zip (v1.2.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.2.0/Xivig-Text-Editor-1.2.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
+| **Windows** | `.exe` (Installer) | [**Download Setup (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig.Text.Editor.Setup.1.3.0.exe) | NSIS Installer with desktop and start menu shortcuts |
+| **Windows** | `.exe` (Portable) | [**Download Portable (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig.Text.Editor.1.3.0.exe) | Zero-install standalone executable |
+| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig-Text-Editor-1.3.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
+| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig-Text-Editor-1.3.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
+| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig-Text-Editor-1.3.0.AppImage) | Standalone Linux x64 AppImage |
+| **Linux** | `.deb` (x64) | [**Download DEB (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/xivig-text-editor_1.3.0_amd64.deb) | Debian / Ubuntu amd64 package |
+| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig-Text-Editor-1.3.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
+| **Linux** | `.zip` (x64) | [**Download zip (v1.3.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig-Text-Editor-1.3.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
 
 > All releases, release notes, and SHA-256 checksums are hosted on the [GitHub Releases Page](https://github.com/xivig/xivig-text-editor/releases).
 
 ---
 
 ## ✨ Key Features
+
+### 🌈 Rainbow Brackets & Vertical Indent Guides
+- **Syntax-Tree-Driven Matching**: Leverages CodeMirror 6 language ASTs to pair matching opening and closing brackets (`()`, `{}`, `[]`) using the exact same depth color.
+- **6-Level Color Progression**: Cycles through Red, Orange, Yellow, Green, Cyan, and Purple across increasing nesting depths.
+- **Rainbow Indentation Guides**: Vertical guide lines mirror code nesting depth for instant visual scanning of complex block scopes.
+- **Dynamic Toggle & Zero-Restart**: Enable/disable brackets and guides instantly from Settings (`Ctrl+,`) or Extension Manager with zero editor restart.
+
+### 🎨 Official Color Theme Suite (10 Themes)
+- **Dracula (Official)**: Full-fidelity Dracula theme palette with signature purple, cyan, pink, and yellow token highlights and optical ligature tuning.
+- **10 Curated Themes**: Switch instantly between *Xivig Dark*, *Dracula (Official)*, *Monokai Pro*, *One Dark Pro*, *Solarized Light*, *Nord Theme*, *Tokyo Night*, *Cyberpunk 2077*, *GitHub Dark*, and *SynthWave '84*.
+- **Integrated Theme Switcher**: Visual palette selector in Settings (`Ctrl+,`) and Command Palette (`Ctrl+K Ctrl+T`) with instant application across all editors and panes.
+
+### ⚙️ VS Code-Style Settings Panel (`Ctrl+,`)
+- **Visual Categorized Preferences**: Tree-driven navigation across *Text Editor*, *Workbench*, *Window*, *Features*, *Application*, and *Extensions*.
+- **Instant Search & Highlighting**: Filter through dozens of settings in real time.
+- **Deep Configuration**: Control font family, font size, word wrap, tab size, auto-save delay, format-on-save, rainbow brackets, and more.
+
+### 🔄 Seamless In-Place Auto-Updater
+- **VS Code-Style Updates**: Background checking, silent downloading, and seamless application on IDE restart without opening manual installer wizards.
+- **Multi-Surface Notification**: Notification banner, Activity Bar Settings gear badge dot (`#35b779`), Status Bar `[⟳ Restart to Update]` action, and Command Palette integration.
 
 ### ⚡ Sublime-Grade Multi-Cursor & Editing
 - **Multi-Cursor Selection**: Press `Ctrl+D` to select next occurrence, `Alt+F3` or `Ctrl+Alt+G` to select all occurrences, and `Ctrl+Shift+L` to split selection into lines.
@@ -166,17 +186,17 @@ Xivig Text Editor is packaged for **Windows**, **Linux**, and **macOS**.
 
 ### Binary Types Produced
 - **Windows**:
-  - `Xivig.Text.Editor.Setup.1.2.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
-  - `Xivig.Text.Editor.1.2.0.exe` (Zero-install standalone portable executable)
+  - `Xivig.Text.Editor.Setup.1.3.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
+  - `Xivig.Text.Editor.1.3.0.exe` (Zero-install standalone portable executable)
   - `win-unpacked/` (Direct portable folder)
 - **Linux**:
-  - `Xivig-Text-Editor-1.2.0.AppImage` (Universal plug-and-play Linux executable)
-  - `xivig-text-editor_1.2.0_amd64.deb` (Debian / Ubuntu amd64 package)
-  - `Xivig-Text-Editor-1.2.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
-  - `Xivig-Text-Editor-1.2.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
+  - `Xivig-Text-Editor-1.3.0.AppImage` (Universal plug-and-play Linux executable)
+  - `xivig-text-editor_1.3.0_amd64.deb` (Debian / Ubuntu amd64 package)
+  - `Xivig-Text-Editor-1.3.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
+  - `Xivig-Text-Editor-1.3.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
 - **macOS**:
-  - `Xivig-Text-Editor-1.2.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
-  - `Xivig-Text-Editor-1.2.0-mac.zip` (Native macOS .app bundle: Universal binary)
+  - `Xivig-Text-Editor-1.3.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
+  - `Xivig-Text-Editor-1.3.0-mac.zip` (Native macOS .app bundle: Universal binary)
 
 ---
 
@@ -226,14 +246,14 @@ Automated cross-platform compilation is powered by GitHub Actions in [`.github/w
 - Builds native Windows `.exe` installers on `windows-latest`.
 - Builds universal Linux `.AppImage` and `.deb` binaries on `ubuntu-latest`.
 - Builds signed macOS `.dmg` and `.zip` binaries on `macos-latest`.
-- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.2.0`).
+- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.3.0`).
 
 ---
 
 ## 📄 Release Information & Attributions
 
 - **App Name**: Xivig Text Editor
-- **Release Version**: 1.2 (Build 1.2.0)
+- **Release Version**: 1.3 (Build 1.3.0)
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 - **Legal**: Copyright © 2026 Xivig. All rights reserved.

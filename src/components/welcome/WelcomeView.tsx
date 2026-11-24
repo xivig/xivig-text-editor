@@ -25,7 +25,7 @@ import { detectLanguageName } from '../editor/languageSupport';
 
 export const WelcomeView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'modern' | 'markdown'>('modern');
-  const [appVersion, setAppVersion] = useState('1.2.0');
+  const [appVersion, setAppVersion] = useState('1.3.0');
 
   const settings = useSettingsStore((state) => state.settings);
   const updateSettings = useSettingsStore((state) => state.updateSettings);

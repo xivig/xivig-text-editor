@@ -48,7 +48,7 @@ Extensions are packaged with a standardized manifest defining metadata, engine c
   "publisher": "community-devs",
   "description": "Rich language intelligence, snippets, and rustfmt formatting for Rust in Xivig.",
   "engines": {
-    "xivig": "^1.2.0"
+    "xivig": "^1.3.0"
   },
   "categories": ["Languages", "Formatters"],
   "main": "./dist/extension.js",
