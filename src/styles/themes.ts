@@ -87,7 +87,7 @@ export const themes: Record<ThemeId, ThemeColors> = {
   },
   'dracula': {
     id: 'dracula',
-    name: 'Dracula',
+    name: 'Dracula (Official)',
     isDark: true,
     colors: {
       bg: '#282a36',

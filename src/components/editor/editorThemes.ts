@@ -185,10 +185,10 @@ const draculaView = EditorView.theme(
       paddingRight: '6px',
     },
     '.cm-activeLine': {
-      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      backgroundColor: 'rgba(68, 71, 90, 0.25)',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+      backgroundColor: 'rgba(68, 71, 90, 0.35)',
       color: '#f8f8f2',
     },
     '.cm-foldPlaceholder': {
@@ -204,8 +204,8 @@ const draculaView = EditorView.theme(
     },
     '.cm-tooltip-autocomplete': {
       '& > ul > li[aria-selected]': {
-        backgroundColor: '#bd93f9',
-        color: '#282a36',
+        backgroundColor: '#44475a',
+        color: '#50fa7b',
         fontWeight: 'bold',
       },
     },
@@ -214,15 +214,16 @@ const draculaView = EditorView.theme(
 );
 
 const draculaHighlight = HighlightStyle.define([
-  { tag: [t.keyword, t.operatorKeyword], color: '#ff79c6', fontWeight: 'bold' },
-  { tag: t.operator, color: '#ff79c6' },
-  { tag: [t.function(t.variableName), t.labelName], color: '#50fa7b' },
-  { tag: [t.string, t.processingInstruction, t.inserted], color: '#f1fa8c' },
-  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#bd93f9' },
-  { tag: [t.typeName, t.className, t.namespace], color: '#8be9fd', fontStyle: 'italic' },
-  { tag: [t.name, t.propertyName, t.definition(t.name)], color: '#f8f8f2' },
-  { tag: [t.meta, t.comment], color: '#6272a4', fontStyle: 'italic' },
-  { tag: [t.escape, t.regexp, t.special(t.string)], color: '#ffb86c' },
+  { tag: [t.keyword, t.operatorKeyword, t.modifier, t.definitionKeyword, t.controlKeyword], color: '#ff79c6', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#ff79c6' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#50fa7b' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted, t.processingInstruction], color: '#f1fa8c' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color, t.unit], color: '#bd93f9' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#8be9fd', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#f8f8f2' },
+  { tag: [t.propertyName, t.attributeName], color: '#50fa7b' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#6272a4', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#ffb86c' },
   { tag: t.strong, fontWeight: 'bold' },
   { tag: t.emphasis, fontStyle: 'italic' },
   { tag: t.strikethrough, textDecoration: 'line-through' },

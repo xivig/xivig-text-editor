@@ -34,7 +34,7 @@ const defaultSettings: UserSettings = {
   wordWrap: false,
   lineNumbers: true,
   minimap: true,
-  theme: 'xivig-dark',
+  theme: 'dracula',
   autoSave: true,
   fontLigatures: true,
   showWelcomeOnStartup: true,
@@ -99,6 +99,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (raw) {
         const parsed = JSON.parse(raw);
         const merged: UserSettings = { ...defaultSettings, ...parsed };
+        if (parsed.theme === 'xivig-dark') {
+          merged.theme = 'dracula';
+        }
         set({ settings: merged });
         applySettingsToDOM(merged);
       } else {

@@ -24,6 +24,37 @@ export interface ExtensionPackage {
 const MARKETPLACE_EXTENSIONS: ExtensionPackage[] = [
   // --- THEMES ---
   {
+    id: 'xivig-theme-dracula',
+    name: 'Dracula Official',
+    publisher: 'Dracula Theme',
+    version: '2.2.0',
+    category: 'Themes',
+    description: 'The official Dracula theme for Xivig. A dark theme for programmers, by a programmer.',
+    iconBg: '#282a36',
+    iconSymbol: '🧛',
+    downloads: '1.8M',
+    rating: 5.0,
+    tags: ['theme', 'dracula', 'official', 'dark', 'purple'],
+    themeId: 'dracula',
+    readme: `# Dracula Official for Xivig Editor
+The official Dracula Theme — a dark theme created for high contrast, readability, and all-night coding comfort.
+
+## Official Palette
+- **Background**: \`#282a36\`
+- **Current Line / Selection**: \`#44475a\`
+- **Foreground**: \`#f8f8f2\`
+- **Comment**: \`#6272a4\`
+- **Cyan**: \`#8be9fd\`
+- **Green**: \`#50fa7b\`
+- **Orange**: \`#ffb86c\`
+- **Pink**: \`#ff79c6\`
+- **Purple**: \`#bd93f9\`
+- **Red**: \`#ff5555\`
+- **Yellow**: \`#f1fa8c\`
+
+Designed with ❤️ by [Dracula Theme](https://draculatheme.com).`,
+  },
+  {
     id: 'xivig-theme-nord',
     name: 'Nord Theme',
     publisher: 'Arctic Ice Studio',
@@ -233,8 +264,8 @@ interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>((set, get) => ({
   marketplace: MARKETPLACE_EXTENSIONS,
-  installedIds: ['xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
-  enabledIds: ['xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
+  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
+  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
   selectedExtension: null,
 
   selectExtension: (pkg) => set({ selectedExtension: pkg }),
