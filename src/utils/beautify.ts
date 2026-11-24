@@ -43,12 +43,37 @@ export function repairPhpCode(code: string): string {
 }
 
 /**
+ * Normalizes and repairs CSS properties, vendor prefixes, units, hex colors, and pseudo-selectors corrupted by JS formatters,
+ * such as "- webkit-transition", "padding - top", "3 px", "0.5 s", "table - cell", "# F45B69", "# 000000", and ": hover".
+ */
+export function repairCss(css: string): string {
+  if (!css) return '';
+  return css
+    // Fix hex colors with space after # or between hex parts: "# F45B69" -> "#F45B69", "# 000000" -> "#000000", "# 94 a0b4" -> "#94a0b4"
+    .replace(/#\s*([0-9a-fA-F]{1,4})\s+([0-9a-fA-F]{1,4})\b/g, '#$1$2')
+    .replace(/#\s+([0-9a-fA-F]{3,8})\b/g, '#$1')
+    // Fix vendor prefix leading dash: "- webkit" -> "-webkit", "- moz" -> "-moz", "- ms" -> "-ms", "- o" -> "-o"
+    .replace(/(^|[\{\;\n\r])\s*-\s+([a-zA-Z])/g, '$1\n  -$2')
+    // Fix hyphenated CSS words/properties/values: "table - cell" -> "table-cell", "list - style" -> "list-style"
+    .replace(/([a-zA-Z0-9_]+)\s*-\s*([a-zA-Z0-9_]+)/g, '$1-$2')
+    // Fix CSS numbers and units: "3 px" -> "3px", "0.5 s" -> "0.5s", "20 px" -> "20px", "100 %" -> "100%"
+    .replace(/(\b\d+(?:\.\d+)?)\s+(px|em|rem|s|ms|%|pt|vh|vw|vmin|vmax|deg|rad|grad|turn|fr|ch|ex|cm|mm|in|dpi|dpcm|dppx)\b/gi, '$1$2')
+    // Fix pseudo-elements and pseudo-classes: ":: before" -> "::before", ": hover" -> ":hover"
+    .replace(/::\s+([a-zA-Z\-]+)/g, '::$1')
+    .replace(/:\s+(hover|focus|active|visited|disabled|checked|first-child|last-child|nth-child|not|root)\b/gi, ':$1')
+    // Fix function calls with spaces: "url (" -> "url(", "calc (" -> "calc("
+    .replace(/\b(url|rgb|rgba|hsl|hsla|calc|var|min|max|clamp)\s+\(/gi, '$1(')
+    // Fix ! important -> !important
+    .replace(/!\s+important\b/gi, '!important');
+}
+
+/**
  * Normalizes and repairs HTML and Blade markup corrupted by JS formatters,
  * such as "<\n div class = ...", "} <\n/style>", "< /p>", and "border - color".
  */
 export function repairBrokenMarkup(code: string): string {
   if (!code) return '';
-  return code
+  let repaired = code
     // Fix broken opening tags across newlines or with excessive spaces: "<\ndiv class = "..." >" -> "<div class = "..." >"
     .replace(/<\s*\n\s*([a-zA-Z0-9_\-]+)/g, '<$1')
     .replace(/<\s+([a-zA-Z0-9_\-]+)(\s|>)/g, '<$1$2')
@@ -59,9 +84,20 @@ export function repairBrokenMarkup(code: string): string {
     // Fix broken attributes: class = "..." -> class="..."
     .replace(/([a-zA-Z0-9_\-]+)\s*=\s*(".*?"|'.*?'|`.*?`)/g, '$1=$2')
     // Fix spaces before > in tags: <div ... > -> <div ...>
-    .replace(/(<[a-zA-Z0-9_\-]+[^>]*?)\s+>/g, '$1>')
-    // Fix broken css property: border - color -> border-color
-    .replace(/\b([a-z]+)\s*-\s*([a-z]+)\s*:/g, '$1-$2:');
+    .replace(/(<[a-zA-Z0-9_\-]+[^>]*?)\s+>/g, '$1>');
+
+  // Also apply CSS repair inside <style> blocks
+  repaired = repaired.replace(/(<style[^>]*>)([\s\S]*?)(<\/style>)/gi, (_match, openTag, styleContent, closeTag) => {
+    return openTag + repairCss(styleContent) + closeTag;
+  });
+
+  // Also apply CSS repair inside @push('css'/'styles') or @section('css'/'styles')
+  repaired = repaired.replace(/(@(?:push|section)\s*\(\s*['"](?:css|styles|style)['"]\s*\))([\s\S]*?)(@end(?:push|section))/gi, (_match, openTag, styleContent, closeTag) => {
+    return openTag + repairCss(styleContent) + closeTag;
+  });
+
+  // And apply general CSS repairs in case styles are inline or in partials
+  return repairCss(repaired);
 }
 
 /**
@@ -193,8 +229,10 @@ export function beautifyCode(
         const repaired = repairBrokenMarkup(code);
         return beautify.html(repaired, options as any);
       }
-      case 'css':
-        return beautify.css(code, options as any);
+      case 'css': {
+        const repaired = repairCss(code);
+        return beautify.css(repaired, options as any);
+      }
       case 'php': {
         const repaired = repairPhpCode(code);
         const hasHtmlTags = /<\s*(?:!DOCTYPE|html|body|div|p|span|header|footer|table|section|article|aside|nav|main|h[1-6]|ul|ol|li)\b/i.test(repaired);

@@ -8,6 +8,7 @@ import {
   detectFormatterLanguage,
   repairPhpCode,
   repairBrokenMarkup,
+  repairCss,
 } from '../utils/beautify';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -401,6 +402,137 @@ div class = "wrapper row3" >`;
       expect(formatted).toContain('{{ $user->name }}');
       expect(formatted).toContain('{!! $user->bio !!}');
       expect(formatted).toContain('@endsection');
+    });
+
+    it('heals and formats broken CSS inside Blade files and standalone CSS', () => {
+      const brokenBladeCss = `<style>
+/* Tree */
+.tree ul {
+    padding-top: 3 px;
+    position: relative;
+    transition: all 0.5 s;
+    - webkit-transition: all 0.5 s;
+    - moz-transition: all 0.5 s;
+}
+
+.tree li {
+    display: table - cell;
+    text-align: center;
+    list - style-type: none;
+    position: relative;
+    padding: 20 px 5 px 0 5 px;
+    transition: all 0.5 s;
+    - webkit-transition: all 0.5 s;
+    - moz-transition: all 0.5 s;
+}
+
+.tree li.child: hover + .parent::before {
+    border - color: red;
+}
+</style>`;
+
+      let currentDoc = brokenBladeCss;
+      const mockView = {
+        state: {
+          doc: {
+            length: currentDoc.length,
+            toString: () => currentDoc,
+          },
+        },
+        dispatch: (action: any) => {
+          if (action.changes?.insert) {
+            currentDoc = action.changes.insert;
+          }
+        },
+      } as any;
+
+      const formatted = autoIndentAndFormatEditor(mockView, 'tree.blade.php', 'blade');
+
+      // 1. Units must not have spaces (3px not 3 px, 0.5s not 0.5 s)
+      expect(formatted).toContain('padding-top: 3px;');
+      expect(formatted).not.toContain('3 px');
+      expect(formatted).toContain('transition: all 0.5s;');
+      expect(formatted).not.toContain('0.5 s');
+      expect(formatted).toContain('padding: 20px 5px 0 5px;');
+      expect(formatted).not.toContain('20 px');
+
+      // 2. Vendor prefixes must be intact
+      expect(formatted).toContain('-webkit-transition: all 0.5s;');
+      expect(formatted).toContain('-moz-transition: all 0.5s;');
+      expect(formatted).not.toContain('- webkit-transition');
+      expect(formatted).not.toContain('- moz-transition');
+
+      // 3. Hyphenated properties & values must not have spaces
+      expect(formatted).toContain('display: table-cell;');
+      expect(formatted).not.toContain('table - cell');
+      expect(formatted).toContain('list-style-type: none;');
+      expect(formatted).not.toContain('list - style-type');
+      expect(formatted).toContain('border-color: red;');
+
+      // 4. Pseudo-class must not have space
+      expect(formatted).toContain('.tree li.child:hover');
+      expect(formatted).not.toContain(': hover');
+    });
+
+    it('heals broken CSS hex colors like # F45B69 and # 000000 in Blade files', () => {
+      const brokenHexCss = `<style>
+.person.female {
+    border-color: # F45B69;
+}
+
+.person.male {
+    border-color: #456990;
+}
+
+.person div {
+    text-align: center;
+}
+
+.person .name {
+    font-size: 16px;
+}
+
+.person .parentDrop,
+.person .spouseDrop,
+.person .childDrop {
+    border: 1px dashed # 000000;
+    width: auto;
+    min-width: 80px;
+}
+</style>`;
+
+      let currentDoc = brokenHexCss;
+      const mockView = {
+        state: {
+          doc: {
+            length: currentDoc.length,
+            toString: () => currentDoc,
+          },
+        },
+        dispatch: (action: any) => {
+          if (action.changes?.insert) {
+            currentDoc = action.changes.insert;
+          }
+        },
+      } as any;
+
+      const formatted = autoIndentAndFormatEditor(mockView, 'family.blade.php', 'blade');
+
+      // Hex colors must not have spaces after #
+      expect(formatted).toContain('border-color: #F45B69;');
+      expect(formatted).not.toContain('# F45B69');
+      expect(formatted).toContain('border-color: #456990;');
+      expect(formatted).toContain('border: 1px dashed #000000;');
+      expect(formatted).not.toContain('# 000000');
+    });
+
+    it('safely repairs standalone CSS files with beautifyCode', () => {
+      const rawCss = `.box { padding: 10 px; - webkit-transform: scale(1); border - radius: 4 px; color: # F45B69; }`;
+      const formatted = beautifyCode(rawCss, 'styles.css');
+      expect(formatted).toContain('padding: 10px;');
+      expect(formatted).toContain('-webkit-transform: scale(1);');
+      expect(formatted).toContain('border-radius: 4px;');
+      expect(formatted).toContain('color: #F45B69;');
     });
   });
 });
