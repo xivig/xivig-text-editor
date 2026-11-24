@@ -72,6 +72,16 @@ describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
     expect(sanitized).toContain('alt="Logo"');
   });
 
+  it('correctly rewrites HTML images with dimension styling and without rogue trailing tags', () => {
+    const md = '<p align="center">\n  <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" />\n</p>';
+    const output = renderAndSanitizeMarkdown(md, 'E:/my-project', 'E:/my-project');
+
+    expect(output).toContain('width: 96px');
+    expect(output).toContain('height: 96px');
+    expect(output).not.toContain('&gt;&gt;');
+    expect(output).not.toContain('/>>');
+  });
+
   it('resolves local relative image paths to file:/// URLs using basePath and workspaceRoot', () => {
     const resolved = resolveMarkdownImagePath('public/logo.png', 'E:/my-project', 'E:/my-project');
     expect(resolved).toMatch(/^file:\/\/\/E:\/my-project\/public\/logo\.png$/i);

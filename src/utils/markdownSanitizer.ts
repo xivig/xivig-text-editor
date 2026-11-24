@@ -101,7 +101,22 @@ export function resolveMarkdownImagePath(src: string, basePath?: string, workspa
 function resolveHtmlImages(html: string, basePath?: string, workspaceRoot?: string): string {
   return html.replace(/<img\b([^>]*\bsrc=["'])([^"']+)(["'][^>]*)>/gi, (match, prefix, src, suffix) => {
     const resolved = resolveMarkdownImagePath(src, basePath, workspaceRoot);
-    return `<img ${prefix.replace(/^<img\b\s*/, '')}${resolved}${suffix}>`;
+    const cleanPrefix = prefix.replace(/^<img\b\s*/i, '');
+    const cleanSuffix = suffix.replace(/\/+$/, '').trimEnd();
+
+    // If explicit width or height attributes are set, enforce them with inline style to avoid unbounded scaling
+    const fullTagAttributes = `${cleanPrefix} ${cleanSuffix}`;
+    const widthMatch = fullTagAttributes.match(/\bwidth=["']?(\d+)(?:px)?["']?/i);
+    const heightMatch = fullTagAttributes.match(/\bheight=["']?(\d+)(?:px)?["']?/i);
+
+    let styleAddition = '';
+    if (widthMatch) {
+      const w = widthMatch[1];
+      const h = heightMatch ? `${heightMatch[1]}px` : 'auto';
+      styleAddition = ` style="max-width: 100%; width: ${w}px; height: ${h}; object-fit: contain;"`;
+    }
+
+    return `<img ${cleanPrefix}${resolved}${cleanSuffix}${styleAddition} />`;
   });
 }
 
@@ -117,7 +132,7 @@ function formatInlineMarkdown(text: string, basePath?: string, workspaceRoot?: s
   // Images: ![alt](url)
   res = res.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
     const resolvedSrc = resolveMarkdownImagePath(src, basePath, workspaceRoot);
-    return `<img src="${resolvedSrc}" alt="${alt}" class="max-w-full rounded border border-[#3e3e42] my-3 inline-block" />`;
+    return `<img src="${resolvedSrc}" alt="${alt}" class="max-w-full max-h-[420px] object-contain rounded border border-[#3e3e42] my-3 inline-block" />`;
   });
   // Links: [text](url)
   res = res.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#3794ff] hover:underline cursor-pointer">$1</a>');

@@ -166,9 +166,9 @@ export const LivePreviewPane: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-[#181818] border-l border-[#2e2e2e] select-none text-gray-300">
       {/* Top Controls Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#202020] border-b border-[#2e2e2e] text-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#202020] border-b border-[#2e2e2e] text-xs gap-2 select-none">
         {/* Left: Device Presets */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 flex-shrink-0">
           <button
             onClick={() => setDeviceMode('responsive')}
             title="Responsive (100%)"
@@ -208,17 +208,18 @@ export const LivePreviewPane: React.FC = () => {
         </div>
 
         {/* Center: Live Server / URL Status */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           {isRunning ? (
-            <div className="flex items-center space-x-1 bg-[#1a2d1d] border border-[#2d5a32] px-2 py-0.5 rounded text-[11px] text-[#4ec9b0]">
+            <div className="flex items-center space-x-1.5 bg-[#1a2d1d] border border-[#2d5a32] px-2 py-0.5 rounded text-[11px] text-[#4ec9b0]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4ec9b0] animate-pulse" />
-              <span>Port {port}</span>
+              <span className="font-mono font-medium">Port {port}</span>
+              <span className="text-[#2d5a32]">|</span>
               <button
                 onClick={() => setUseServerUrl(!useServerUrl)}
-                className={`ml-1 px-1.5 py-0.2 rounded text-[10px] ${
-                  useServerUrl ? 'bg-[#2d5a32] text-white' : 'text-gray-400 hover:text-gray-200'
+                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                  useServerUrl ? 'bg-[#2d5a32] text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
                 }`}
-                title="Toggle between Server HTTP vs Keystroke Preview"
+                title="Toggle between Server HTTP vs Keystroke Direct Preview"
               >
                 {useServerUrl ? 'Live HTTP' : 'Direct'}
               </button>
@@ -236,7 +237,7 @@ export const LivePreviewPane: React.FC = () => {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center space-x-1.5 flex-shrink-0">
           <button
             onClick={handleReload}
             title="Refresh Preview"
@@ -279,12 +280,12 @@ export const LivePreviewPane: React.FC = () => {
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 overflow-auto bg-[#141414] flex justify-center p-2 relative">
+      <div className="flex-1 min-h-0 bg-[#141414] flex flex-col items-center justify-start p-2 relative overflow-hidden">
         <div
-          className="h-full bg-white transition-all duration-200 shadow-2xl overflow-hidden flex flex-col rounded-sm"
+          className="w-full h-full min-h-0 bg-white transition-all duration-200 shadow-2xl overflow-hidden flex flex-col rounded-sm"
           style={{
-            width: getViewportWidth(),
-            maxWidth: '100%',
+            maxWidth: getViewportWidth(),
+            height: '100%',
           }}
         >
           {useServerUrl && isRunning && serverPreviewUrl ? (
@@ -292,7 +293,8 @@ export const LivePreviewPane: React.FC = () => {
               key={`srv-${iframeKey}`}
               ref={iframeRef}
               src={serverPreviewUrl}
-              className="w-full h-full border-none flex-1"
+              className="w-full h-full min-h-full border-none block flex-1"
+              style={{ width: '100%', height: '100%', border: 'none' }}
               title="Xivig Live Server Preview"
               sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
             />
@@ -301,7 +303,8 @@ export const LivePreviewPane: React.FC = () => {
               key={`direct-${iframeKey}`}
               ref={iframeRef}
               srcDoc={previewHtml}
-              className="w-full h-full border-none flex-1"
+              className="w-full h-full min-h-full border-none block flex-1"
+              style={{ width: '100%', height: '100%', border: 'none' }}
               title="Xivig Direct Preview"
               sandbox="allow-scripts allow-forms allow-modals"
             />

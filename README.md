@@ -1,7 +1,7 @@
 # Xivig Text Editor ⚡
 
 <p align="center">
-  <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" />
+  <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" style="width: 96px; height: 96px; object-fit: contain;" />
 </p>
 
 <p align="center">

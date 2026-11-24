@@ -26,7 +26,8 @@ export const MarkdownPreviewPane: React.FC = () => {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewContentRef = useRef<HTMLDivElement>(null);
   const activeViewRef = useRef<EditorView | null>(null);
-  const activeScrollSourceRef = useRef<'editor' | 'preview'>('editor');
+  const isProgrammaticEditorScrollRef = useRef(false);
+  const isProgrammaticPreviewScrollRef = useRef(false);
   const syncScrollRef = useRef(syncScroll);
   syncScrollRef.current = syncScroll;
 
@@ -69,7 +70,7 @@ export const MarkdownPreviewPane: React.FC = () => {
 
   // Synchronize Preview scroll from Editor position
   const syncPreviewFromEditor = useCallback(() => {
-    if (!syncScrollRef.current || activeScrollSourceRef.current === 'preview') return;
+    if (!syncScrollRef.current) return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -92,7 +93,8 @@ export const MarkdownPreviewPane: React.FC = () => {
       let currentLine = 1;
       const ratio = editorMax > 0 ? editorScroller.scrollTop / editorMax : 0;
       try {
-        const topBlock = targetView.lineBlockAtHeight(editorScroller.scrollTop);
+        const docTop = typeof (targetView as any).documentTop === 'number' ? (targetView as any).documentTop : 0;
+        const topBlock = targetView.lineBlockAtHeight(editorScroller.scrollTop - docTop);
         if (topBlock && typeof topBlock.from === 'number') {
           currentLine = targetView.state.doc.lineAt(topBlock.from).number;
         } else {
@@ -157,13 +159,17 @@ export const MarkdownPreviewPane: React.FC = () => {
     targetScrollTop = Math.max(0, Math.min(previewMax, Math.round(targetScrollTop)));
 
     if (Math.abs(previewEl.scrollTop - targetScrollTop) > 1) {
+      isProgrammaticPreviewScrollRef.current = true;
       previewEl.scrollTop = targetScrollTop;
+      requestAnimationFrame(() => {
+        isProgrammaticPreviewScrollRef.current = false;
+      });
     }
   }, [getTargetView]);
 
   // Synchronize Editor scroll from Preview position
   const syncEditorFromPreview = useCallback(() => {
-    if (!syncScrollRef.current || activeScrollSourceRef.current !== 'preview') return;
+    if (!syncScrollRef.current) return;
 
     const targetView = getTargetView();
     const editorScroller = targetView?.scrollDOM;
@@ -235,7 +241,11 @@ export const MarkdownPreviewPane: React.FC = () => {
     targetScrollTop = Math.max(0, Math.min(editorMax, Math.round(targetScrollTop)));
 
     if (Math.abs(editorScroller.scrollTop - targetScrollTop) > 1) {
+      isProgrammaticEditorScrollRef.current = true;
       editorScroller.scrollTop = targetScrollTop;
+      requestAnimationFrame(() => {
+        isProgrammaticEditorScrollRef.current = false;
+      });
     }
   }, [getTargetView]);
 
@@ -253,31 +263,23 @@ export const MarkdownPreviewPane: React.FC = () => {
 
       if (view?.scrollDOM) {
         const scroller = view.scrollDOM;
-        const setEditorSource = () => {
-          activeScrollSourceRef.current = 'editor';
-        };
 
         const onEditorScroll = () => {
+          if (isProgrammaticEditorScrollRef.current) {
+            isProgrammaticEditorScrollRef.current = false;
+            return;
+          }
           syncPreviewFromEditor();
         };
 
-        scroller.addEventListener('mouseenter', setEditorSource, { passive: true });
-        scroller.addEventListener('wheel', setEditorSource, { passive: true });
-        scroller.addEventListener('pointerdown', setEditorSource, { passive: true });
-        scroller.addEventListener('focusin', setEditorSource, { passive: true });
         scroller.addEventListener('scroll', onEditorScroll, { passive: true });
 
         cleanUpEditorScroll = () => {
-          scroller.removeEventListener('mouseenter', setEditorSource);
-          scroller.removeEventListener('wheel', setEditorSource);
-          scroller.removeEventListener('pointerdown', setEditorSource);
-          scroller.removeEventListener('focusin', setEditorSource);
           scroller.removeEventListener('scroll', onEditorScroll);
         };
 
         // Initial sync
         requestAnimationFrame(() => {
-          activeScrollSourceRef.current = 'editor';
           syncPreviewFromEditor();
         });
       }
@@ -294,6 +296,10 @@ export const MarkdownPreviewPane: React.FC = () => {
 
     const previewEl = previewContainerRef.current;
     const onPreviewScroll = () => {
+      if (isProgrammaticPreviewScrollRef.current) {
+        isProgrammaticPreviewScrollRef.current = false;
+        return;
+      }
       syncEditorFromPreview();
     };
 
@@ -322,9 +328,7 @@ export const MarkdownPreviewPane: React.FC = () => {
   useEffect(() => {
     if (!previewContentRef.current) return;
     const ro = new ResizeObserver(() => {
-      if (activeScrollSourceRef.current !== 'preview') {
-        syncPreviewFromEditor();
-      }
+      syncPreviewFromEditor();
     });
     ro.observe(previewContentRef.current);
     return () => ro.disconnect();
@@ -333,23 +337,22 @@ export const MarkdownPreviewPane: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e] border-l border-[#2e2e2e] select-text text-gray-200">
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#2e2e2e] text-xs select-none">
-        <div className="flex items-center space-x-2 text-gray-300 font-medium">
-          <BookOpen size={14} className="text-[#569cd6]" />
-          <span>Markdown Live Preview</span>
-          <span className="text-[11px] text-gray-500">
-            ({stats.words} words · {stats.readTime} read)
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#2e2e2e] text-xs select-none gap-2">
+        <div className="flex items-center space-x-1.5 text-gray-300 font-medium min-w-0">
+          <BookOpen size={14} className="text-[#569cd6] flex-shrink-0" />
+          <span className="truncate">Markdown Live Preview</span>
+          <span className="text-[11px] text-gray-500 whitespace-nowrap">
+            &nbsp;({stats.words} words · {stats.readTime} read)
           </span>
         </div>
 
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center space-x-1.5 flex-shrink-0">
           {/* Synchronized Live Scrolling Toggle */}
           <button
             onClick={() => {
               setSyncScroll((prev) => {
                 const next = !prev;
                 if (next) {
-                  activeScrollSourceRef.current = 'editor';
                   setTimeout(() => syncPreviewFromEditor(), 50);
                 }
                 return next;
@@ -391,22 +394,26 @@ export const MarkdownPreviewPane: React.FC = () => {
       <div
         ref={previewContainerRef}
         style={{ position: 'relative' }}
-        onMouseEnter={() => {
-          activeScrollSourceRef.current = 'preview';
-        }}
-        onWheel={() => {
-          activeScrollSourceRef.current = 'preview';
-        }}
-        onPointerDown={() => {
-          activeScrollSourceRef.current = 'preview';
-        }}
         className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
       >
         <style>{`
           .markdown-preview img {
             max-width: 100%;
+            max-height: 480px;
             height: auto;
             object-fit: contain;
+            display: inline-block;
+            border-radius: 4px;
+          }
+          .markdown-preview p[align="center"] {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+          }
+          .markdown-preview p[align="center"] img {
+            margin-left: auto;
+            margin-right: auto;
           }
         `}</style>
         <div

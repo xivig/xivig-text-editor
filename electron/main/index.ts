@@ -778,7 +778,11 @@ ipcMain.handle('updater:check', async (event) => {
       error: 'Unauthorized IPC invocation',
     };
   }
-  return checkGitHubRelease();
+  const result = await checkGitHubRelease();
+  if (result.updateAvailable && !event.sender.isDestroyed()) {
+    event.sender.send('updater:available', result);
+  }
+  return result;
 });
 
 ipcMain.handle('updater:download', async (event) => {
