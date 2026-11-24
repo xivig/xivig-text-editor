@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { syntaxTree, indentRange } from '@codemirror/language';
 import { getLanguageExtension, detectLanguageName } from '../components/editor/languageSupport';
-import { autoIndentAndFormatEditor, beautifyCode } from '../utils/beautify';
+import {
+  autoIndentAndFormatEditor,
+  beautifyCode,
+  detectFormatterLanguage,
+  repairPhpCode,
+  repairBrokenMarkup,
+} from '../utils/beautify';
 import { useEditorStore } from '../stores/editorStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
@@ -28,6 +34,8 @@ describe('Language Support and Syntax Highlighting', () => {
     expect(detectLanguageName('deploy.bat')).toBe('Batch Script');
     expect(detectLanguageName('run.cmd')).toBe('Batch Script');
     expect(detectLanguageName('notes.txt')).toBe('Plain Text');
+    expect(detectLanguageName('home.blade.php')).toBe('Blade');
+    expect(detectLanguageName('welcome.blade')).toBe('Blade');
   });
 
   it('provides active CodeMirror language extension for Java and builds syntax tree', () => {
@@ -230,5 +238,169 @@ describe('Auto-Indent on Save and Settings', () => {
 
     const result = autoIndentAndFormatEditor(mockView, 'notes.md', 'markdown');
     expect(result).toBe(notes);
+  });
+
+  describe('PHP and Blade Safe Formatting & Restoration', () => {
+    it('detects correct formatter languages for PHP, Blade, HTML, CSS, JS, and unknown types', () => {
+      expect(detectFormatterLanguage('classListing.php')).toBe('php');
+      expect(detectFormatterLanguage('index.php', 'php')).toBe('php');
+      expect(detectFormatterLanguage('home.blade.php')).toBe('html');
+      expect(detectFormatterLanguage('welcome.blade', 'blade')).toBe('html');
+      expect(detectFormatterLanguage('app.js')).toBe('js');
+      expect(detectFormatterLanguage('style.css')).toBe('css');
+      expect(detectFormatterLanguage('script.py')).toBeNull();
+      expect(detectFormatterLanguage('notes.txt')).toBeNull();
+    });
+
+    it('formats and repairs PHP files without mangling <?php tags, -> operators, or function signatures', () => {
+      const brokenPhp = `< ? php
+
+/**
+ * File created by Bandhu
+ * Listing all classes.
+ */
+
+class ClassListing {
+    private $classList;
+
+    // Constructor to initialize classList
+    public
+    function __construct() {
+        $this - > classList = get_declared_classes();
+    }
+
+    // Method to list class names
+    public
+    function listClassNames() {
+        if (is_array($this - > classList)) {
+            foreach ($this - > classList as $class) {
+                echo $class.
+                "<br>";
+            }
+        } else {
+            echo "No classes found.<br>";
+        }
+    }
+}`;
+
+      let currentDoc = brokenPhp;
+      const mockView = {
+        state: {
+          doc: {
+            length: currentDoc.length,
+            toString: () => currentDoc,
+          },
+        },
+        dispatch: (action: any) => {
+          if (action.changes?.insert) {
+            currentDoc = action.changes.insert;
+          }
+        },
+      } as any;
+
+      const formatted = autoIndentAndFormatEditor(mockView, 'classListing.php', 'php');
+
+      // 1. Tag must be valid <?php and never separated into < ? php
+      expect(formatted).toContain('<?php');
+      expect(formatted).not.toContain('< ? php');
+      expect(formatted).not.toContain('< ?php');
+
+      // 2. Object operator -> must be intact and never $this - >
+      expect(formatted).toContain('$this->classList');
+      expect(formatted).not.toContain('$this - >');
+
+      // 3. public function must be on the same line
+      expect(formatted).toContain('public function __construct()');
+      expect(formatted).toContain('public function listClassNames()');
+      expect(formatted).not.toMatch(/public\s*\n\s*function/);
+
+      // 4. String concatenation must be preserved
+      expect(formatted).toContain('echo $class . "<br>";');
+    });
+
+    it('formats and repairs Laravel Blade and HTML markup without mangling tags or styles', () => {
+      const brokenBlade = `/*Connector styles on hover*/
+.tree li.child: hover + .parent::before,
+.tree li.child: hover + .parent.person + ul li::after {
+  border - color: red;
+} <
+/style>
+
+<
+div class = "wrapper row0" >
+<
+div class = "rounded" >
+<
+p align = "center" > < img src = "../assets/document/course.png" alt = "Univlogo" > < /p> <
+p align = "center" >
+<
+font color = "blue" > < b > Courses offered by the Department
+<
+/p> < /
+div > <
+/div> <
+div class = "wrapper row3" >`;
+
+      let currentDoc = brokenBlade;
+      const mockView = {
+        state: {
+          doc: {
+            length: currentDoc.length,
+            toString: () => currentDoc,
+          },
+        },
+        dispatch: (action: any) => {
+          if (action.changes?.insert) {
+            currentDoc = action.changes.insert;
+          }
+        },
+      } as any;
+
+      const formatted = autoIndentAndFormatEditor(mockView, 'welcome.blade.php', 'blade');
+
+      // 1. Tags must be clean HTML tags, not split into < \n div
+      expect(formatted).toContain('<div class="wrapper row0">');
+      expect(formatted).toContain('<div class="rounded">');
+      expect(formatted).not.toContain('<\ndiv');
+      expect(formatted).not.toContain('< \n div');
+
+      // 2. Closing tags must be clean
+      expect(formatted).toContain('</style>');
+      expect(formatted).toContain('</p>');
+      expect(formatted).toContain('</div>');
+      expect(formatted).not.toContain('} <\n/style>');
+      expect(formatted).not.toContain('< /p>');
+      expect(formatted).not.toContain('< /div>');
+
+      // 3. CSS property must not be broken
+      expect(formatted).toContain('border-color: red;');
+      expect(formatted).not.toContain('border - color');
+    });
+
+    it('safely handles Blade directives alongside HTML markup', () => {
+      const bladeTemplate = `@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    @if ($user)
+        <h1>{{ $user->name }}</h1>
+        <p>{!! $user->bio !!}</p>
+    @endif
+    @foreach ($items as $item)
+        <div class="item-card">
+            <span>{{ $item->title }}</span>
+        </div>
+    @endforeach
+</div>
+@endsection`;
+
+      const formatted = beautifyCode(bladeTemplate, 'view.blade.php');
+      expect(formatted).toContain("@extends('layouts.app')");
+      expect(formatted).toContain("@section('content')");
+      expect(formatted).toContain('<div class="container">');
+      expect(formatted).toContain('{{ $user->name }}');
+      expect(formatted).toContain('{!! $user->bio !!}');
+      expect(formatted).toContain('@endsection');
+    });
   });
 });

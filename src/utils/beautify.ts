@@ -17,21 +17,161 @@ export interface BeautifyOptions {
   unescape_strings?: boolean;
 }
 
-export function detectFormatterLanguage(docName: string, lang = ''): 'html' | 'css' | 'js' {
-  const ext = (docName || lang).split('.').pop()?.toLowerCase() || '';
+export type FormatterLanguage = 'html' | 'css' | 'js' | 'php' | null;
 
-  if (['html', 'htm', 'xhtml', 'vue', 'svelte', 'xml', 'svg'].includes(ext)) {
-    return 'html';
-  }
-  if (['css', 'scss', 'sass', 'less'].includes(ext)) {
-    return 'css';
-  }
-  return 'js';
+/**
+ * Normalizes and repairs PHP syntax that was corrupted by JS formatters or user edits,
+ * such as "< ? php", "$this - >", split "public \n function", and broken concatenation.
+ */
+export function repairPhpCode(code: string): string {
+  if (!code) return '';
+  return code
+    // Fix broken opening PHP tag "< ? php", "<? php", "< ?php" -> "<?php"
+    .replace(/<\s*\?\s*php\b/gi, '<?php')
+    // Fix broken closing PHP tag "? >" -> "?>"
+    .replace(/\?\s*>/g, '?>')
+    // Fix broken object operator "$this - > property" or "$var - > prop" -> "$this->property"
+    .replace(/(\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*-\s*>\s*/g, '$1->')
+    // Fix broken static operator "::" -> "::"
+    .replace(/([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*:\s*:\s*/g, '$1::')
+    // Fix broken arrow array operator "=>" -> "=>"
+    .replace(/=\s*>\s*/g, '=> ')
+    // Fix broken method/class modifier line breaks: "public \n function", "private \n function"
+    .replace(/\b(public|private|protected|static|abstract|final)\s*\n\s*(function|class|\$)/g, '$1 $2')
+    // Fix broken string concatenation with newline: "$class .\n"<br>";" -> "$class . "<br>";"
+    .replace(/(\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*\.\s*\n\s*(['"])/g, '$1 . $2');
 }
 
-export function beautifyCode(code: string, languageOrFilename: string, customOptions?: BeautifyOptions): string {
+/**
+ * Normalizes and repairs HTML and Blade markup corrupted by JS formatters,
+ * such as "<\n div class = ...", "} <\n/style>", "< /p>", and "border - color".
+ */
+export function repairBrokenMarkup(code: string): string {
+  if (!code) return '';
+  return code
+    // Fix broken opening tags across newlines or with excessive spaces: "<\ndiv class = "..." >" -> "<div class = "..." >"
+    .replace(/<\s*\n\s*([a-zA-Z0-9_\-]+)/g, '<$1')
+    .replace(/<\s+([a-zA-Z0-9_\-]+)(\s|>)/g, '<$1$2')
+    // Fix broken closing tag after closing brace: "} <\n/style>" or "} </style>" -> "}\n</style>"
+    .replace(/\}\s*<\s*\n?\s*\/\s*([a-zA-Z0-9_\-]+)\s*>/gi, '}\n</$1>')
+    // Fix broken closing tags across newlines: "< /\ndiv >" or "< /p>" -> "</div >" or "</p>"
+    .replace(/<\s*\n?\s*\/\s*([a-zA-Z0-9_\-]+)\s*>/g, '</$1>')
+    // Fix broken attributes: class = "..." -> class="..."
+    .replace(/([a-zA-Z0-9_\-]+)\s*=\s*(".*?"|'.*?'|`.*?`)/g, '$1=$2')
+    // Fix spaces before > in tags: <div ... > -> <div ...>
+    .replace(/(<[a-zA-Z0-9_\-]+[^>]*?)\s+>/g, '$1>')
+    // Fix broken css property: border - color -> border-color
+    .replace(/\b([a-z]+)\s*-\s*([a-z]+)\s*:/g, '$1-$2:');
+}
+
+/**
+ * Safe line-by-line indenter for pure PHP files that preserves PHP tokens, tags, and comments.
+ */
+export function indentPhpCode(code: string, tabSize = 2): string {
+  const repaired = repairPhpCode(code);
+  const lines = repaired.split('\n');
+  let depth = 0;
+  const unit = ' '.repeat(tabSize);
+  const result: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      result.push('');
+      continue;
+    }
+
+    // Preserve comment lines starting with * inside docblocks
+    if (trimmed.startsWith('*')) {
+      result.push(unit.repeat(depth) + ' ' + trimmed);
+      continue;
+    }
+
+    // Dedent if line starts with closing brace/bracket/paren
+    if (/^[}\])]/.test(trimmed)) {
+      depth = Math.max(0, depth - 1);
+    }
+
+    result.push(unit.repeat(depth) + trimmed);
+
+    // Count open/close braces
+    const openBraces = (trimmed.match(/[{]/g) || []).length;
+    const closeBraces = (trimmed.match(/[}]/g) || []).length;
+
+    const net = /^[}\])]/.test(trimmed)
+      ? openBraces - (closeBraces - 1)
+      : openBraces - closeBraces;
+
+    depth = Math.max(0, depth + net);
+  }
+  return result.join('\n');
+}
+
+/**
+ * Detects the proper formatter engine for a document without inappropriately falling back to JS.
+ */
+export function detectFormatterLanguage(docName: string, lang = ''): FormatterLanguage {
+  const lowerName = (docName || '').toLowerCase().trim();
+  const lowerLang = (lang || '').toLowerCase().trim();
+  const ext = lowerName.split('.').pop() || '';
+
+  // 1. Blade templates: must be checked before .php extension!
+  if (
+    lowerName.endsWith('.blade.php') ||
+    lowerName.endsWith('.blade') ||
+    lowerLang === 'blade' ||
+    lowerLang.includes('blade')
+  ) {
+    return 'html';
+  }
+
+  // 2. HTML & Template languages
+  if (
+    ['html', 'htm', 'xhtml', 'vue', 'svelte', 'xml', 'svg', 'phtml'].includes(ext) ||
+    ['html', 'htm', 'xhtml', 'vue', 'svelte', 'xml', 'svg'].includes(lowerLang)
+  ) {
+    return 'html';
+  }
+
+  // 3. CSS & Style languages
+  if (
+    ['css', 'scss', 'sass', 'less'].includes(ext) ||
+    ['css', 'scss', 'sass', 'less'].includes(lowerLang)
+  ) {
+    return 'css';
+  }
+
+  // 4. PHP files (pure or mixed)
+  if (ext === 'php' || lowerLang === 'php') {
+    return 'php';
+  }
+
+  // 5. JavaScript / TypeScript / JSON & C-like syntax languages
+  if (
+    ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'json', 'java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'cs'].includes(ext) ||
+    ['javascript', 'js', 'jsx', 'typescript', 'ts', 'tsx', 'json', 'java', 'c', 'cpp', 'csharp'].includes(lowerLang)
+  ) {
+    return 'js';
+  }
+
+  // 6. Non-supported or strictly preserved formats (Python, YAML, Markdown, Bash, SQL, etc.)
+  return null;
+}
+
+export function beautifyCode(
+  code: string,
+  languageOrFilename: string,
+  customOptions?: BeautifyOptions,
+  languageFallback = ''
+): string {
   const tabSize = useSettingsStore.getState().settings.tabSize || 2;
-  const lang = detectFormatterLanguage(languageOrFilename);
+  const lang = detectFormatterLanguage(languageOrFilename, languageFallback);
+
+  if (lang === null) {
+    return code;
+  }
 
   const options: BeautifyOptions = {
     indent_size: tabSize,
@@ -49,10 +189,20 @@ export function beautifyCode(code: string, languageOrFilename: string, customOpt
 
   try {
     switch (lang) {
-      case 'html':
-        return beautify.html(code, options as any);
+      case 'html': {
+        const repaired = repairBrokenMarkup(code);
+        return beautify.html(repaired, options as any);
+      }
       case 'css':
         return beautify.css(code, options as any);
+      case 'php': {
+        const repaired = repairPhpCode(code);
+        const hasHtmlTags = /<\s*(?:!DOCTYPE|html|body|div|p|span|header|footer|table|section|article|aside|nav|main|h[1-6]|ul|ol|li)\b/i.test(repaired);
+        if (hasHtmlTags) {
+          return beautify.html(repairBrokenMarkup(repaired), options as any);
+        }
+        return indentPhpCode(repaired, options.indent_size || 2);
+      }
       case 'js':
       default:
         return beautify.js(code, options as any);
@@ -69,11 +219,12 @@ export function beautifyActiveEditor(view: EditorView): boolean {
 
   const selection = view.state.selection.main;
   const docName = activeDoc.name || activeDoc.language || 'code.js';
+  const docLang = activeDoc.language || '';
 
   if (!selection.empty) {
     // Format only the selected range
     const selectedText = view.state.sliceDoc(selection.from, selection.to);
-    const formatted = beautifyCode(selectedText, docName);
+    const formatted = beautifyCode(selectedText, docName, undefined, docLang);
 
     if (formatted !== selectedText) {
       view.dispatch({
@@ -88,7 +239,7 @@ export function beautifyActiveEditor(view: EditorView): boolean {
   } else {
     // Format the entire document
     const fullText = view.state.doc.toString();
-    const formatted = beautifyCode(fullText, docName);
+    const formatted = beautifyCode(fullText, docName, undefined, docLang);
 
     if (formatted !== fullText) {
       view.dispatch({
@@ -98,8 +249,23 @@ export function beautifyActiveEditor(view: EditorView): boolean {
           insert: formatted,
         },
       });
-      return true;
     }
+
+    // Apply CodeMirror's indentRange for precise language-aware block alignment
+    try {
+      const indentChanges = indentRange(view.state, 0, view.state.doc.length);
+      if (indentChanges && indentChanges.length > 0) {
+        view.dispatch({ changes: indentChanges });
+      }
+    } catch {
+      // Language may not have registered an indent context; ignore safely
+    }
+
+    const finalContent = view.state.doc.toString();
+    if (activeDoc && activeDoc.content !== finalContent) {
+      useEditorStore.getState().updateDocumentContent(activeDoc.id, finalContent);
+    }
+    return true;
   }
 
   return true;
@@ -107,8 +273,8 @@ export function beautifyActiveEditor(view: EditorView): boolean {
 
 /**
  * Auto-indents and formats code on save according to file extension and language selection.
- * Handles Python without breaking indentation blocks, C-style languages (JS, TS, Java, C, C++, C#, JSON, PHP),
- * and skips Plain Text and Markdown to preserve author formatting.
+ * Handles Python without breaking indentation blocks, C-style languages, HTML/Blade, and PHP,
+ * while safely preserving language-specific tokens and preventing syntax mangling.
  */
 export function autoIndentAndFormatEditor(
   view?: EditorView | null,
@@ -134,13 +300,13 @@ export function autoIndentAndFormatEditor(
     return activeDoc?.content || '';
   }
 
-  const effectiveLangOrFile = targetLang || targetDocName || 'code.js';
+  const effectiveLangOrFile = targetDocName || targetLang || 'code.js';
 
   if (view) {
-    // 1. If not python or batch script, format braces and structure with beautifyCode
+    // 1. If not python or batch script, format structure with beautifyCode
     if (!isPython && !isBatch) {
       const currentDoc = view.state.doc.toString();
-      const formatted = beautifyCode(currentDoc, effectiveLangOrFile);
+      const formatted = beautifyCode(currentDoc, effectiveLangOrFile, undefined, targetLang);
       if (formatted !== currentDoc) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: formatted },
@@ -167,7 +333,7 @@ export function autoIndentAndFormatEditor(
 
   // Fallback when view is not actively mounted
   if (!isPython && !isBatch && activeDoc) {
-    const formatted = beautifyCode(activeDoc.content, effectiveLangOrFile);
+    const formatted = beautifyCode(activeDoc.content, effectiveLangOrFile, undefined, targetLang);
     if (formatted !== activeDoc.content) {
       useEditorStore.getState().updateDocumentContent(activeDoc.id, formatted);
     }

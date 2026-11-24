@@ -1089,6 +1089,9 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
   if (target.endsWith('.go')) {
     return goLanguage;
   }
+  if (target.endsWith('.blade.php') || target.endsWith('.blade') || target === 'blade') {
+    return html();
+  }
   if (target.endsWith('.php') || target.endsWith('.phtml')) {
     return phpLanguage;
   }
@@ -1191,6 +1194,11 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
 export function detectLanguageName(filenameOrLang?: string, fallbackLangId?: string): string {
   const target = (filenameOrLang || fallbackLangId || '').trim();
   if (!target) return 'Plain Text';
+
+  const lower = target.toLowerCase();
+  if (lower.endsWith('.blade.php') || lower.endsWith('.blade') || lower === 'blade') {
+    return 'Blade';
+  }
 
   const ext = target.includes('.') ? target.split('.').pop()?.toLowerCase() : target.toLowerCase();
 
