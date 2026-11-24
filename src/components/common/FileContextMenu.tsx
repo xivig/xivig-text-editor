@@ -18,6 +18,7 @@ export interface ContextMenuTarget {
   name: string;
   path: string;
   isDirectory?: boolean;
+  docId?: string;
 }
 
 export interface FileContextMenuProps {
@@ -102,8 +103,16 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
   // Find document corresponding to target (for tabs or active file)
   const getTargetDoc = () => {
-    return useEditorStore.getState().documents.find(
-      (d) => d.path === target.path || d.name === target.name
+    const docs = useEditorStore.getState().documents;
+    if (target.docId) {
+      const match = docs.find((d) => d.id === target.docId);
+      if (match) return match;
+    }
+    const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+    const targetNorm = target.path ? norm(target.path) : '';
+    return (
+      docs.find((d) => (d.path && norm(d.path) === targetNorm) || d.name === target.name) ||
+      useEditorStore.getState().getActiveDocument()
     );
   };
 
@@ -418,18 +427,21 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     onClose();
     const doc = getTargetDoc();
     if (doc) closeDocument(doc.id);
+    else closeDocument();
   };
 
   const handleCloseOtherTabs = () => {
     onClose();
     const doc = getTargetDoc();
     if (doc) closeOtherTabs(doc.id);
+    else closeOtherTabs();
   };
 
   const handleCloseTabsToTheRight = () => {
     onClose();
     const doc = getTargetDoc();
     if (doc) closeTabsToTheRight(doc.id);
+    else closeTabsToTheRight();
   };
 
   const handleCloseSavedTabs = () => {
@@ -440,6 +452,11 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   const handleCloseAllTabs = () => {
     onClose();
     closeAllTabs();
+  };
+
+  const handleReopenClosedTab = () => {
+    onClose();
+    useEditorStore.getState().reopenClosedTab();
   };
 
   const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -566,6 +583,13 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
           </div>
           <div onClick={handleCloseAllTabs} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>Close All</span>
+          </div>
+
+          <div style={menuDividerStyle} />
+
+          <div onClick={handleReopenClosedTab} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Reopen Closed Tab</span>
+            <span style={shortcutStyle}>Ctrl+Shift+T</span>
           </div>
 
           <div style={menuDividerStyle} />

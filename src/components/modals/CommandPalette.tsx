@@ -46,6 +46,11 @@ export const CommandPalette: React.FC = () => {
   const openDocument = useEditorStore((state) => state.openDocument);
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const closeDocument = useEditorStore((state) => state.closeDocument);
+  const closeOtherTabs = useEditorStore((state) => state.closeOtherTabs);
+  const closeTabsToTheRight = useEditorStore((state) => state.closeTabsToTheRight);
+  const closeSavedTabs = useEditorStore((state) => state.closeSavedTabs);
+  const closeAllTabs = useEditorStore((state) => state.closeAllTabs);
+  const reopenClosedTab = useEditorStore((state) => state.reopenClosedTab);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
   const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
 
@@ -153,7 +158,38 @@ export const CommandPalette: React.FC = () => {
       category: 'File',
       title: 'Close Active Tab',
       shortcut: 'Ctrl+W',
-      action: () => activeDoc && closeDocument(activeDoc.id),
+      action: () => closeDocument(activeDoc?.id),
+    },
+    {
+      id: 'file:close-others',
+      category: 'File',
+      title: 'Close Other Tabs',
+      action: () => closeOtherTabs(activeDoc?.id),
+    },
+    {
+      id: 'file:close-to-the-right',
+      category: 'File',
+      title: 'Close Tabs to the Right',
+      action: () => closeTabsToTheRight(activeDoc?.id),
+    },
+    {
+      id: 'file:close-saved',
+      category: 'File',
+      title: 'Close Saved Tabs',
+      action: () => closeSavedTabs(),
+    },
+    {
+      id: 'file:close-all',
+      category: 'File',
+      title: 'Close All Tabs',
+      action: () => closeAllTabs(),
+    },
+    {
+      id: 'file:reopen-closed-tab',
+      category: 'File',
+      title: 'Reopen Closed Tab',
+      shortcut: 'Ctrl+Shift+T',
+      action: () => reopenClosedTab(),
     },
     {
       id: 'nav:quick-open',

@@ -56,7 +56,24 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
       onClick={() => setActivePane(pane)}
       style={tabBarContainerStyle}
     >
-      <div style={tabsScrollContainerStyle}>
+      <div
+        style={tabsScrollContainerStyle}
+        onContextMenu={(e) => {
+          if (e.target === e.currentTarget) {
+            e.preventDefault();
+            const active = activeDoc;
+            setContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              target: {
+                name: active ? active.name : '',
+                path: active ? (active.path || active.name) : '',
+                docId: active ? active.id : undefined,
+              },
+            });
+          }
+        }}
+      >
         {documents.map((doc) => {
           const isActive = doc.id === activeDocumentId;
 
@@ -70,7 +87,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
                 setContextMenu({
                   x: e.clientX,
                   y: e.clientY,
-                  target: { name: doc.name, path: doc.path || doc.name },
+                  target: { name: doc.name, path: doc.path || doc.name, docId: doc.id },
                 });
               }}
               onAuxClick={(e) => {

@@ -223,11 +223,33 @@ describe('TabBar Document Management', () => {
     expect(useEditorStore.getState().activeDocumentId).toBe('doc-2');
   });
 
-  it('closes tabs to the right', () => {
-    useEditorStore.getState().closeTabsToTheRight('doc-1');
+  it('closes tabs to the right of specified tab', () => {
+    useEditorStore.getState().closeTabsToTheRight('doc-2');
+    const docs = useEditorStore.getState().documents;
+    expect(docs).toHaveLength(2);
+    expect(docs.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
+  });
+
+  it('closes tabs to the right of active tab when no id passed', () => {
+    useEditorStore.getState().setActiveDocument('doc-1');
+    useEditorStore.getState().closeTabsToTheRight();
     const docs = useEditorStore.getState().documents;
     expect(docs).toHaveLength(1);
     expect(docs[0].id).toBe('doc-1');
+  });
+
+  it('closes all tabs and records them in history', () => {
+    useEditorStore.getState().closeAllTabs();
+    expect(useEditorStore.getState().documents).toHaveLength(0);
+    expect(useEditorStore.getState().activeDocumentId).toBeNull();
+    expect(useEditorStore.getState().closedDocumentsHistory.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('closes active document when no id passed to closeDocument', () => {
+    useEditorStore.getState().setActiveDocument('doc-2');
+    useEditorStore.getState().closeDocument();
+    const docs = useEditorStore.getState().documents;
+    expect(docs.some((d) => d.id === 'doc-2')).toBe(false);
   });
 
   it('closes saved (non-dirty) tabs', () => {

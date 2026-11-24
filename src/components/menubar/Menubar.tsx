@@ -25,6 +25,11 @@ export const Menubar: React.FC = () => {
   const openDocument = useEditorStore((state) => state.openDocument);
   const activeDoc = useEditorStore((state) => state.getActiveDocument());
   const closeDocument = useEditorStore((state) => state.closeDocument);
+  const closeOtherTabs = useEditorStore((state) => state.closeOtherTabs);
+  const closeTabsToTheRight = useEditorStore((state) => state.closeTabsToTheRight);
+  const closeSavedTabs = useEditorStore((state) => state.closeSavedTabs);
+  const closeAllTabs = useEditorStore((state) => state.closeAllTabs);
+  const reopenClosedTab = useEditorStore((state) => state.reopenClosedTab);
   const markDocumentSaved = useEditorStore((state) => state.markDocumentSaved);
 
   const setCurrentFolder = useFileStore((state) => state.setCurrentFolder);
@@ -163,7 +168,28 @@ export const Menubar: React.FC = () => {
       {
         label: 'Close Tab',
         shortcut: 'Ctrl+W',
-        action: () => activeDoc && closeDocument(activeDoc.id),
+        action: () => closeDocument(activeDoc?.id),
+      },
+      {
+        label: 'Close Other Tabs',
+        action: () => closeOtherTabs(activeDoc?.id),
+      },
+      {
+        label: 'Close Tabs to the Right',
+        action: () => closeTabsToTheRight(activeDoc?.id),
+      },
+      {
+        label: 'Close Saved Tabs',
+        action: () => closeSavedTabs(),
+      },
+      {
+        label: 'Close All Tabs',
+        action: () => closeAllTabs(),
+      },
+      {
+        label: 'Reopen Closed Tab',
+        shortcut: 'Ctrl+Shift+T',
+        action: () => reopenClosedTab(),
       },
       { divider: true, label: '' },
       {

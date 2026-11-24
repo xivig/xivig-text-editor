@@ -19,9 +19,9 @@ interface EditorState {
   externalConflictDocId: string | null;
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
-  closeDocument: (id: string) => void;
-  closeOtherTabs: (id: string) => void;
-  closeTabsToTheRight: (id: string) => void;
+  closeDocument: (id?: string) => void;
+  closeOtherTabs: (id?: string) => void;
+  closeTabsToTheRight: (id?: string) => void;
   closeSavedTabs: () => void;
   closeAllTabs: () => void;
   reopenClosedTab: () => void;
@@ -322,16 +322,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     triggerAutoSave();
   },
 
-  closeDocument: (id) => {
-    const { documents, activeDocumentId, closedDocumentsHistory } = get();
-    const index = documents.findIndex((d) => d.id === id);
+  closeDocument: (id?: string) => {
+    const { documents, activeDocumentId, secondaryDocumentId, closedDocumentsHistory } = get();
+    const targetId = id || activeDocumentId;
+    if (!targetId) return;
+    const index = documents.findIndex((d) => d.id === targetId);
     if (index === -1) return;
 
     const closedDoc = documents[index];
-    const newDocs = documents.filter((d) => d.id !== id);
+    const newDocs = documents.filter((d) => d.id !== targetId);
     let nextActiveId = activeDocumentId;
 
-    if (activeDocumentId === id) {
+    if (activeDocumentId === targetId) {
       if (newDocs.length === 0) {
         nextActiveId = null;
       } else {
@@ -340,46 +342,62 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
     }
 
+    let nextSecondaryId = secondaryDocumentId;
+    if (secondaryDocumentId === targetId) {
+      nextSecondaryId = newDocs.length > 0 ? newDocs[Math.min(index, newDocs.length - 1)].id : null;
+    }
+
     set({
       documents: newDocs,
       activeDocumentId: nextActiveId,
+      secondaryDocumentId: nextSecondaryId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), closedDoc],
     });
     triggerAutoSave();
   },
 
-  closeOtherTabs: (id: string) => {
-    const { documents, closedDocumentsHistory } = get();
-    const kept = documents.filter((d) => d.id === id);
-    const closed = documents.filter((d) => d.id !== id);
+  closeOtherTabs: (id?: string) => {
+    const { documents, activeDocumentId, closedDocumentsHistory } = get();
+    const targetId = id || activeDocumentId;
+    if (!targetId) return;
+    const kept = documents.filter((d) => d.id === targetId);
+    const closed = documents.filter((d) => d.id !== targetId);
     set({
       documents: kept,
-      activeDocumentId: id,
+      activeDocumentId: targetId,
+      secondaryDocumentId: targetId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
     });
     triggerAutoSave();
   },
 
-  closeTabsToTheRight: (id: string) => {
-    const { documents, activeDocumentId, closedDocumentsHistory } = get();
-    const index = documents.findIndex((d) => d.id === id);
+  closeTabsToTheRight: (id?: string) => {
+    const { documents, activeDocumentId, secondaryDocumentId, closedDocumentsHistory } = get();
+    const targetId = id || activeDocumentId;
+    if (!targetId) return;
+    const index = documents.findIndex((d) => d.id === targetId);
     if (index === -1) return;
     const kept = documents.slice(0, index + 1);
     const closed = documents.slice(index + 1);
     let nextActiveId = activeDocumentId;
     if (!kept.some((d) => d.id === activeDocumentId)) {
-      nextActiveId = id;
+      nextActiveId = targetId;
+    }
+    let nextSecondaryId = secondaryDocumentId;
+    if (!kept.some((d) => d.id === secondaryDocumentId)) {
+      nextSecondaryId = kept.length > 0 ? kept[kept.length - 1].id : null;
     }
     set({
       documents: kept,
       activeDocumentId: nextActiveId,
+      secondaryDocumentId: nextSecondaryId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
     });
     triggerAutoSave();
   },
 
   closeSavedTabs: () => {
-    const { documents, activeDocumentId, closedDocumentsHistory } = get();
+    const { documents, activeDocumentId, secondaryDocumentId, closedDocumentsHistory } = get();
     const kept = documents.filter((d) => d.isDirty);
     const closed = documents.filter((d) => !d.isDirty);
     let nextActiveId = activeDocumentId;
@@ -388,9 +406,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     } else if (!kept.some((d) => d.id === activeDocumentId)) {
       nextActiveId = kept[0].id;
     }
+    let nextSecondaryId = secondaryDocumentId;
+    if (!kept.some((d) => d.id === secondaryDocumentId)) {
+      nextSecondaryId = kept.length > 0 ? kept[0].id : null;
+    }
     set({
       documents: kept,
       activeDocumentId: nextActiveId,
+      secondaryDocumentId: nextSecondaryId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
     });
     triggerAutoSave();
