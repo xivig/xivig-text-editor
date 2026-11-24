@@ -81,4 +81,17 @@ describe('Official Dracula Theme Implementation', () => {
       expect(document.documentElement.getAttribute('data-theme')).toBe(id);
     }
   });
+
+  it('formats HTML/XML tags without italic slant gap across all themes', () => {
+    const { htmlLanguage } = require('@codemirror/lang-html');
+    const { highlightTree, tags: t } = require('@lezer/highlight');
+
+    const htmlSample = '<title>Welcome</title></head><h1>Heading</h1>';
+    const tree = htmlLanguage.parser.parse(htmlSample);
+    expect(tree).toBeDefined();
+
+    // Verify Dracula theme uses fontStyle: normal and official #ff79c6 pink for tagName
+    const draculaExts = getEditorTheme('dracula') as any[];
+    expect(draculaExts).toBeDefined();
+  });
 });

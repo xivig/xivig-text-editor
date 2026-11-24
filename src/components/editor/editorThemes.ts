@@ -63,6 +63,9 @@ const xivigDarkView = EditorView.theme(
 
 const xivigDarkHighlight = HighlightStyle.define([
   { tag: t.keyword, color: '#e06c75', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#e06c75', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#abb2bf' },
+  { tag: t.attributeName, color: '#d19a66' },
   { tag: [t.name, t.deleted, t.character, t.propertyName, t.macroName], color: '#e5e7eb' },
   { tag: [t.function(t.variableName), t.labelName], color: '#61afef' },
   { tag: [t.color, t.constant(t.name), t.standard(t.name)], color: '#d19a66' },
@@ -140,6 +143,9 @@ const monokaiView = EditorView.theme(
 
 const monokaiHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operator, t.operatorKeyword], color: '#f92672', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#f92672', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#f8f8f2' },
+  { tag: t.attributeName, color: '#a6e22e', fontStyle: 'italic' },
   { tag: [t.function(t.variableName), t.labelName], color: '#a6e22e' },
   { tag: [t.string, t.processingInstruction, t.inserted], color: '#e6db74' },
   { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#ae81ff' },
@@ -216,12 +222,14 @@ const draculaView = EditorView.theme(
 const draculaHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier, t.definitionKeyword, t.controlKeyword], color: '#ff79c6', fontWeight: 'bold' },
   { tag: [t.operator, t.punctuation], color: '#ff79c6' },
+  { tag: t.tagName, color: '#ff79c6', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#f8f8f2' },
+  { tag: [t.attributeName, t.propertyName], color: '#50fa7b', fontStyle: 'italic' },
+  { tag: [t.attributeValue, t.string, t.special(t.string), t.character, t.inserted, t.processingInstruction], color: '#f1fa8c' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#50fa7b' },
-  { tag: [t.string, t.special(t.string), t.character, t.inserted, t.processingInstruction], color: '#f1fa8c' },
   { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color, t.unit], color: '#bd93f9' },
   { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#8be9fd', fontStyle: 'italic' },
   { tag: [t.variableName, t.name, t.definition(t.name)], color: '#f8f8f2' },
-  { tag: [t.propertyName, t.attributeName], color: '#50fa7b' },
   { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#6272a4', fontStyle: 'italic' },
   { tag: [t.escape, t.regexp], color: '#ffb86c' },
   { tag: t.strong, fontWeight: 'bold' },
@@ -292,6 +300,9 @@ const oneDarkView = EditorView.theme(
 
 const oneDarkHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword], color: '#c678dd', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#e06c75', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#abb2bf' },
+  { tag: t.attributeName, color: '#d19a66' },
   { tag: t.operator, color: '#56b6c2' },
   { tag: [t.function(t.variableName), t.labelName], color: '#61afef' },
   { tag: [t.string, t.processingInstruction, t.inserted], color: '#98c379' },
@@ -370,6 +381,9 @@ const solarizedLightView = EditorView.theme(
 
 const solarizedLightHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword], color: '#859900', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#268bd2', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#657b83' },
+  { tag: t.attributeName, color: '#93a1a1' },
   { tag: t.operator, color: '#657b83' },
   { tag: [t.function(t.variableName), t.labelName], color: '#268bd2' },
   { tag: [t.string, t.processingInstruction, t.inserted], color: '#2aa198' },
@@ -446,6 +460,8 @@ const nordView = EditorView.theme(
 
 const nordHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#81a1c1', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#81a1c1', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#eceff4' },
   { tag: [t.operator, t.punctuation], color: '#81a1c1' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#88c0d0' },
   { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#a3be8c' },
@@ -523,6 +539,8 @@ const tokyoNightView = EditorView.theme(
 
 const tokyoNightHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#bb9af7', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#f7768e', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#89ddff' },
   { tag: [t.operator, t.punctuation], color: '#89ddff' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#7aa2f7' },
   { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#9ece6a' },
@@ -600,6 +618,8 @@ const cyberpunkView = EditorView.theme(
 
 const cyberpunkHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#00f0ff', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#01cdfe', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#ff003c' },
   { tag: [t.operator, t.punctuation], color: '#ff003c' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#fee801' },
   { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#05d9e8' },
@@ -677,6 +697,8 @@ const githubDarkView = EditorView.theme(
 
 const githubDarkHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#ff7b72', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#7ee787', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#c9d1d9' },
   { tag: [t.operator, t.punctuation], color: '#ff7b72' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#d2a8ff' },
   { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#a5d6ff' },
@@ -754,6 +776,8 @@ const synthwaveView = EditorView.theme(
 
 const synthwaveHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#f92aad', fontWeight: 'bold' },
+  { tag: t.tagName, color: '#fe4450', fontStyle: 'normal' },
+  { tag: t.angleBracket, color: '#36f9f6' },
   { tag: [t.operator, t.punctuation], color: '#fede5d' },
   { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#36f9f6' },
   { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#ff8b39' },
