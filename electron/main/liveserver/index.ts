@@ -1,7 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import url from 'node:url';
 import crypto from 'node:crypto';
 import { BrowserWindow, shell } from 'electron';
 import { assertPathAuthorized } from '../security';
@@ -282,7 +281,15 @@ export async function startLiveServer(
           return;
         }
 
-        const parsedUrl = url.parse(req.url || '/', true);
+        // WHATWG URL parsing compliant with DEP0169
+        let parsedUrl: URL;
+        try {
+          parsedUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
+          res.end('400 Bad Request: Invalid request URL.');
+          return;
+        }
 
         // Safe URL decoding to protect against malformed URL encoding attacks
         let pathname = '/';
@@ -296,7 +303,7 @@ export async function startLiveServer(
 
         // 3. SSE Live reload endpoint with mandatory session token validation
         if (pathname === '/__xivig_live_reload') {
-          const clientToken = parsedUrl.query.token;
+          const clientToken = parsedUrl.searchParams.get('token');
           if (!clientToken || clientToken !== sessionToken) {
             res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders });
             res.end('401 Unauthorized: Invalid or missing live reload session token.');
