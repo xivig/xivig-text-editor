@@ -58,7 +58,7 @@ export const themes: Record<ThemeId, ThemeColors> = {
       textDim: '#646b7a',
       border: '#2c313d',
       borderSubtle: '#21252f',
-      selection: 'rgba(108, 140, 255, 0.25)',
+      selection: 'rgba(108, 140, 255, 0.45)',
     },
   },
   'monokai': {
@@ -305,6 +305,14 @@ export function applyThemeToCssVariables(themeId: ThemeId): void {
   root.style.setProperty('--xivig-border', theme.colors.border);
   root.style.setProperty('--xivig-border-subtle', theme.colors.borderSubtle);
   root.style.setProperty('--xivig-selection', theme.colors.selection);
+  root.style.setProperty(
+    '--xivig-selection-match',
+    theme.colors.selection.replace(/[\d\.]+\)$/, '0.22)')
+  );
+  root.style.setProperty(
+    '--xivig-active-line',
+    theme.isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)'
+  );
 
   root.style.colorScheme = theme.isDark ? 'dark' : 'light';
   root.setAttribute('data-theme', theme.id);

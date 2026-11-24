@@ -125,11 +125,11 @@ input, textarea {
 
 .cm-activeLineGutter {
   color: var(--xivig-text) !important;
-  background-color: var(--xivig-surface-hover) !important;
+  background-color: var(--xivig-active-line, rgba(255, 255, 255, 0.04)) !important;
 }
 
 .cm-activeLine {
-  background-color: var(--xivig-surface-hover) !important;
+  background-color: var(--xivig-active-line, rgba(255, 255, 255, 0.04)) !important;
 }
 
 .cm-cursor {
@@ -137,8 +137,31 @@ input, textarea {
   border-left-width: 2px !important;
 }
 
-.cm-selectionBackground, ::selection {
-  background-color: var(--xivig-selection, rgba(108, 140, 255, 0.3)) !important;
+/* Editor text selection across all themes and focus states */
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground,
+.cm-editor .cm-selectionLayer .cm-selectionBackground,
+.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.cm-editor > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.cm-selectionBackground,
+.cm-content ::selection,
+.cm-line ::selection,
+::selection {
+  background-color: var(--xivig-selection, rgba(108, 140, 255, 0.45)) !important;
+}
+
+/* Maintain visible selection even when editor loses focus (e.g. context menu or modal open) */
+.cm-editor:not(.cm-focused) .cm-selectionBackground,
+.cm-editor:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background-color: var(--xivig-selection, rgba(108, 140, 255, 0.35)) !important;
+  opacity: 0.8 !important;
+}
+
+/* Secondary selection matches (other occurrences of selected text) */
+.cm-selectionMatch {
+  background-color: var(--xivig-selection-match, rgba(108, 140, 255, 0.22)) !important;
+  outline: 1px solid rgba(108, 140, 255, 0.45) !important;
+  border-radius: 2px !important;
 }
 
 /* Bracket matching indicator */

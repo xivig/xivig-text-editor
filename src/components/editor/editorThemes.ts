@@ -25,7 +25,10 @@ const xivigDarkView = EditorView.theme(
       borderLeftWidth: '2px',
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
-      backgroundColor: 'rgba(108, 140, 255, 0.25) !important',
+      backgroundColor: 'rgba(108, 140, 255, 0.45) !important',
+    },
+    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(108, 140, 255, 0.45) !important',
     },
     '.cm-gutters': {
       backgroundColor: '#17191f',
