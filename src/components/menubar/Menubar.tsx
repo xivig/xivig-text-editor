@@ -747,13 +747,16 @@ const dropdownStyle: React.CSSProperties = {
   position: 'absolute',
   top: '100%',
   left: 0,
-  minWidth: '200px',
+  minWidth: '260px',
+  width: 'max-content',
+  maxWidth: '450px',
   backgroundColor: '#212224',
   border: '1px solid #383a40',
   borderRadius: '4px',
   padding: '4px 0',
   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
   zIndex: 1000,
+  whiteSpace: 'nowrap',
 };
 
 const dropdownItemStyle: React.CSSProperties = {
@@ -769,12 +772,18 @@ const dropdownItemStyle: React.CSSProperties = {
   cursor: 'pointer',
   color: '#c9ccd3',
   fontFamily: 'inherit',
+  whiteSpace: 'nowrap',
+  gap: '28px',
+  boxSizing: 'border-box',
 };
 
 const shortcutStyle: React.CSSProperties = {
   fontSize: '11px',
   color: 'var(--xivig-text-dim)',
-  marginLeft: '16px',
+  marginLeft: 'auto',
+  paddingLeft: '20px',
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 };
 
 const dividerStyle: React.CSSProperties = {

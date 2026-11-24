@@ -521,7 +521,9 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         border: '1px solid #363945',
         borderRadius: '6px',
         padding: '5px 0',
-        minWidth: '200px',
+        minWidth: '250px',
+        width: 'max-content',
+        maxWidth: '450px',
         maxHeight: 'calc(100vh - 20px)',
         overflowY: 'auto',
         boxShadow: '0 10px 28px rgba(0, 0, 0, 0.55)',
@@ -529,6 +531,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         color: '#e5e7eb',
         userSelect: 'none',
         fontFamily: 'var(--xivig-font-ui, system-ui, sans-serif)',
+        whiteSpace: 'nowrap',
       }}
     >
       {/* ------------------------------------------------------------- */}
@@ -814,12 +817,18 @@ const menuItemStyle: React.CSSProperties = {
   transition: 'background-color 0.1s ease',
   fontSize: '12px',
   lineHeight: 1.4,
+  whiteSpace: 'nowrap',
+  gap: '28px',
+  boxSizing: 'border-box',
 };
 
 const shortcutStyle: React.CSSProperties = {
-  marginLeft: '16px',
+  marginLeft: 'auto',
+  paddingLeft: '20px',
   color: '#8b92a2',
   fontSize: '11px',
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 };
 
 const menuDividerStyle: React.CSSProperties = {
