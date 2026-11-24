@@ -54,6 +54,14 @@ import { findNext, findPrevious } from '@codemirror/search';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../utils/beautify';
 import { prepareContentForSave } from '../utils/saveUtils';
 import { navigationHistory } from '../utils/navigationHistory';
+import { LanguageServersModal } from '../components/modals/LanguageServersModal';
+import {
+  useLspStore,
+  LspClient,
+  formatDocumentWithLsp,
+  requestLspCodeActions,
+  executeLspCodeAction,
+} from '../lsp';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -100,9 +108,10 @@ export const App: React.FC = () => {
   // Restore Session and Settings on Mount
   useEffect(() => {
     async function initSession() {
-      // 1. Load persisted settings and extensions first
+      // 1. Load persisted settings, extensions, and LSP servers first
       await useSettingsStore.getState().loadSettings();
       useExtensionStore.getState().loadInstalledExtensions();
+      useLspStore.getState().initialize();
       const settings = useSettingsStore.getState().settings;
 
       if (!window.xivig?.restoreSession) return;
@@ -657,7 +666,26 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         const view = getActiveEditorView();
-        if (view) beautifyActiveEditor(view);
+        if (view) {
+          const settings = useSettingsStore.getState().settings;
+          if (activeDoc?.path) {
+            formatDocumentWithLsp(view, activeDoc.path, settings.tabSize || 2, true, activeDoc.language).then((formatted) => {
+              if (!formatted) beautifyActiveEditor(view);
+            });
+          } else {
+            beautifyActiveEditor(view);
+          }
+        }
+      } else if (isCtrlOrMeta && e.key === '.') {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view && activeDoc?.path) {
+          requestLspCodeActions(view, activeDoc.path, activeDoc.language).then((actions) => {
+            if (actions.length > 0) {
+              executeLspCodeAction(view, actions[0]);
+            }
+          });
+        }
       } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'c') {
         e.preventDefault();
         const view = getActiveEditorView();
@@ -837,6 +865,7 @@ export const App: React.FC = () => {
       <IndexingStatusModal />
       <RemoveLicenseModal />
       <UpdateCheckModal />
+      <LanguageServersModal />
     </div>
   );
 };

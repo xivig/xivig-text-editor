@@ -49,6 +49,7 @@ import {
   applyUpdateAndRestart,
   getDownloadedUpdateInfo,
 } from './updater';
+import { lspManager } from './lsp/lspManager';
 import {
   validateIpcSender,
   getValidatedWindow,
@@ -119,6 +120,7 @@ async function createWindow() {
 
   openWindows.add(currentWin);
   activeWindow = currentWin;
+  lspManager.registerWindow(currentWin);
 
   currentWin.on('focus', () => {
     activeWindow = currentWin;
@@ -264,6 +266,7 @@ app.on('window-all-closed', () => {
   stopTerminal();
   stopAllBuildProcesses();
   stopLiveServer();
+  lspManager.shutdownAll();
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -834,3 +837,81 @@ ipcMain.handle('app:info', async (event) => {
     platform: process.platform,
   };
 });
+
+// ============================================================================
+// Language Server Protocol (LSP) IPC Endpoints
+// ============================================================================
+ipcMain.handle('lsp:list-servers', async (event) => {
+  if (!validateIpcSender(event)) return [];
+  return lspManager.listServers();
+});
+
+ipcMain.handle('lsp:start-server', async (event, { serverId, rootPath }: { serverId: string; rootPath?: string }) => {
+  if (!validateIpcSender(event)) return false;
+  return lspManager.startServer(serverId, rootPath);
+});
+
+ipcMain.handle('lsp:stop-server', async (event, serverId: string) => {
+  if (!validateIpcSender(event)) return false;
+  await lspManager.stopServer(serverId);
+  return true;
+});
+
+ipcMain.handle('lsp:restart-server', async (event, serverId: string) => {
+  if (!validateIpcSender(event)) return false;
+  return lspManager.restartServer(serverId);
+});
+
+ipcMain.handle('lsp:update-config', async (event, { serverId, patch }: { serverId: string; patch: any }) => {
+  if (!validateIpcSender(event)) return null;
+  return lspManager.updateServerConfig(serverId, patch);
+});
+
+ipcMain.handle('lsp:set-workspace-root', async (event, rootPath: string) => {
+  if (!validateIpcSender(event)) return false;
+  lspManager.setWorkspaceRoot(rootPath);
+  return true;
+});
+
+ipcMain.handle('lsp:open-document', async (event, { doc, filePath }: { doc: any; filePath: string }) => {
+  if (!validateIpcSender(event)) return;
+  return lspManager.openDocument(doc, filePath);
+});
+
+ipcMain.handle(
+  'lsp:change-document',
+  async (
+    event,
+    { uri, text, filePath, languageId }: { uri: string; text: string; filePath: string; languageId?: string }
+  ) => {
+    if (!validateIpcSender(event)) return;
+    return lspManager.changeDocument(uri, text, filePath, languageId);
+  }
+);
+
+ipcMain.handle(
+  'lsp:save-document',
+  async (
+    event,
+    { uri, filePath, text, languageId }: { uri: string; filePath: string; text?: string; languageId?: string }
+  ) => {
+    if (!validateIpcSender(event)) return;
+    return lspManager.saveDocument(uri, filePath, text, languageId);
+  }
+);
+
+ipcMain.handle(
+  'lsp:close-document',
+  async (event, { uri, filePath, languageId }: { uri: string; filePath: string; languageId?: string }) => {
+    if (!validateIpcSender(event)) return;
+    return lspManager.closeDocument(uri, filePath, languageId);
+  }
+);
+
+ipcMain.handle(
+  'lsp:send-request',
+  async (event, { target, method, params }: { target: any; method: string; params: any }) => {
+    if (!validateIpcSender(event)) throw new Error('Unauthorized IPC');
+    return lspManager.sendRequest(target, method, params);
+  }
+);

@@ -154,6 +154,50 @@ const xivigAPI = {
   // Application Metadata
   getAppInfo: () => ipcRenderer.invoke('app:info'),
 
+  // Language Server Protocol (LSP)
+  lsp: {
+    listServers: () => ipcRenderer.invoke('lsp:list-servers'),
+    startServer: (serverId: string, rootPath?: string) =>
+      ipcRenderer.invoke('lsp:start-server', { serverId, rootPath }),
+    stopServer: (serverId: string) => ipcRenderer.invoke('lsp:stop-server', serverId),
+    restartServer: (serverId: string) => ipcRenderer.invoke('lsp:restart-server', serverId),
+    updateConfig: (serverId: string, patch: any) =>
+      ipcRenderer.invoke('lsp:update-config', { serverId, patch }),
+    setWorkspaceRoot: (rootPath: string) =>
+      ipcRenderer.invoke('lsp:set-workspace-root', rootPath),
+    openDocument: (doc: any, filePath: string) =>
+      ipcRenderer.invoke('lsp:open-document', { doc, filePath }),
+    changeDocument: (uri: string, text: string, filePath: string, languageId?: string) =>
+      ipcRenderer.invoke('lsp:change-document', { uri, text, filePath, languageId }),
+    saveDocument: (uri: string, filePath: string, text?: string, languageId?: string) =>
+      ipcRenderer.invoke('lsp:save-document', { uri, filePath, text, languageId }),
+    closeDocument: (uri: string, filePath: string, languageId?: string) =>
+      ipcRenderer.invoke('lsp:close-document', { uri, filePath, languageId }),
+    sendRequest: (target: any, method: string, params: any) =>
+      ipcRenderer.invoke('lsp:send-request', { target, method, params }),
+    onDiagnostics: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('lsp:diagnostics', handler);
+      return () => {
+        ipcRenderer.removeListener('lsp:diagnostics', handler);
+      };
+    },
+    onServersChanged: (callback: (servers: any[]) => void) => {
+      const handler = (_: any, data: any[]) => callback(data);
+      ipcRenderer.on('lsp:servers-changed', handler);
+      return () => {
+        ipcRenderer.removeListener('lsp:servers-changed', handler);
+      };
+    },
+    onNotification: (callback: (notification: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('lsp:notification', handler);
+      return () => {
+        ipcRenderer.removeListener('lsp:notification', handler);
+      };
+    },
+  },
+
   // Environment
   platform: process.platform,
 };

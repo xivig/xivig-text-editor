@@ -8,6 +8,13 @@ import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
+import {
+  useLspStore,
+  formatDocumentWithLsp,
+  organizeImports,
+  requestLspCodeActions,
+  executeLspCodeAction,
+} from '../../lsp';
 import { prepareContentForSave } from '../../utils/saveUtils';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
@@ -276,7 +283,15 @@ export const Menubar: React.FC = () => {
         shortcut: 'Ctrl+Alt+B',
         action: () => {
           const view = getActiveEditorView();
-          if (view) beautifyActiveEditor(view);
+          if (view) {
+            if (activeDoc?.path) {
+              formatDocumentWithLsp(view, activeDoc.path, 2, true, activeDoc.language).then((done) => {
+                if (!done) beautifyActiveEditor(view);
+              });
+            } else {
+              beautifyActiveEditor(view);
+            }
+          }
         },
       },
       {
@@ -617,6 +632,40 @@ export const Menubar: React.FC = () => {
         label: 'Extensions',
         shortcut: 'Ctrl+Shift+X',
         action: () => setActiveSidebarView('extensions'),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Language Servers (LSP)...',
+        action: () => useLspStore.getState().openModal(),
+      },
+      {
+        label: 'Restart Active Language Server',
+        action: () => {
+          const active = useLspStore.getState().activeServer;
+          if (active) useLspStore.getState().restartServer(active.id);
+        },
+      },
+      {
+        label: 'Organize Imports',
+        shortcut: 'Shift+Alt+O',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view && activeDoc?.path) {
+            organizeImports(view, activeDoc.path, activeDoc.language);
+          }
+        },
+      },
+      {
+        label: 'Code Actions / Quick Fix',
+        shortcut: 'Ctrl+.',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view && activeDoc?.path) {
+            requestLspCodeActions(view, activeDoc.path, activeDoc.language).then((actions) => {
+              if (actions.length > 0) executeLspCodeAction(view, actions[0]);
+            });
+          }
+        },
       },
     ],
     Help: [

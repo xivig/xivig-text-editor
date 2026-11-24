@@ -52,6 +52,17 @@ import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } fr
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
+import {
+  createLspSyncExtension,
+  createLspCompletionSource,
+  createLspHoverExtension,
+  createLspSignatureHelpExtension,
+  createLspDiagnosticsLinter,
+  createLspInlayHintsExtension,
+  createLspCodeLensExtension,
+  createLspSemanticTokensExtension,
+  useLspStore,
+} from '../../lsp';
 import { beautifyActiveEditor } from '../../utils/beautify';
 import { extensionManager } from '../../extensions/runtime/extensionManager';
 import { Minimap } from './Minimap';
@@ -108,6 +119,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
 
   const isConflict = conflictDocId === activeDoc?.id;
   const isLargeFile = (activeDoc?.content?.length || 0) > 1_500_000;
+
+  useEffect(() => {
+    useLspStore.getState().updateActiveServerForDoc(activeDoc?.path || undefined, activeDoc?.language);
+  }, [activeDoc?.path, activeDoc?.language]);
 
   // Maintain active document ID in ref for updateListener
   const docIdRef = useRef(activeDocumentId);
@@ -176,7 +191,17 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         foldGutter(),
         bookmarkField,
         bookmarkGutter,
-        ...(!isLargeFile ? [autoRenameTagExtension, cssColorHighlighterExtension] : []),
+        ...(!isLargeFile ? [
+          autoRenameTagExtension,
+          cssColorHighlighterExtension,
+          createLspSyncExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspHoverExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspSignatureHelpExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspDiagnosticsLinter(activeDoc.path || ''),
+          createLspInlayHintsExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspCodeLensExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspSemanticTokensExtension(activeDoc.path || '', activeDoc.language || ''),
+        ] : []),
         ...(!isLargeFile ? createDiagnosticsLinter(activeDoc.id, activeDoc.path, activeDoc.name) : []),
         drawSelection(),
         dropCursor(),
@@ -186,6 +211,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         closeBrackets(),
         autocompletion({
           override: [
+            createLspCompletionSource(activeDoc.path || '', activeDoc.language || ''),
             createEmmetCompletionSource(() => detectEmmetSyntax(activeDoc.name || activeDoc.language)),
             createLanguageCompletionSource(() => activeDoc.name || activeDoc.language),
             getCustomSnippetSource(activeDoc.language || activeDoc.name),

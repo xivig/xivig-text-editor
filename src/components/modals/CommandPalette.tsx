@@ -20,6 +20,13 @@ import {
 } from '../editor/codeIntelligence';
 import { navigationHistory } from '../../utils/navigationHistory';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
+import {
+  useLspStore,
+  formatDocumentWithLsp,
+  organizeImports,
+  requestLspCodeActions,
+  executeLspCodeAction,
+} from '../../lsp';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
   sortLines,
@@ -628,6 +635,69 @@ export const CommandPalette: React.FC = () => {
         const view = getActiveEditorView();
         if (view) {
           findReferences(view);
+        }
+      },
+    },
+    {
+      id: 'lsp:manage-servers',
+      category: 'Language Server Protocol',
+      title: 'LSP: Open Language Servers Manager...',
+      action: () => useLspStore.getState().openModal(),
+    },
+    {
+      id: 'lsp:restart-server',
+      category: 'Language Server Protocol',
+      title: 'LSP: Restart Current Language Server',
+      action: () => {
+        const active = useLspStore.getState().activeServer;
+        if (active) useLspStore.getState().restartServer(active.id);
+      },
+    },
+    {
+      id: 'lsp:organize-imports',
+      category: 'Language Server Protocol',
+      title: 'LSP: Organize Imports',
+      shortcut: 'Shift+Alt+O',
+      action: () => {
+        const view = getActiveEditorView();
+        const activeDoc = useEditorStore.getState().getActiveDocument();
+        if (view && activeDoc?.path) {
+          organizeImports(view, activeDoc.path, activeDoc.language);
+        }
+      },
+    },
+    {
+      id: 'lsp:code-actions',
+      category: 'Language Server Protocol',
+      title: 'LSP: Trigger Code Actions / Quick Fix',
+      shortcut: 'Ctrl+.',
+      action: () => {
+        const view = getActiveEditorView();
+        const activeDoc = useEditorStore.getState().getActiveDocument();
+        if (view && activeDoc?.path) {
+          requestLspCodeActions(view, activeDoc.path, activeDoc.language).then((actions) => {
+            if (actions.length > 0) executeLspCodeAction(view, actions[0]);
+          });
+        }
+      },
+    },
+    {
+      id: 'lsp:format-document',
+      category: 'Language Server Protocol',
+      title: 'LSP: Format Document with Language Server',
+      shortcut: 'Ctrl+Alt+B',
+      action: () => {
+        const view = getActiveEditorView();
+        const activeDoc = useEditorStore.getState().getActiveDocument();
+        if (view) {
+          const settings = useSettingsStore.getState().settings;
+          if (activeDoc?.path) {
+            formatDocumentWithLsp(view, activeDoc.path, settings.tabSize || 2, true, activeDoc.language).then((done) => {
+              if (!done) beautifyActiveEditor(view);
+            });
+          } else {
+            beautifyActiveEditor(view);
+          }
         }
       },
     },

@@ -163,6 +163,24 @@ export interface XivigAPI {
   // Application info
   getAppInfo?: () => Promise<AppInfo | null>;
 
+  // Language Server Protocol (LSP)
+  lsp?: {
+    listServers: () => Promise<any[]>;
+    startServer: (serverId: string, rootPath?: string) => Promise<boolean>;
+    stopServer: (serverId: string) => Promise<boolean>;
+    restartServer: (serverId: string) => Promise<boolean>;
+    updateConfig: (serverId: string, patch: any) => Promise<any>;
+    setWorkspaceRoot: (rootPath: string) => Promise<boolean>;
+    openDocument: (doc: any, filePath: string) => Promise<void>;
+    changeDocument: (uri: string, text: string, filePath: string, languageId?: string) => Promise<void>;
+    saveDocument: (uri: string, filePath: string, text?: string, languageId?: string) => Promise<void>;
+    closeDocument: (uri: string, filePath: string, languageId?: string) => Promise<void>;
+    sendRequest: (target: any, method: string, params: any) => Promise<any>;
+    onDiagnostics: (callback: (data: any) => void) => () => void;
+    onServersChanged: (callback: (servers: any[]) => void) => () => void;
+    onNotification: (callback: (notification: any) => void) => () => void;
+  };
+
   // System info
   platform: string;
 }

@@ -7,6 +7,8 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useDiagnosticsStore } from '../../stores/diagnosticsStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { useUpdateStore } from '../../stores/updateStore';
+import { useLspStore } from '../../lsp/lspStore';
+import { Server } from 'lucide-react';
 import { detectLanguageName } from '../editor/languageSupport';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 
@@ -38,6 +40,7 @@ export const StatusBar: React.FC = () => {
   const isDownloading = useUpdateStore((state) => state.isDownloading);
   const downloadProgress = useUpdateStore((state) => state.downloadProgress);
   const applyAndRestart = useUpdateStore((state) => state.applyAndRestart);
+  const activeLspServer = useLspStore((state) => state.activeServer);
 
   const [indentMenuOpen, setIndentMenuOpen] = useState(false);
   const [encodingMenuOpen, setEncodingMenuOpen] = useState(false);
@@ -260,6 +263,41 @@ export const StatusBar: React.FC = () => {
           title={`Line Ending: ${lineEnding}. Click to convert buffer to ${isCRLF ? 'LF' : 'CRLF'}.`}
         >
           <span>{lineEnding}</span>
+        </div>
+
+        {/* Language Server Protocol (LSP) Status Indicator */}
+        <div
+          onClick={() => useLspStore.getState().openModal()}
+          style={{
+            ...interactiveItemStyle,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            color: activeLspServer?.status === 'running' ? '#35b779' : 'var(--xivig-text-muted)',
+            fontWeight: 500,
+          }}
+          title={
+            activeLspServer
+              ? `LSP: ${activeLspServer.name} (${activeLspServer.status}). Click to configure language servers.`
+              : 'LSP: No active language server. Click to open Language Servers Manager.'
+          }
+        >
+          <div
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor:
+                activeLspServer?.status === 'running'
+                  ? '#35b779'
+                  : activeLspServer?.status === 'starting'
+                  ? '#e6ad45'
+                  : activeLspServer?.status === 'error'
+                  ? '#ef6464'
+                  : 'var(--xivig-text-dim)',
+            }}
+          />
+          <span>{activeLspServer ? `LSP: ${activeLspServer.id}` : 'LSP: Ready'}</span>
         </div>
 
         {/* Language selector */}
