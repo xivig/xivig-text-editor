@@ -556,10 +556,6 @@ export const Menubar: React.FC = () => {
       },
     ],
     View: [
-      { label: 'Command Palette...', shortcut: 'Ctrl+Shift+P', action: openCommandPalette },
-      { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
-      { label: 'Go to Symbol...', shortcut: 'Ctrl+R', action: () => useUIStore.getState().openQuickOpenWithMode('@') },
-      { divider: true, label: '' },
       { label: 'Toggle Live Web Preview', shortcut: 'Ctrl+K V', action: () => useEditorStore.getState().togglePreview('live-web') },
       { label: 'Toggle Markdown Live Preview', shortcut: 'Ctrl+Shift+V', action: () => useEditorStore.getState().togglePreview('markdown') },
       { label: 'Live Server: Toggle (Go Live)', action: () => useLiveServerStore.getState().toggleServer() },
@@ -574,7 +570,6 @@ export const Menubar: React.FC = () => {
       { label: 'Toggle Whitespace Characters', action: () => { const cur = useSettingsStore.getState().settings.renderWhitespace; useSettingsStore.getState().updateSettings({ renderWhitespace: cur === 'all' ? 'selection' : 'all' }); } },
       { label: 'Toggle Indentation Guides', action: () => { const cur = useSettingsStore.getState().settings.rainbowIndentGuides; useSettingsStore.getState().updateSettings({ rainbowIndentGuides: !cur }); } },
       { label: 'Toggle Font Ligatures', action: () => useSettingsStore.getState().toggleFontLigatures() },
-      { label: 'Extensions', shortcut: 'Ctrl+Shift+X', action: () => setActiveSidebarView('extensions') },
       { divider: true, label: '' },
       { label: 'Layout: Single', shortcut: 'Alt+Shift+1', action: () => setSplitLayout('single') },
       { label: 'Layout: 2 Columns', shortcut: 'Alt+Shift+2', action: () => setSplitLayout('two-columns') },
@@ -598,6 +593,12 @@ export const Menubar: React.FC = () => {
     ],
     Tools: [
       {
+        label: 'Command Palette...',
+        shortcut: 'Ctrl+Shift+P',
+        action: openCommandPalette,
+      },
+      { divider: true, label: '' },
+      {
         label: 'Build',
         shortcut: 'Ctrl+B',
         action: () => useBuildStore.getState().executeBuild(),
@@ -613,7 +614,7 @@ export const Menubar: React.FC = () => {
       },
       { divider: true, label: '' },
       {
-        label: 'Package Control: Browse Packages',
+        label: 'Extensions',
         shortcut: 'Ctrl+Shift+X',
         action: () => setActiveSidebarView('extensions'),
       },
