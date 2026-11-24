@@ -27,7 +27,7 @@
       {
         "id": "rainbow.indentGuides",
         "type": "boolean",
-        "default": true,
+        "default": false,
         "description": "Enable vertical rainbow indentation guide lines"
       },
       {

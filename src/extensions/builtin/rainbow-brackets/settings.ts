@@ -8,7 +8,7 @@ export interface RainbowBracketsSettings {
 export const DEFAULT_RAINBOW_SETTINGS: RainbowBracketsSettings = {
   enabled: true,
   brackets: true,
-  indentGuides: true,
+  indentGuides: false,
   tabSize: 4,
 };
 

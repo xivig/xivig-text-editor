@@ -171,6 +171,8 @@ test.describe('Xivig Editor Application Workflows', () => {
     expect(rainbowResults.redCount).toBeGreaterThan(0);
     expect(rainbowResults.orangeCount).toBeGreaterThan(0);
     expect(rainbowResults.yellowCount).toBeGreaterThan(0);
+    // Vertical indent guide lines should be removed
+    expect(rainbowResults.indentGuideCount).toBe(0);
 
     // Take screenshot of rainbow brackets in action
     await window.screenshot({

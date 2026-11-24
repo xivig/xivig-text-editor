@@ -12,7 +12,7 @@ export class RainbowBracketsExtension implements BuiltinExtensionModule {
   activate(context: ExtensionContext) {
     this.settings.enabled = context.getSetting('rainbow.enabled', true);
     this.settings.brackets = context.getSetting('rainbow.brackets', true);
-    this.settings.indentGuides = context.getSetting('rainbow.indentGuides', true);
+    this.settings.indentGuides = context.getSetting('rainbow.indentGuides', false);
     this.settings.tabSize = context.getSetting('rainbow.tabSize', 4);
   }
 
