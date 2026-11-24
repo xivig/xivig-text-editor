@@ -589,8 +589,7 @@ ipcMain.handle('settings:get', async (event, key: string) => {
 
 ipcMain.handle('settings:set', async (event, { key, value }: { key: string; value: string }) => {
   if (!validateIpcSender(event)) return false;
-  setSetting(key, value);
-  return true;
+  return setSetting(key, value);
 });
 
 // Finding 1 fix: watchWorkspace is strictly separated from addApprovedWorkspace.

@@ -19,6 +19,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit && vite build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:node": "tsc --project tsconfig.node.json --noEmit",
@@ -27,7 +28,7 @@
     "package": "npm run build && electron-builder",
     "package:win": "npm run build && electron-builder --win",
     "package:linux": "npm run build && electron-builder --linux",
-    "package:mac": "npm run build && electron-builder --mac --universal"
+    "package:mac": "npm run build && electron-builder --mac --arm64"
   },
   "build": {
     "appId": "com.xivig.texteditor",
@@ -160,6 +161,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^22.13.4",
     "@types/react": "^18.3.18",

@@ -7,3 +7,5 @@ release/
 *.log
 *.tsbuildinfo
 *.zip
+test-results/
+playwright-report/

@@ -37,3 +37,8 @@ jobs:
 
       - name: Production Build
         run: npm run build
+
+      - name: Playwright E2E Workflow Tests
+        run: npx playwright test
+        env:
+          CI: true

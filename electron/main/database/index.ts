@@ -298,7 +298,19 @@ export function getRecentWorkspaces(limit = 10): RecentItem[] {
 }
 
 export function setSetting(key: string, value: string): boolean {
-  inMemoryStore.settings[key] = value;
+  if (
+    typeof key !== 'string' ||
+    !key.trim() ||
+    key === '__proto__' ||
+    key === 'constructor' ||
+    key === 'prototype'
+  ) {
+    return false;
+  }
+  if (typeof value !== 'string') {
+    return false;
+  }
+  inMemoryStore.settings[key.trim()] = value;
   schedulePersist();
   return true;
 }
