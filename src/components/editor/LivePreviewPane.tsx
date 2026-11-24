@@ -164,61 +164,149 @@ export const LivePreviewPane: React.FC = () => {
   const errorCount = logs.filter((l) => l.type === 'error').length;
 
   return (
-    <div className="flex flex-col h-full bg-[#181818] border-l border-[#2e2e2e] select-none text-gray-300">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        backgroundColor: '#181818',
+        borderLeft: '1px solid #2e2e2e',
+        userSelect: 'none',
+        color: '#d4d4d4',
+        overflow: 'hidden',
+        position: 'relative',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Top Controls Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#202020] border-b border-[#2e2e2e] text-xs gap-2 select-none overflow-x-auto flex-nowrap">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 10px',
+          backgroundColor: '#202020',
+          borderBottom: '1px solid #2e2e2e',
+          fontSize: '12px',
+          gap: '8px',
+          userSelect: 'none',
+          flexShrink: 0,
+          height: '35px',
+          boxSizing: 'border-box',
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {/* Left: Device Presets */}
-        <div className="flex items-center space-x-1 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
           <button
             onClick={() => setDeviceMode('responsive')}
             title="Responsive (100%)"
-            className={`p-1 rounded transition-colors ${
-              deviceMode === 'responsive' ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: deviceMode === 'responsive' ? '#37373d' : 'transparent',
+              color: deviceMode === 'responsive' ? '#ffffff' : '#999999',
+            }}
           >
             <Maximize2 size={13} />
           </button>
           <button
             onClick={() => setDeviceMode('desktop')}
             title="Desktop (1200px)"
-            className={`p-1 rounded transition-colors ${
-              deviceMode === 'desktop' ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: deviceMode === 'desktop' ? '#37373d' : 'transparent',
+              color: deviceMode === 'desktop' ? '#ffffff' : '#999999',
+            }}
           >
             <Monitor size={13} />
           </button>
           <button
             onClick={() => setDeviceMode('tablet')}
             title="Tablet (768px)"
-            className={`p-1 rounded transition-colors ${
-              deviceMode === 'tablet' ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: deviceMode === 'tablet' ? '#37373d' : 'transparent',
+              color: deviceMode === 'tablet' ? '#ffffff' : '#999999',
+            }}
           >
             <Tablet size={13} />
           </button>
           <button
             onClick={() => setDeviceMode('mobile')}
             title="Mobile (375px)"
-            className={`p-1 rounded transition-colors ${
-              deviceMode === 'mobile' ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: deviceMode === 'mobile' ? '#37373d' : 'transparent',
+              color: deviceMode === 'mobile' ? '#ffffff' : '#999999',
+            }}
           >
             <Smartphone size={13} />
           </button>
         </div>
 
         {/* Center: Live Server / URL Status */}
-        <div className="flex items-center space-x-2 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {isRunning ? (
-            <div className="flex items-center space-x-1.5 bg-[#1a2d1d] border border-[#2d5a32] px-2 py-0.5 rounded text-[11px] text-[#4ec9b0] whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4ec9b0] animate-pulse" />
-              <span className="font-mono font-medium">Port {port}</span>
-              <span className="text-[#2d5a32]">|</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: '#1a2d1d',
+                border: '1px solid #2d5a32',
+                padding: '2px 8px',
+                borderRadius: '3px',
+                fontSize: '11px',
+                color: '#4ec9b0',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#4ec9b0',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>Port {port}</span>
+              <span style={{ color: '#2d5a32' }}>|</span>
               <button
                 onClick={() => setUseServerUrl(!useServerUrl)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${
-                  useServerUrl ? 'bg-[#2d5a32] text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
-                }`}
+                style={{
+                  padding: '1px 6px',
+                  borderRadius: '3px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: useServerUrl ? '#2d5a32' : 'transparent',
+                  color: useServerUrl ? '#ffffff' : '#aaaaaa',
+                }}
                 title="Toggle between Server HTTP vs Keystroke Direct Preview"
               >
                 {useServerUrl ? 'Live HTTP' : 'Direct'}
@@ -227,21 +315,41 @@ export const LivePreviewPane: React.FC = () => {
           ) : (
             <button
               onClick={() => startServer()}
-              className="flex items-center space-x-1 px-2 py-0.5 rounded bg-[#2a2a2a] hover:bg-[#333] text-gray-300 hover:text-white text-[11px] border border-[#3c3c3c] transition-colors"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '3px',
+                backgroundColor: '#2a2a2a',
+                color: '#cccccc',
+                fontSize: '11px',
+                border: '1px solid #3c3c3c',
+                cursor: 'pointer',
+              }}
               title="Start embedded Live Server (HTTP with auto-reload)"
             >
-              <Radio size={11} className="text-gray-400" />
+              <Radio size={11} style={{ color: '#888888' }} />
               <span>Start Live Server</span>
             </button>
           )}
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center space-x-1.5 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <button
             onClick={handleReload}
             title="Refresh Preview"
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#888888',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
             <RotateCw size={13} />
           </button>
@@ -249,7 +357,16 @@ export const LivePreviewPane: React.FC = () => {
           <button
             onClick={() => openInBrowser()}
             title="Open in System Browser"
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#888888',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
             <ExternalLink size={13} />
           </button>
@@ -257,13 +374,30 @@ export const LivePreviewPane: React.FC = () => {
           <button
             onClick={() => setShowConsole(!showConsole)}
             title="Toggle Preview Console"
-            className={`p-1 rounded flex items-center space-x-1 transition-colors ${
-              showConsole ? 'bg-[#37373d] text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-[#333]'
-            }`}
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              backgroundColor: showConsole ? '#37373d' : 'transparent',
+              color: showConsole ? '#ffffff' : '#888888',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
           >
             <Terminal size={13} />
             {errorCount > 0 && (
-              <span className="bg-red-500 text-white rounded-full px-1 text-[9px] font-bold">
+              <span
+                style={{
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  borderRadius: '9999px',
+                  padding: '0 4px',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                }}
+              >
                 {errorCount}
               </span>
             )}
@@ -272,22 +406,54 @@ export const LivePreviewPane: React.FC = () => {
           <button
             onClick={closePreview}
             title="Close Preview"
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+            style={{
+              padding: '4px 6px',
+              borderRadius: '3px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#888888',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
-            <X size={13} />
+            <X size={14} />
           </button>
         </div>
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 min-h-0 w-full bg-[#141414] flex flex-col items-center justify-start p-2 relative overflow-hidden">
+      <div
+        style={{
+          flex: '1 1 0%',
+          height: 'calc(100% - 35px)',
+          minHeight: 0,
+          width: '100%',
+          backgroundColor: '#141414',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          padding: deviceMode === 'responsive' ? '0' : '12px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        }}
+      >
         <div
-          className="w-full flex-1 min-h-0 bg-white transition-all duration-200 shadow-2xl overflow-hidden flex flex-col rounded-sm"
           style={{
             maxWidth: getViewportWidth(),
             width: '100%',
             height: '100%',
+            minHeight: 0,
             flex: '1 1 0%',
+            backgroundColor: '#ffffff',
+            boxShadow: deviceMode === 'responsive' ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: deviceMode === 'responsive' ? '0' : '4px',
+            boxSizing: 'border-box',
           }}
         >
           {useServerUrl && isRunning && serverPreviewUrl ? (
@@ -295,8 +461,16 @@ export const LivePreviewPane: React.FC = () => {
               key={`srv-${iframeKey}`}
               ref={iframeRef}
               src={serverPreviewUrl}
-              className="w-full h-full min-h-full border-none block flex-1"
-              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', border: 'none', display: 'block', flex: '1 1 0%' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                flex: '1 1 0%',
+                minHeight: '100%',
+                border: 'none',
+                display: 'block',
+                boxSizing: 'border-box',
+                backgroundColor: '#ffffff',
+              }}
               title="Xivig Live Server Preview"
               sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
             />
@@ -305,10 +479,18 @@ export const LivePreviewPane: React.FC = () => {
               key={`direct-${iframeKey}`}
               ref={iframeRef}
               srcDoc={previewHtml}
-              className="w-full h-full min-h-full border-none block flex-1"
-              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', border: 'none', display: 'block', flex: '1 1 0%' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                flex: '1 1 0%',
+                minHeight: '100%',
+                border: 'none',
+                display: 'block',
+                boxSizing: 'border-box',
+                backgroundColor: '#ffffff',
+              }}
               title="Xivig Direct Preview"
-              sandbox="allow-scripts allow-forms allow-modals"
+              sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
             />
           )}
         </div>
@@ -316,42 +498,105 @@ export const LivePreviewPane: React.FC = () => {
 
       {/* Embedded Console Drawer */}
       {showConsole && (
-        <div className="h-44 bg-[#1e1e1e] border-t border-[#2e2e2e] flex flex-col text-xs">
-          <div className="flex items-center justify-between px-3 py-1 bg-[#252526] border-b border-[#2e2e2e] text-gray-400 font-mono">
+        <div
+          style={{
+            height: '160px',
+            backgroundColor: '#1e1e1e',
+            borderTop: '1px solid #2e2e2e',
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: '12px',
+            flexShrink: 0,
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '4px 10px',
+              backgroundColor: '#252526',
+              borderBottom: '1px solid #2e2e2e',
+              color: '#888888',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+            }}
+          >
             <span>Preview Console ({logs.length} logs)</span>
             <button
               onClick={() => setLogs([])}
               title="Clear Console"
-              className="hover:text-white flex items-center space-x-1"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#888888',
+                cursor: 'pointer',
+              }}
             >
               <Trash2 size={11} />
               <span>Clear</span>
             </button>
           </div>
-          <div className="flex-1 overflow-auto p-2 font-mono text-[11px] space-y-1">
+          <div
+            style={{
+              flex: '1 1 0%',
+              overflowY: 'auto',
+              padding: '6px',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+            }}
+          >
             {logs.length === 0 ? (
-              <div className="text-gray-500 italic">No console output yet.</div>
+              <div style={{ color: '#666666', fontStyle: 'italic' }}>No console output yet.</div>
             ) : (
               logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`flex items-start space-x-2 py-0.5 border-b border-[#2a2a2a] ${
-                    log.type === 'error'
-                      ? 'text-red-400 bg-red-950/20'
-                      : log.type === 'warn'
-                      ? 'text-yellow-400 bg-yellow-950/20'
-                      : log.type === 'info'
-                      ? 'text-blue-400'
-                      : 'text-gray-300'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px',
+                    padding: '2px 0',
+                    borderBottom: '1px solid #2a2a2a',
+                    color:
+                      log.type === 'error'
+                        ? '#f87171'
+                        : log.type === 'warn'
+                        ? '#facc15'
+                        : log.type === 'info'
+                        ? '#60a5fa'
+                        : '#cccccc',
+                    backgroundColor:
+                      log.type === 'error'
+                        ? 'rgba(127, 29, 29, 0.2)'
+                        : log.type === 'warn'
+                        ? 'rgba(113, 63, 18, 0.2)'
+                        : 'transparent',
+                  }}
                 >
-                  <span className="text-gray-500 text-[10px] select-none">
+                  <span style={{ color: '#666666', fontSize: '10px', userSelect: 'none' }}>
                     [{log.timestamp}]
                   </span>
-                  <span className="uppercase text-[9px] px-1 py-0.2 rounded font-bold bg-[#333] text-gray-200">
+                  <span
+                    style={{
+                      textTransform: 'uppercase',
+                      fontSize: '9px',
+                      padding: '1px 4px',
+                      borderRadius: '2px',
+                      fontWeight: 700,
+                      backgroundColor: '#333333',
+                      color: '#e5e7eb',
+                    }}
+                  >
                     {log.type}
                   </span>
-                  <span className="flex-1 whitespace-pre-wrap break-all">{log.text}</span>
+                  <span style={{ flex: '1 1 0%', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                    {log.text}
+                  </span>
                 </div>
               ))
             )}

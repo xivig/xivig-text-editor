@@ -90,4 +90,49 @@ test.describe('Xivig Editor Application Workflows', () => {
     expect(previewState.canScroll).toBe(true);
     expect(previewState.scrolled).toBe(true);
   });
+
+  test('renders html live preview with full height iframe and aligned toolbar', async () => {
+    const window = await app.firstWindow();
+    await window.waitForLoadState('domcontentloaded');
+    await window.waitForTimeout(1000);
+
+    // Switch to index.html tab
+    const indexTab = await window.$('text=index.html');
+    if (indexTab) {
+      await indexTab.click();
+      await window.waitForTimeout(500);
+    }
+
+    // Click Live Web Preview button (title contains "Live Web Preview")
+    const liveBtn = await window.$('button[title*="Live Web Preview"]');
+    if (liveBtn) {
+      await liveBtn.click();
+    } else {
+      await window.keyboard.press('Control+Shift+V');
+    }
+    await window.waitForTimeout(1000);
+
+    const iframeMetrics = await window.evaluate(() => {
+      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+      if (!iframe) return { found: false };
+
+      const computed = window.getComputedStyle(iframe);
+      const parent = iframe.parentElement as HTMLElement;
+      return {
+        found: true,
+        clientHeight: iframe.clientHeight,
+        offsetHeight: iframe.offsetHeight,
+        height: computed.height,
+        parentHeight: parent ? parent.clientHeight : 0,
+      };
+    });
+
+    console.log('HTML_IFRAME_METRICS:', JSON.stringify(iframeMetrics));
+    expect(iframeMetrics.found).toBe(true);
+    expect(iframeMetrics.clientHeight).toBeGreaterThan(400);
+
+    await window.screenshot({
+      path: 'C:/Users/CyberWord/.gemini/antigravity/brain/c1f6cb44-9b8f-4859-a490-88dce2fd3052/scratch/html_preview_debug.png',
+    });
+  });
 });
