@@ -379,6 +379,97 @@ Scans your document and workspace for \`TODO\`, \`FIXME\`, \`BUG\`, \`HACK\`, an
     readme: `# TODO Highlight
 Never forget a TODO comment again! Highlights annotations in source code with vibrant warning badges.`,
   },
+
+  // --- GIT & VERSION CONTROL ---
+  {
+    id: 'xivig-tool-gitlens',
+    name: 'GitLens — Git supercharged',
+    publisher: 'GitKraken',
+    version: '15.0.0',
+    category: 'Productivity',
+    description: 'Supercharge Git in Xivig: current-line blame, authorship annotations, commit details, and seamless revision navigation.',
+    iconBg: '#0f766e',
+    iconSymbol: '🔭',
+    downloads: '28.4M',
+    rating: 5.0,
+    tags: ['git', 'gitlens', 'blame', 'version-control', 'authorship'],
+    readme: `# GitLens for Xivig
+Unpack the story behind every line of code:
+- **Current Line Blame**: Faint authorship and commit message annotation at the end of the line you are currently editing.
+- **Commit Details**: Quick jump to commit hashes and author timestamps.
+- **Heatmap & Gutter**: Visual age and change indicators.`,
+  },
+  {
+    id: 'xivig-tool-git-graph',
+    name: 'Git Graph',
+    publisher: 'mhutchie',
+    version: '1.30.0',
+    category: 'Productivity',
+    description: 'View a Git Graph of your repository and easily perform Git actions right from the visual graph.',
+    iconBg: '#f97316',
+    iconSymbol: '📊',
+    downloads: '11.5M',
+    rating: 4.9,
+    tags: ['git', 'git-graph', 'branches', 'visual', 'history'],
+    readme: `# Git Graph for Xivig
+A visual topological graph of your repository:
+- Multi-lane branch visualization with merge nodes and commit dots.
+- Tag markers and active HEAD indicators.
+- Instant checkout, merge, rebase, and branch creation actions.`,
+  },
+  {
+    id: 'xivig-tool-git-history',
+    name: 'Git History',
+    publisher: 'Don Jayamanne',
+    version: '0.6.20',
+    category: 'Productivity',
+    description: 'View git log, file history, and compare branches or commits side by side.',
+    iconBg: '#e11d48',
+    iconSymbol: '📜',
+    downloads: '9.2M',
+    rating: 4.8,
+    tags: ['git', 'history', 'diff', 'log', 'timeline'],
+    readme: `# Git History for Xivig
+Inspect the evolution of individual files or the whole project:
+- File-specific commit timeline with author, date, and commit message.
+- Side-by-side or unified diff comparison between any two revisions.`,
+  },
+  {
+    id: 'xivig-tool-github-prs',
+    name: 'GitHub Pull Requests and Issues',
+    publisher: 'GitHub',
+    version: '0.84.0',
+    category: 'Productivity',
+    description: 'Enables reviewing and managing GitHub pull requests and issues directly from within Xivig.',
+    iconBg: '#24292f',
+    iconSymbol: '🐙',
+    downloads: '16.7M',
+    rating: 4.9,
+    tags: ['github', 'pull-requests', 'issues', 'collaboration'],
+    readme: `# GitHub Pull Requests and Issues for Xivig
+Work with GitHub PRs and issues without leaving your editor:
+- Auto-detects remote GitHub repository URL.
+- Lists open PRs and issues with labels, author, and review status.
+- Direct links to web reviews and branch checkout.`,
+  },
+  {
+    id: 'xivig-tool-copilot',
+    name: 'GitHub Copilot',
+    publisher: 'GitHub',
+    version: '1.180.0',
+    category: 'Productivity',
+    description: 'Your AI pair programmer: inline ghost-text code completions with Tab accept and intelligent multi-line suggestions.',
+    iconBg: '#1f242c',
+    iconSymbol: '🤖',
+    downloads: '21.0M',
+    rating: 4.9,
+    tags: ['ai', 'copilot', 'ghost-text', 'code-completion', 'llm'],
+    readme: `# GitHub Copilot for Xivig
+AI-powered coding velocity right at your fingertips:
+- **Ghost Text Suggestions**: Context-aware code completions appear ahead of your cursor in subtle italic gray.
+- **Tab to Accept**: Press \`Tab\` to accept the suggested completion instantly.
+- **Escape to Dismiss**: Press \`Escape\` to reject or dismiss.`,
+  },
   {
     id: 'xivig-tool-rainbow',
     name: 'Rainbow Brackets & Indent',

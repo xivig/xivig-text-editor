@@ -16,6 +16,14 @@ import {
   todoTreeExtensionModule,
 } from './productivity/index';
 
+import {
+  gitLensExtensionModule,
+  gitGraphExtensionModule,
+  gitHistoryExtensionModule,
+  githubPrsExtensionModule,
+  copilotExtensionModule,
+} from './git/index';
+
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
   'xivig.rainbow-brackets': rainbowBracketsExtension,
@@ -47,6 +55,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-better-comments': betterCommentsExtensionModule,
   'xivig.todo-tree': todoTreeExtensionModule,
   'xivig-tool-todo-tree': todoTreeExtensionModule,
+
+  // Git & Version Control Suite
+  'xivig.gitlens': gitLensExtensionModule,
+  'xivig-tool-gitlens': gitLensExtensionModule,
+  'xivig.git-graph': gitGraphExtensionModule,
+  'xivig-tool-git-graph': gitGraphExtensionModule,
+  'xivig.git-history': gitHistoryExtensionModule,
+  'xivig-tool-git-history': gitHistoryExtensionModule,
+  'xivig.github-prs': githubPrsExtensionModule,
+  'xivig-tool-github-prs': githubPrsExtensionModule,
+  'xivig.copilot': copilotExtensionModule,
+  'xivig-tool-copilot': copilotExtensionModule,
 };
 
 export {
@@ -64,4 +84,9 @@ export {
   autoCloseTagExtensionModule,
   betterCommentsExtensionModule,
   todoTreeExtensionModule,
+  gitLensExtensionModule,
+  gitGraphExtensionModule,
+  gitHistoryExtensionModule,
+  githubPrsExtensionModule,
+  copilotExtensionModule,
 };

@@ -244,6 +244,100 @@ export class LspProcess {
     }
   }
 
+  public supportsMethod(method: string): boolean {
+    // If not initialized yet, let essential handshake requests proceed
+    if (!this.serverCapabilities) {
+      if (method === 'initialize' || method === 'shutdown' || method === 'exit') {
+        return true;
+      }
+      return false;
+    }
+
+    const caps = this.serverCapabilities;
+    switch (method) {
+      case 'initialize':
+      case 'shutdown':
+      case 'exit':
+        return true;
+
+      case 'textDocument/inlayHint':
+        return Boolean(caps.inlayHintProvider);
+
+      case 'textDocument/codeLens':
+        return Boolean(caps.codeLensProvider);
+
+      case 'textDocument/semanticTokens/full':
+        if (!caps.semanticTokensProvider) return false;
+        if (typeof caps.semanticTokensProvider === 'object') {
+          return caps.semanticTokensProvider.full !== false;
+        }
+        return Boolean(caps.semanticTokensProvider);
+
+      case 'textDocument/semanticTokens/range':
+        if (!caps.semanticTokensProvider) return false;
+        if (typeof caps.semanticTokensProvider === 'object') {
+          return Boolean(caps.semanticTokensProvider.range);
+        }
+        return Boolean(caps.semanticTokensProvider);
+
+      case 'textDocument/hover':
+        return Boolean(caps.hoverProvider);
+
+      case 'textDocument/completion':
+        return Boolean(caps.completionProvider);
+
+      case 'textDocument/signatureHelp':
+        return Boolean(caps.signatureHelpProvider);
+
+      case 'textDocument/definition':
+        return Boolean(caps.definitionProvider);
+
+      case 'textDocument/typeDefinition':
+        return Boolean(caps.typeDefinitionProvider);
+
+      case 'textDocument/implementation':
+        return Boolean(caps.implementationProvider);
+
+      case 'textDocument/references':
+        return Boolean(caps.referencesProvider);
+
+      case 'textDocument/documentHighlight':
+        return Boolean(caps.documentHighlightProvider);
+
+      case 'textDocument/documentSymbol':
+        return Boolean(caps.documentSymbolProvider);
+
+      case 'textDocument/codeAction':
+        return Boolean(caps.codeActionProvider);
+
+      case 'textDocument/formatting':
+        return Boolean(caps.documentFormattingProvider);
+
+      case 'textDocument/rangeFormatting':
+        return Boolean(caps.documentRangeFormattingProvider);
+
+      case 'textDocument/rename':
+        return Boolean(caps.renameProvider);
+
+      case 'textDocument/foldingRange':
+        return Boolean(caps.foldingRangeProvider);
+
+      case 'textDocument/declaration':
+        return Boolean(caps.declarationProvider);
+
+      case 'workspace/symbol':
+        return Boolean(caps.workspaceSymbolProvider);
+
+      case 'textDocument/documentColor':
+      case 'textDocument/colorPresentation':
+        return Boolean(caps.colorProvider);
+
+      default:
+        // For custom or unmapped extension methods, permit dispatch
+        return true;
+    }
+  }
+
   private handleIncomingMessage(msg: JsonRpcMessage): void {
     // 1. Response to our pending request
     if (msg.id !== undefined && this.pendingRequests.has(msg.id)) {
@@ -252,7 +346,18 @@ export class LspProcess {
       this.pendingRequests.delete(msg.id);
 
       if (msg.error) {
-        pending.reject(new Error(msg.error.message || `LSP Error ${msg.error.code}`));
+        const errMsg = String(msg.error.message || '');
+        const isUnsupported =
+          msg.error.code === -32601 ||
+          errMsg.toLowerCase().includes('unhandled method') ||
+          errMsg.toLowerCase().includes('method not found');
+
+        if (isUnsupported) {
+          // Gracefully resolve unsupported methods as null so callers and logs remain clean
+          pending.resolve(null);
+        } else {
+          pending.reject(new Error(errMsg || `LSP Error ${msg.error.code}`));
+        }
       } else {
         pending.resolve(msg.result);
       }
