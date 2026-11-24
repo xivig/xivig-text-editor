@@ -111,6 +111,11 @@ input, textarea {
   font-feature-settings: inherit !important;
 }
 
+/* Ensure closing tags and angle brackets do not create artificial gaps or ligature spacing */
+.cm-line span {
+  letter-spacing: normal !important;
+}
+
 .cm-gutters {
   background-color: var(--xivig-editor) !important;
   color: var(--xivig-text-dim) !important;

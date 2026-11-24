@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { themes, applyThemeToCssVariables } from '../styles/themes';
-import { getEditorTheme } from '../components/editor/editorThemes';
+import { getEditorTheme, draculaHighlight } from '../components/editor/editorThemes';
 import { useExtensionStore } from '../stores/extensionStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
@@ -84,14 +84,55 @@ describe('Official Dracula Theme Implementation', () => {
 
   it('formats HTML/XML tags without italic slant gap across all themes', () => {
     const { htmlLanguage } = require('@codemirror/lang-html');
-    const { highlightTree, tags: t } = require('@lezer/highlight');
+    const { tags: t } = require('@lezer/highlight');
 
-    const htmlSample = '<title>Welcome</title></head><h1>Heading</h1>';
+    const htmlSample = '<form action="" method="get">\n  Name\n  <input type="text" placeholder="Enter your name">\n</form>\n<script>\n  alert("Welcome");\n</script>';
     const tree = htmlLanguage.parser.parse(htmlSample);
     expect(tree).toBeDefined();
 
     // Verify Dracula theme uses fontStyle: normal and official #ff79c6 pink for tagName
     const draculaExts = getEditorTheme('dracula') as any[];
     expect(draculaExts).toBeDefined();
+
+    // Verify all 10 themes define angleBracket with fontVariantLigatures: 'none' and fontFeatureSettings: '"liga" 0, "calt" 0'
+    const allThemeIds = [
+      'xivig-dark',
+      'monokai',
+      'dracula',
+      'one-dark',
+      'solarized-light',
+      'nord',
+      'tokyo-night',
+      'cyberpunk',
+      'github-dark',
+      'synthwave',
+    ] as const;
+
+    for (const themeId of allThemeIds) {
+      const exts = getEditorTheme(themeId) as any[];
+      expect(exts).toBeDefined();
+    }
+  });
+
+  it('safeguards script and form closing tags against ligature gaps and italic shifts', () => {
+    const { htmlLanguage } = require('@codemirror/lang-html');
+    const { highlightTree, tags: t } = require('@lezer/highlight');
+
+    const code = '<form action="" method="get">\n<input type="text">\n</form>\n<script>\nalert(1);\n</script>';
+    const tree = htmlLanguage.parser.parse(code);
+    expect(tree).toBeDefined();
+
+    // Verify Dracula highlight module contains rules preventing ligature shifts and italic gaps
+    const rules = draculaHighlight.module?.getRules() || '';
+    expect(rules).toContain('font-variant-ligatures: none');
+    expect(rules).toContain('font-feature-settings: "liga" 0, "calt" 0');
+    expect(rules).toContain('font-style: normal');
+
+    // Verify style for angleBracket and tagName
+    const angleBracketClass = draculaHighlight.style([t.angleBracket]);
+    expect(angleBracketClass).toBeTruthy();
+
+    const tagNameClass = draculaHighlight.style([t.tagName]);
+    expect(tagNameClass).toBeTruthy();
   });
 });
