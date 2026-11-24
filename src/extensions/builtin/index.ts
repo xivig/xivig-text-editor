@@ -23,6 +23,13 @@ import {
   githubPrsExtensionModule,
   copilotExtensionModule,
 } from './git/index';
+import {
+  copilotChatExtensionModule,
+  codeiumExtensionModule,
+  continueExtensionModule,
+  tabnineExtensionModule,
+  amazonQExtensionModule,
+} from './ai/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -67,6 +74,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-github-prs': githubPrsExtensionModule,
   'xivig.copilot': copilotExtensionModule,
   'xivig-tool-copilot': copilotExtensionModule,
+
+  // AI Development Suite
+  'xivig.copilot-chat': copilotChatExtensionModule,
+  'xivig-tool-copilot-chat': copilotChatExtensionModule,
+  'xivig.codeium': codeiumExtensionModule,
+  'xivig-tool-codeium': codeiumExtensionModule,
+  'xivig.continue': continueExtensionModule,
+  'xivig-tool-continue': continueExtensionModule,
+  'xivig.tabnine': tabnineExtensionModule,
+  'xivig-tool-tabnine': tabnineExtensionModule,
+  'xivig.amazon-q': amazonQExtensionModule,
+  'xivig-tool-amazon-q': amazonQExtensionModule,
 };
 
 export {
@@ -89,4 +108,9 @@ export {
   gitHistoryExtensionModule,
   githubPrsExtensionModule,
   copilotExtensionModule,
+  copilotChatExtensionModule,
+  codeiumExtensionModule,
+  continueExtensionModule,
+  tabnineExtensionModule,
+  amazonQExtensionModule,
 };

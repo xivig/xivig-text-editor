@@ -470,6 +470,99 @@ AI-powered coding velocity right at your fingertips:
 - **Tab to Accept**: Press \`Tab\` to accept the suggested completion instantly.
 - **Escape to Dismiss**: Press \`Escape\` to reject or dismiss.`,
   },
+
+  // --- AI DEVELOPMENT ---
+  {
+    id: 'xivig-tool-copilot-chat',
+    name: 'GitHub Copilot Chat',
+    publisher: 'GitHub',
+    version: '0.14.0',
+    category: 'Productivity',
+    description: 'AI chat companion: ask questions about your codebase, write unit tests, explain code, and run slash commands.',
+    iconBg: '#1f242c',
+    iconSymbol: '💬',
+    downloads: '18.2M',
+    rating: 4.9,
+    tags: ['ai', 'copilot', 'chat', 'slash-commands', 'refactor'],
+    readme: `# GitHub Copilot Chat for Xivig
+Have conversations with your code:
+- \`/explain\`: Understand how complex functions or classes work.
+- \`/tests\`: Generate complete, runnable unit test suites.
+- \`/fix\`: Propose bug fixes and resolve anti-patterns.
+- \`/doc\`: Add comprehensive docstrings and comments.`,
+  },
+  {
+    id: 'xivig-tool-codeium',
+    name: 'Codeium: Free AI Code Completion & Chat',
+    publisher: 'Codeium',
+    version: '1.8.0',
+    category: 'Productivity',
+    description: 'Ultra-fast, free multi-language code completion, docstring generation, and in-editor chat assistance.',
+    iconBg: '#09b6a2',
+    iconSymbol: '⚡',
+    downloads: '7.8M',
+    rating: 4.9,
+    tags: ['ai', 'codeium', 'completion', 'docstring', 'free'],
+    readme: `# Codeium for Xivig
+Modern free AI developer assistant:
+- Lightning-fast inline completions with smart caching.
+- JSDoc, Python docstring, and PHPDoc generator.
+- Multi-language autocompletion support.`,
+  },
+  {
+    id: 'xivig-tool-continue',
+    name: 'Continue — Open-source Autopilot',
+    publisher: 'Continue',
+    version: '0.8.0',
+    category: 'Productivity',
+    description: 'Open-source autopilot extension connecting local models (Ollama, LM Studio) and cloud models with custom @context.',
+    iconBg: '#ff6b4a',
+    iconSymbol: '⏩',
+    downloads: '3.4M',
+    rating: 4.8,
+    tags: ['ai', 'continue', 'ollama', 'local-ai', 'privacy'],
+    readme: `# Continue for Xivig
+Bring your own models (local Ollama or cloud LLMs):
+- Custom context providers: \`@file:\`, \`@code:\`, \`@terminal:\`.
+- Complete privacy mode: run air-gapped without external requests.
+- Full code refactoring and diff review.`,
+  },
+  {
+    id: 'xivig-tool-tabnine',
+    name: 'Tabnine AI: Whole-line & Full-function Completions',
+    publisher: 'Tabnine',
+    version: '3.120.0',
+    category: 'Productivity',
+    description: 'AI code completion engine with local air-gapped prediction mode, zero code sharing, and whole-line completions.',
+    iconBg: '#172b4d',
+    iconSymbol: '🔮',
+    downloads: '9.6M',
+    rating: 4.8,
+    tags: ['ai', 'tabnine', 'whole-line', 'prediction', 'local-mode'],
+    readme: `# Tabnine for Xivig
+Whole-line code completion tuned for developer productivity:
+- Predicts lines of code before you finish typing.
+- 100% private local execution mode.
+- Context-driven identifier and method suggestions.`,
+  },
+  {
+    id: 'xivig-tool-amazon-q',
+    name: 'Amazon Q Developer',
+    publisher: 'Amazon Web Services',
+    version: '1.24.0',
+    category: 'Productivity',
+    description: 'Generative AI assistant for software development with built-in code security vulnerability scanning.',
+    iconBg: '#232f3e',
+    iconSymbol: '☁️',
+    downloads: '5.1M',
+    rating: 4.8,
+    tags: ['ai', 'amazon-q', 'aws', 'security-scan', 'cdk'],
+    readme: `# Amazon Q Developer for Xivig
+Generative AI and security intelligence from AWS:
+- Automated code vulnerability scanning (hardcoded secrets, SQL injection, eval).
+- AWS CDK and Cloud SDK templates and completions.
+- Code modernization recommendations.`,
+  },
   {
     id: 'xivig-tool-rainbow',
     name: 'Rainbow Brackets & Indent',
