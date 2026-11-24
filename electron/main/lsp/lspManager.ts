@@ -167,10 +167,22 @@ export class LspManager {
       return null;
     }
 
+    // Check if the server's declared capabilities support this method
+    if (!proc.supportsMethod(method)) {
+      return null;
+    }
+
     try {
       return await proc.sendRequest(method, params);
     } catch (err: any) {
-      console.debug(`[LSP:${proc.profile.id}] Request '${method}' failed:`, err?.message);
+      const errMsg = String(err?.message || '');
+      if (
+        !errMsg.toLowerCase().includes('unhandled method') &&
+        !errMsg.toLowerCase().includes('method not found') &&
+        !errMsg.includes('-32601')
+      ) {
+        console.debug(`[LSP:${proc.profile.id}] Request '${method}' failed:`, errMsg);
+      }
       return null;
     }
   }
