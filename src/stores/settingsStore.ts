@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ThemeId, applyThemeToCssVariables } from '../styles/themes';
+import { extensionManager } from '../extensions/runtime/extensionManager';
 
 export interface UserSettings {
   fontSize: number;
@@ -21,6 +22,9 @@ export interface UserSettings {
   bracketMatching?: boolean;
   rainbowBrackets?: boolean;
   rainbowIndentGuides?: boolean;
+  bootstrap5Enabled?: boolean;
+  bootstrap5Components?: boolean;
+  bootstrap5FontAwesome?: boolean;
   terminalFontSize?: number;
   trimTrailingWhitespace?: boolean;
   insertFinalNewline?: boolean;
@@ -57,6 +61,9 @@ export const defaultSettings: UserSettings = {
   bracketMatching: true,
   rainbowBrackets: true,
   rainbowIndentGuides: false,
+  bootstrap5Enabled: true,
+  bootstrap5Components: true,
+  bootstrap5FontAwesome: true,
   terminalFontSize: 13,
   trimTrailingWhitespace: false,
   insertFinalNewline: true,
@@ -85,6 +92,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const updated = { ...get().settings, ...partial };
     set({ settings: updated });
     applySettingsToDOM(updated);
+
+    // Sync extension settings
+    if (partial.rainbowBrackets !== undefined) {
+      extensionManager.setSetting('rainbow.brackets', partial.rainbowBrackets);
+    }
+    if (partial.rainbowIndentGuides !== undefined) {
+      extensionManager.setSetting('rainbow.indentGuides', partial.rainbowIndentGuides);
+    }
+    if (partial.bootstrap5Enabled !== undefined) {
+      extensionManager.setSetting('bootstrap5.enabled', partial.bootstrap5Enabled);
+    }
+    if (partial.bootstrap5Components !== undefined) {
+      extensionManager.setSetting('bootstrap5.enableBootstrap', partial.bootstrap5Components);
+    }
+    if (partial.bootstrap5FontAwesome !== undefined) {
+      extensionManager.setSetting('bootstrap5.enableFontAwesome', partial.bootstrap5FontAwesome);
+    }
 
     if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('user_settings', JSON.stringify(updated));

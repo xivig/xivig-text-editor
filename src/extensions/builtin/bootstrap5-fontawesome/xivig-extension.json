@@ -1,0 +1,47 @@
+{
+  "$schema": "https://xivig.dev/schemas/extension-v1.json",
+  "id": "xivig-tool-bootstrap5",
+  "name": "Bootstrap 5 & Font Awesome Snippets",
+  "displayName": "Bootstrap 5 & Font Awesome Snippets",
+  "publisher": "xivig",
+  "version": "1.0.0",
+  "description": "Comprehensive Bootstrap 5 and Font Awesome 6/5 snippets for HTML, PHP, Vue, React, TSX, JSX, and Blade.",
+  "categories": [
+    "Productivity",
+    "Languages"
+  ],
+  "engines": {
+    "xivig": ">=1.3.0"
+  },
+  "activationEvents": [
+    "onEditorCreated",
+    "onLanguage:html",
+    "onLanguage:php",
+    "onLanguage:vue",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact"
+  ],
+  "permissions": [],
+  "contributes": {
+    "settings": [
+      {
+        "id": "bootstrap5.enabled",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Bootstrap 5 and Font Awesome snippets autocompletion"
+      },
+      {
+        "id": "bootstrap5.enableBootstrap",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Bootstrap 5 layout, grid, components, and form snippets (b5-*)"
+      },
+      {
+        "id": "bootstrap5.enableFontAwesome",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Font Awesome icon and CDN snippets (fa-*)"
+      }
+    ]
+  }
+}

@@ -74,6 +74,7 @@ export interface BuiltinExtensionModule {
   activate: (context: ExtensionContext) => Promise<void> | void;
   deactivate?: () => Promise<void> | void;
   getCodeMirrorExtensions?: () => CodeMirrorExtension[];
+  getSnippets?: (language?: string) => any[];
 }
 
 export interface ExtensionRuntimeState {

@@ -1,4 +1,5 @@
 import { snippetCompletion, Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import { extensionManager } from '../../extensions/runtime/extensionManager';
 
 export const jsSnippets: Completion[] = [
   snippetCompletion('console.log(${1:object});', {
@@ -243,7 +244,7 @@ export function getCustomSnippetSource(languageName: string) {
   const lang = languageName.toLowerCase();
 
   return (context: CompletionContext): CompletionResult | null => {
-    const word = context.matchBefore(/\w*/);
+    const word = context.matchBefore(/[\w$-]*/);
     if (!word || (word.from === word.to && !context.explicit)) return null;
 
     let options: Completion[] = [];
@@ -268,10 +269,20 @@ export function getCustomSnippetSource(languageName: string) {
       options = [...options, ...loremSnippets];
     }
 
+    // Include snippets contributed by active extensions (e.g. Bootstrap 5 & Font Awesome)
+    try {
+      const extensionSnippets = extensionManager.getActiveSnippets(lang);
+      if (extensionSnippets.length > 0) {
+        options = [...options, ...extensionSnippets];
+      }
+    } catch {
+      // Ignore if extension manager is initializing
+    }
+
     return {
       from: word.from,
       options,
-      validFor: /^\w*$/,
+      validFor: /^[\w$-]*$/,
     };
   };
 }

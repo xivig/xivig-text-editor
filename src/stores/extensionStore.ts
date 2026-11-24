@@ -247,6 +247,71 @@ Never forget a TODO comment again! Highlights annotations in source code with vi
     readme: `# Rainbow Brackets & Indent
 Makes complex nested code blocks instantly readable by coloring pairs in cyclical rainbow tints.`,
   },
+  {
+    id: 'xivig-tool-bootstrap5',
+    name: 'Bootstrap 5 & Font Awesome Snippets',
+    publisher: 'Anbuselvan Rocky',
+    version: '5.1.0',
+    category: 'Productivity',
+    description: 'Over 60+ responsive Bootstrap 5 components, layouts, grid scopes, and Font Awesome 6 icons for HTML, PHP, Vue, and React.',
+    iconBg: '#7952b3',
+    iconSymbol: '🅱️',
+    downloads: '1.4M',
+    rating: 4.9,
+    tags: ['bootstrap', 'bootstrap5', 'fontawesome', 'snippets', 'html', 'css', 'icons'],
+    readme: `# Bootstrap 5 & Font Awesome Snippets for Xivig
+
+Rapidly scaffold modern, responsive web layouts and components using authentic Bootstrap 5.3 and Font Awesome 6.5 snippet triggers.
+
+## 🚀 Quick Triggers Cheat Sheet
+
+### Bootstrap 5 Starters & Layout
+- \`b5-$\`: Complete responsive HTML5 starter boilerplate with Bootstrap 5.3 CDN CSS & JS.
+- \`b5-cdn-css\`: Bootstrap 5.3 CDN stylesheet link.
+- \`b5-cdn-js\`: Bootstrap 5.3 CDN JavaScript bundle tag.
+- \`b5-grid\`: Container > Row > Column layout scaffold.
+- \`b5-container\`: Responsive layout container (\`.container\` / \`.container-fluid\`).
+- \`b5-row\`: Grid row wrapper.
+- \`b5-col\`: Grid column (\`.col-md-6\`, \`.col-12\`).
+- \`b5-row-cols\`: Grid with auto-wrapping columns and gutters.
+
+### Bootstrap 5 Components
+- \`b5-navbar\`: Full responsive navbar with brand, hamburger toggler, dropdown, and search.
+- \`b5-card\`: Image, title, text, and button card component.
+- \`b5-card-header-footer\`: Featured card with header, body, and footer.
+- \`b5-alert\`: Dismissible contextual alert with close button.
+- \`b5-modal\`: Accessible modal dialog with backdrop and trigger button.
+- \`b5-accordion\`: Multi-item collapsible accordion.
+- \`b5-carousel\`: Image slider with indicators, captions, and controls.
+- \`b5-dropdown\`: Action dropdown menu.
+- \`b5-offcanvas\`: Responsive drawer sidebar.
+- \`b5-table\`: Responsive striped and hoverable table.
+- \`b5-pagination\`: Pagination links with active states.
+- \`b5-btn\`: Standard styled button.
+- \`b5-btn-outline\`: Outline styled button.
+- \`b5-badge\`: Contextual badge.
+- \`b5-progress\`: Progress bar with percentage width.
+- \`b5-spinner\`: CSS loading spinner.
+
+### Bootstrap 5 Forms
+- \`b5-form-input\`: Label + input control with placeholder and helper text.
+- \`b5-form-floating\`: Floating label input container.
+- \`b5-form-select\`: Custom dropdown select.
+- \`b5-form-check\`: Consistent checkbox.
+- \`b5-form-switch\`: Toggle switch.
+- \`b5-input-group\`: Input with prepend/append text addons.
+
+### Font Awesome 6 Icons
+- \`fa-$\`: Font Awesome 6.5.1 CDN link tag.
+- \`fa-icon\`: Standard solid icon (\`<i class="fa-solid fa-star"></i>\`).
+- \`fa-icon-regular\`: Outline icon (\`<i class="fa-regular fa-heart"></i>\`).
+- \`fa-icon-brands\`: Brand logo (\`<i class="fa-brands fa-github"></i>\`).
+- \`fa-btn\`: Button with leading icon and spacing.
+- \`fa-spin\`: Spinning loader icon.
+- \`fa-stack\`: Composite stacked icons.
+- Popular icons: \`fa-house\`, \`fa-user\`, \`fa-search\`, \`fa-gear\`, \`fa-envelope\`, \`fa-bell\`, \`fa-check\`, \`fa-xmark\`, \`fa-trash\`, \`fa-bars\`, \`fa-heart\`, \`fa-star\`, \`fa-github\`, \`fa-twitter\`, etc.
+`,
+  },
 ];
 
 interface ExtensionState {
@@ -264,8 +329,8 @@ interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>((set, get) => ({
   marketplace: MARKETPLACE_EXTENSIONS,
-  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
-  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow'],
+  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5'],
+  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5'],
   selectedExtension: null,
 
   selectExtension: (pkg) => set({ selectedExtension: pkg }),

@@ -203,6 +203,35 @@ export class ExtensionManager {
   }
 
   /**
+   * Returns all code snippets contributed by currently enabled extensions.
+   */
+  getActiveSnippets(language?: string): any[] {
+    const snippets: any[] = [];
+    const processedModules = new Set<BuiltinExtensionModule>();
+
+    for (const [id, state] of this.runtimeStates.entries()) {
+      if (state.status === 'enabled') {
+        const module = BUILTIN_EXTENSIONS[id];
+        if (module && !processedModules.has(module)) {
+          processedModules.add(module);
+          if (typeof module.getSnippets === 'function') {
+            try {
+              const list = module.getSnippets(language);
+              if (Array.isArray(list)) {
+                snippets.push(...list);
+              }
+            } catch (err) {
+              console.error(`Error getting snippets for ${id}:`, err);
+            }
+          }
+        }
+      }
+    }
+
+    return snippets;
+  }
+
+  /**
    * Checks whether an extension is currently enabled and active.
    */
   isExtensionActive(id: string): boolean {
@@ -230,6 +259,14 @@ export class ExtensionManager {
       const rainbow = BUILTIN_EXTENSIONS['xivig-tool-rainbow'] as any;
       if (rainbow && typeof rainbow.updateSettings === 'function') {
         rainbow.updateSettings({ [field]: value });
+      }
+    }
+    // If setting belongs to bootstrap 5 / font awesome, update module settings directly
+    if (key.startsWith('bootstrap5.')) {
+      const field = key.replace('bootstrap5.', '');
+      const bootstrap = BUILTIN_EXTENSIONS['xivig-tool-bootstrap5'] as any;
+      if (bootstrap && typeof bootstrap.updateSettings === 'function') {
+        bootstrap.updateSettings({ [field]: value });
       }
     }
     this.notifyListeners();
