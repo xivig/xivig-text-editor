@@ -20,6 +20,9 @@ interface EditorState {
 
   openDocument: (doc: Omit<EditorDocument, 'id' | 'isDirty' | 'cursor'> & { id?: string }) => void;
   closeDocument: (id: string) => void;
+  closeOtherTabs: (id: string) => void;
+  closeTabsToTheRight: (id: string) => void;
+  closeSavedTabs: () => void;
   closeAllTabs: () => void;
   reopenClosedTab: () => void;
   nextTab: () => void;
@@ -341,6 +344,54 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       documents: newDocs,
       activeDocumentId: nextActiveId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), closedDoc],
+    });
+    triggerAutoSave();
+  },
+
+  closeOtherTabs: (id: string) => {
+    const { documents, closedDocumentsHistory } = get();
+    const kept = documents.filter((d) => d.id === id);
+    const closed = documents.filter((d) => d.id !== id);
+    set({
+      documents: kept,
+      activeDocumentId: id,
+      closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
+    });
+    triggerAutoSave();
+  },
+
+  closeTabsToTheRight: (id: string) => {
+    const { documents, activeDocumentId, closedDocumentsHistory } = get();
+    const index = documents.findIndex((d) => d.id === id);
+    if (index === -1) return;
+    const kept = documents.slice(0, index + 1);
+    const closed = documents.slice(index + 1);
+    let nextActiveId = activeDocumentId;
+    if (!kept.some((d) => d.id === activeDocumentId)) {
+      nextActiveId = id;
+    }
+    set({
+      documents: kept,
+      activeDocumentId: nextActiveId,
+      closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
+    });
+    triggerAutoSave();
+  },
+
+  closeSavedTabs: () => {
+    const { documents, activeDocumentId, closedDocumentsHistory } = get();
+    const kept = documents.filter((d) => d.isDirty);
+    const closed = documents.filter((d) => !d.isDirty);
+    let nextActiveId = activeDocumentId;
+    if (kept.length === 0) {
+      nextActiveId = null;
+    } else if (!kept.some((d) => d.id === activeDocumentId)) {
+      nextActiveId = kept[0].id;
+    }
+    set({
+      documents: kept,
+      activeDocumentId: nextActiveId,
+      closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
     });
     triggerAutoSave();
   },

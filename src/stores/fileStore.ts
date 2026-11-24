@@ -3,6 +3,13 @@ import { ActiveSidebarView, FileItem } from '../types/editor';
 import { RecentItem, GitFileChange } from '../types/electron';
 import { useEditorStore } from './editorStore';
 
+export interface FileClipboardItem {
+  action: 'cut' | 'copy';
+  path: string;
+  name: string;
+  isDirectory?: boolean;
+}
+
 interface FileState {
   currentFolderPath: string | null;
   currentFolderName: string | null;
@@ -11,6 +18,7 @@ interface FileState {
   isSidebarOpen: boolean;
   recentFiles: RecentItem[];
   recentWorkspaces: RecentItem[];
+  fileClipboard: FileClipboardItem | null;
 
   // Git state
   gitBranch: string;
@@ -25,6 +33,8 @@ interface FileState {
   setActiveSidebarView: (view: ActiveSidebarView) => void;
   toggleSidebar: () => void;
   setInitialSession: (folderPath: string | null, isSidebarOpen: boolean, view: ActiveSidebarView) => void;
+  setFileClipboard: (item: FileClipboardItem | null) => void;
+  pasteFileClipboard: (destinationDir: string) => Promise<{ success: boolean; error?: string }>;
   loadRecentHistory: () => Promise<void>;
   loadGitStatus: () => Promise<void>;
   stageGitFile: (filePath: string) => Promise<void>;
@@ -43,9 +53,62 @@ export const useFileStore = create<FileState>((set, get) => ({
   isSidebarOpen: true,
   recentFiles: [],
   recentWorkspaces: [],
+  fileClipboard: null,
   gitBranch: 'main',
   gitChanges: [],
   isGitRepo: false,
+
+  setFileClipboard: (item) => set({ fileClipboard: item }),
+
+  pasteFileClipboard: async (destinationDir: string) => {
+    const { fileClipboard, refreshCurrentFolder } = get();
+    if (!fileClipboard) return { success: false, error: 'Clipboard is empty' };
+
+    const cleanDest = destinationDir.replace(/[/\\]+$/, '');
+    const cleanSource = fileClipboard.path.replace(/[/\\]+$/, '');
+
+    if (cleanDest === cleanSource) {
+      return { success: false, error: 'Cannot paste item into itself' };
+    }
+
+    let targetPath = `${cleanDest}/${fileClipboard.name}`;
+
+    try {
+      if (fileClipboard.action === 'cut') {
+        if (!window.xivig?.renameFileOrFolder) {
+          return { success: false, error: 'Rename/Move API not available' };
+        }
+        const res = await window.xivig.renameFileOrFolder(cleanSource, targetPath);
+        if (res.success) {
+          set({ fileClipboard: null });
+          await refreshCurrentFolder();
+          return { success: true };
+        }
+        return res;
+      } else {
+        if (!window.xivig?.duplicateFile) {
+          return { success: false, error: 'Duplicate API not available' };
+        }
+        if (cleanDest === cleanSource.replace(/[/\\][^/\\]+$/, '')) {
+          const parts = fileClipboard.name.split('.');
+          if (parts.length > 1 && !fileClipboard.isDirectory) {
+            const ext = parts.pop();
+            targetPath = `${cleanDest}/${parts.join('.')}-copy.${ext}`;
+          } else {
+            targetPath = `${cleanDest}/${fileClipboard.name}-copy`;
+          }
+        }
+        const res = await window.xivig.duplicateFile(cleanSource, targetPath);
+        if (res.success) {
+          await refreshCurrentFolder();
+          return { success: true };
+        }
+        return res;
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to paste file' };
+    }
+  },
 
   loadGitStatus: async () => {
     const { currentFolderPath } = get();

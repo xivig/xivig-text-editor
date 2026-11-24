@@ -529,6 +529,17 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       onContextMenu={(e) => {
         if (activeDoc) {
           e.preventDefault();
+          const view = viewRef.current;
+          if (view) {
+            const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+            if (pos !== null) {
+              const { from, to } = view.state.selection.main;
+              const isInsideSelection = from !== to && pos >= from && pos <= to;
+              if (!isInsideSelection) {
+                view.dispatch({ selection: { anchor: pos } });
+              }
+            }
+          }
           setContextMenu({ x: e.clientX, y: e.clientY });
         }
       }}
@@ -583,6 +594,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         <FileContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
+          source="editor"
           target={{
             name: activeDoc.name,
             path: activeDoc.path || activeDoc.name,

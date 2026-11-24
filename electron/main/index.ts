@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, session } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, session, clipboard } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
@@ -304,6 +304,17 @@ ipcMain.handle('window:openNew', async (event) => {
   return { success: true };
 });
 
+ipcMain.handle('clipboard:readText', (event) => {
+  if (!validateIpcSender(event)) return '';
+  return clipboard.readText();
+});
+
+ipcMain.handle('clipboard:writeText', (event, text: string) => {
+  if (!validateIpcSender(event)) return false;
+  clipboard.writeText(typeof text === 'string' ? text : '');
+  return true;
+});
+
 // File dialogs & System operations (Only explicit user selection approves paths)
 ipcMain.handle('dialog:openFile', async (event) => {
   if (!validateIpcSender(event)) return { canceled: true };
@@ -527,7 +538,12 @@ ipcMain.handle('file:duplicate', async (event, { sourcePath, targetPath }: { sou
     assertImmediateDestructiveAuthorization(targetWin.id, safeTarget, 'file:duplicate (destination)');
 
     // COPYFILE_EXCL ensures duplicate does not silently overwrite an existing destination
-    await fs.copyFile(safeSource, safeTarget, fsSync.constants.COPYFILE_EXCL);
+    const stat = await fs.stat(safeSource);
+    if (stat.isDirectory()) {
+      await fs.cp(safeSource, safeTarget, { recursive: true });
+    } else {
+      await fs.copyFile(safeSource, safeTarget, fsSync.constants.COPYFILE_EXCL);
+    }
     addApprovedFile(targetWin.id, safeTarget);
     return { success: true };
   } catch (error: any) {

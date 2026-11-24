@@ -86,6 +86,8 @@ export interface XivigAPI {
   renameFileOrFolder: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>;
   duplicateFile: (sourcePath: string, targetPath: string) => Promise<{ success: boolean; error?: string }>;
   revealInExplorer: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
+  clipboardReadText?: () => Promise<string>;
+  clipboardWriteText?: (text: string) => Promise<boolean>;
 
   // Window controls
   minimizeWindow: () => void;

@@ -713,6 +713,7 @@ export const Sidebar: React.FC = () => {
           x={contextMenu.x}
           y={contextMenu.y}
           target={contextMenu.target}
+          source="sidebar"
           onClose={() => setContextMenu(null)}
           onRename={(target) => {
             setRenameTarget(target);

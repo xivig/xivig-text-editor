@@ -67,13 +67,11 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
               onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (doc.path) {
-                  setContextMenu({
-                    x: e.clientX,
-                    y: e.clientY,
-                    target: { name: doc.name, path: doc.path },
-                  });
-                }
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  target: { name: doc.name, path: doc.path || doc.name },
+                });
               }}
               onAuxClick={(e) => {
                 if (e.button === 1) {
@@ -234,6 +232,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
           x={contextMenu.x}
           y={contextMenu.y}
           target={contextMenu.target}
+          source="tab"
           onClose={() => setContextMenu(null)}
         />
       )}

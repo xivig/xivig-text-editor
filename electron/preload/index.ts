@@ -18,6 +18,8 @@ const xivigAPI = {
     ipcRenderer.invoke('file:duplicate', { sourcePath, targetPath }),
   revealInExplorer: (targetPath: string) =>
     ipcRenderer.invoke('file:revealInExplorer', targetPath),
+  clipboardReadText: () => ipcRenderer.invoke('clipboard:readText'),
+  clipboardWriteText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
 
   // Window operations
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
