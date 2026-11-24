@@ -391,20 +391,58 @@ export const MarkdownPreviewPane: React.FC = () => {
 
   return (
     <div
-      className="flex flex-col h-full min-h-0 bg-[#1e1e1e] border-l border-[#2e2e2e] select-text text-gray-200 overflow-hidden"
-      style={{ height: '100%', minHeight: 0 }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        backgroundColor: '#1e1e1e',
+        borderLeft: '1px solid #2e2e2e',
+        userSelect: 'text',
+        color: '#d4d4d4',
+        overflow: 'hidden',
+        position: 'relative',
+        boxSizing: 'border-box',
+      }}
     >
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#2e2e2e] text-xs select-none gap-2 flex-shrink-0">
-        <div className="flex items-center space-x-1.5 text-gray-300 font-medium min-w-0">
-          <BookOpen size={14} className="text-[#569cd6] flex-shrink-0" />
-          <span className="truncate">Markdown Live Preview</span>
-          <span className="text-[11px] text-gray-500 whitespace-nowrap">
-            &nbsp;({stats.words} words · {stats.readTime} read)
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 12px',
+          backgroundColor: '#252526',
+          borderBottom: '1px solid #2e2e2e',
+          fontSize: '12px',
+          userSelect: 'none',
+          gap: '8px',
+          flexShrink: 0,
+          height: '35px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#cccccc',
+            fontWeight: 500,
+            minWidth: 0,
+          }}
+        >
+          <BookOpen size={14} style={{ color: '#569cd6', flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Markdown Live Preview
+          </span>
+          <span style={{ fontSize: '11px', color: '#888888', whiteSpace: 'nowrap' }}>
+            ({stats.words} words · {stats.readTime} read)
           </span>
         </div>
 
-        <div className="flex items-center space-x-1.5 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           {/* Synchronized Live Scrolling Toggle */}
           <button
             onClick={() => {
@@ -417,13 +455,20 @@ export const MarkdownPreviewPane: React.FC = () => {
               });
             }}
             title={syncScroll ? 'Disable Synchronized Live Scrolling' : 'Enable Synchronized Live Scrolling'}
-            className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition-colors ${
-              syncScroll
-                ? 'text-[#569cd6] bg-[#264f78]/30 border border-[#569cd6]/40 hover:bg-[#264f78]/50'
-                : 'text-gray-400 hover:text-white hover:bg-[#333]'
-            }`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              border: syncScroll ? '1px solid rgba(86, 156, 214, 0.4)' : '1px solid transparent',
+              backgroundColor: syncScroll ? 'rgba(38, 79, 120, 0.4)' : 'transparent',
+              color: syncScroll ? '#569cd6' : '#999999',
+            }}
           >
-            <ArrowUpDown size={12} className={syncScroll ? 'text-[#569cd6]' : 'text-gray-400'} />
+            <ArrowUpDown size={12} style={{ color: syncScroll ? '#569cd6' : '#999999' }} />
             <span>{syncScroll ? 'Sync On' : 'Sync Off'}</span>
           </button>
 
@@ -431,9 +476,20 @@ export const MarkdownPreviewPane: React.FC = () => {
           <button
             onClick={handleCopyHtml}
             title="Copy Rendered HTML"
-            className="flex items-center space-x-1 px-2 py-0.5 rounded text-gray-300 hover:text-white hover:bg-[#333] transition-colors text-[11px]"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              border: '1px solid #3c3c3c',
+              backgroundColor: '#2d2d2d',
+              color: '#cccccc',
+            }}
           >
-            {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+            {copied ? <Check size={12} style={{ color: '#4ade80' }} /> : <Copy size={12} />}
             <span>{copied ? 'Copied HTML' : 'Copy HTML'}</span>
           </button>
 
@@ -441,7 +497,17 @@ export const MarkdownPreviewPane: React.FC = () => {
           <button
             onClick={closePreview}
             title="Close Preview"
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px',
+              borderRadius: '3px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#888888',
+              cursor: 'pointer',
+            }}
           >
             <X size={14} />
           </button>
@@ -451,36 +517,170 @@ export const MarkdownPreviewPane: React.FC = () => {
       {/* Rendered Markdown Body with exact positioning, constrained image sizing and custom visible scrollbar */}
       <div
         ref={previewContainerRef}
-        style={{ position: 'relative', minHeight: 0, overflowY: 'auto' }}
-        className="flex-1 min-h-0 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
+        className="markdown-preview"
+        style={{
+          flex: '1 1 0%',
+          height: 'calc(100% - 35px)',
+          minHeight: 0,
+          maxHeight: 'calc(100% - 35px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '16px 24px',
+          position: 'relative',
+          boxSizing: 'border-box',
+          scrollbarGutter: 'stable',
+        }}
       >
         <style>{`
           .markdown-preview {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #cccccc;
+            line-height: 1.6;
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.28) rgba(0, 0, 0, 0.2);
           }
           .markdown-preview::-webkit-scrollbar {
             width: 10px;
             height: 10px;
-            display: block;
+            display: block !important;
           }
           .markdown-preview::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.2) !important;
           }
           .markdown-preview::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.28);
+            background-color: rgba(255, 255, 255, 0.28) !important;
             border-radius: 5px;
             border: 2px solid #1e1e1e;
             background-clip: padding-box;
           }
           .markdown-preview::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.45);
+            background-color: rgba(255, 255, 255, 0.45) !important;
           }
           .markdown-preview::-webkit-scrollbar-thumb:active {
-            background-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(255, 255, 255, 0.6) !important;
           }
           .markdown-preview::-webkit-scrollbar-corner {
             background: transparent;
+          }
+          .markdown-preview h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #333333;
+            padding-bottom: 8px;
+          }
+          .markdown-preview h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4ec9b0;
+            margin-top: 22px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #2e2e2e;
+            padding-bottom: 6px;
+          }
+          .markdown-preview h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #569cd6;
+            margin-top: 18px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #282828;
+            padding-bottom: 4px;
+          }
+          .markdown-preview h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #d4d4d4;
+            margin-top: 14px;
+            margin-bottom: 8px;
+          }
+          .markdown-preview p {
+            margin-top: 8px;
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #cccccc;
+            font-size: 14px;
+          }
+          .markdown-preview pre {
+            background-color: #1a1a1a;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 12px;
+            overflow-x: auto;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+            color: #d4d4d4;
+            line-height: 1.5;
+            margin: 14px 0;
+          }
+          .markdown-preview code {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+          }
+          .markdown-preview p code, .markdown-preview li code {
+            background-color: #2d2d2d;
+            color: #ce9178;
+            padding: 2px 5px;
+            border-radius: 3px;
+            border: 1px solid #3c3c3c;
+          }
+          .markdown-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+          }
+          .markdown-preview th {
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            padding: 8px 12px;
+            font-weight: 600;
+            color: #ffffff;
+            text-align: left;
+          }
+          .markdown-preview td {
+            border: 1px solid #3e3e42;
+            padding: 8px 12px;
+            color: #cccccc;
+          }
+          .markdown-preview tr:nth-child(even) {
+            background-color: #1e1e1e;
+          }
+          .markdown-preview tr:nth-child(odd) {
+            background-color: #181818;
+          }
+          .markdown-preview tr:hover {
+            background-color: #282828;
+          }
+          .markdown-preview blockquote {
+            border-left: 4px solid #007acc;
+            padding: 6px 12px;
+            margin: 12px 0;
+            background-color: #20252b;
+            border-radius: 0 4px 4px 0;
+            color: #9cdcfe;
+            font-style: italic;
+          }
+          .markdown-preview a {
+            color: #3794ff;
+            text-decoration: none;
+          }
+          .markdown-preview a:hover {
+            text-decoration: underline;
+          }
+          .markdown-preview hr {
+            border: none;
+            border-top: 1px solid #3e3e42;
+            margin: 20px 0;
+          }
+          .markdown-preview ul, .markdown-preview ol {
+            padding-left: 24px;
+            margin: 8px 0;
+          }
+          .markdown-preview li {
+            margin: 4px 0;
           }
           .markdown-preview img {
             max-width: 100%;
@@ -517,7 +717,7 @@ export const MarkdownPreviewPane: React.FC = () => {
         `}</style>
         <div
           ref={previewContentRef}
-          className="max-w-3xl mx-auto"
+          style={{ maxWidth: '850px', margin: '0 auto' }}
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       </div>
