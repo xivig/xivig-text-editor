@@ -9,6 +9,20 @@ import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
+import {
+  sortLines,
+  removeDuplicateLinesCommand,
+  reverseLinesCommand,
+  trimTrailingWhitespaceCommand,
+  incrementNumberCommand,
+  decrementNumberCommand,
+  transformToUppercase,
+  transformToLowercase,
+  transformToTitleCaseCommand,
+  transformToCamelCaseCommand,
+  transformToSnakeCaseCommand,
+  transformToKebabCaseCommand,
+} from '../editor/sublimeKeymap';
 
 interface MenuItem {
   label: React.ReactNode;
@@ -168,7 +182,13 @@ export const Menubar: React.FC = () => {
       {
         label: 'Close Tab',
         shortcut: 'Ctrl+W',
-        action: () => closeDocument(activeDoc?.id),
+        action: () => {
+          if (activeDoc && activeDoc.isDirty) {
+            useUIStore.getState().openDirtyCloseModal(activeDoc.id);
+          } else {
+            closeDocument(activeDoc?.id);
+          }
+        },
       },
       {
         label: 'Close Other Tabs',
@@ -278,6 +298,89 @@ export const Menubar: React.FC = () => {
         label: 'Insert Lorem Ipsum...',
         shortcut: 'Ctrl+Alt+L',
         action: () => useUIStore.getState().openLoremIpsumModal(),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Sort Lines',
+        shortcut: 'F9',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) sortLines(false)(view);
+        },
+      },
+      {
+        label: 'Sort Lines (Case Sensitive)',
+        shortcut: 'Ctrl+F9',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) sortLines(true)(view);
+        },
+      },
+      {
+        label: 'Remove Duplicate Lines',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) removeDuplicateLinesCommand(view);
+        },
+      },
+      {
+        label: 'Reverse Selected Lines',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) reverseLinesCommand(view);
+        },
+      },
+      {
+        label: 'Trim Trailing Whitespace',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) trimTrailingWhitespaceCommand(view);
+        },
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Transform: UPPERCASE',
+        shortcut: 'Ctrl+K Ctrl+U',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToUppercase(view);
+        },
+      },
+      {
+        label: 'Transform: lowercase',
+        shortcut: 'Ctrl+K Ctrl+L',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToLowercase(view);
+        },
+      },
+      {
+        label: 'Transform: Title Case',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToTitleCaseCommand(view);
+        },
+      },
+      {
+        label: 'Transform: camelCase',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToCamelCaseCommand(view);
+        },
+      },
+      {
+        label: 'Transform: snake_case',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToSnakeCaseCommand(view);
+        },
+      },
+      {
+        label: 'Transform: kebab-case',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transformToKebabCaseCommand(view);
+        },
       },
     ],
     Selection: [

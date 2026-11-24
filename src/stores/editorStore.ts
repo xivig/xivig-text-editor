@@ -25,6 +25,8 @@ interface EditorState {
   closeSavedTabs: () => void;
   closeAllTabs: () => void;
   reopenClosedTab: () => void;
+  reorderTabs: (sourceId: string, targetId: string) => void;
+  togglePinTab: (id?: string) => void;
   nextTab: () => void;
   previousTab: () => void;
   switchToTab: (index: number) => void;
@@ -360,8 +362,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { documents, activeDocumentId, closedDocumentsHistory } = get();
     const targetId = id || activeDocumentId;
     if (!targetId) return;
-    const kept = documents.filter((d) => d.id === targetId);
-    const closed = documents.filter((d) => d.id !== targetId);
+    const kept = documents.filter((d) => d.id === targetId || d.isPinned);
+    const closed = documents.filter((d) => d.id !== targetId && !d.isPinned);
     set({
       documents: kept,
       activeDocumentId: targetId,
@@ -377,8 +379,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!targetId) return;
     const index = documents.findIndex((d) => d.id === targetId);
     if (index === -1) return;
-    const kept = documents.slice(0, index + 1);
-    const closed = documents.slice(index + 1);
+    const kept = documents.slice(0, index + 1).concat(documents.slice(index + 1).filter((d) => d.isPinned));
+    const closed = documents.slice(index + 1).filter((d) => !d.isPinned);
     let nextActiveId = activeDocumentId;
     if (!kept.some((d) => d.id === activeDocumentId)) {
       nextActiveId = targetId;
@@ -393,6 +395,37 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       secondaryDocumentId: nextSecondaryId,
       closedDocumentsHistory: [...closedDocumentsHistory.slice(-20), ...closed],
     });
+    triggerAutoSave();
+  },
+
+  reorderTabs: (sourceId: string, targetId: string) => {
+    const { documents } = get();
+    if (sourceId === targetId) return;
+    const sourceIndex = documents.findIndex((d) => d.id === sourceId);
+    const targetIndex = documents.findIndex((d) => d.id === targetId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const newDocs = [...documents];
+    const [dragged] = newDocs.splice(sourceIndex, 1);
+    newDocs.splice(targetIndex, 0, dragged);
+
+    set({ documents: newDocs });
+    triggerAutoSave();
+  },
+
+  togglePinTab: (id?: string) => {
+    const { documents, activeDocumentId } = get();
+    const targetId = id || activeDocumentId;
+    if (!targetId) return;
+
+    const newDocs = documents.map((d) => {
+      if (d.id === targetId) {
+        return { ...d, isPinned: !d.isPinned };
+      }
+      return d;
+    });
+
+    set({ documents: newDocs });
     triggerAutoSave();
   },
 

@@ -426,8 +426,13 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   const handleCloseThisTab = () => {
     onClose();
     const doc = getTargetDoc();
-    if (doc) closeDocument(doc.id);
-    else closeDocument();
+    if (doc && doc.isDirty) {
+      useUIStore.getState().openDirtyCloseModal(doc.id);
+    } else if (doc) {
+      closeDocument(doc.id);
+    } else {
+      closeDocument();
+    }
   };
 
   const handleCloseOtherTabs = () => {
@@ -457,6 +462,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   const handleReopenClosedTab = () => {
     onClose();
     useEditorStore.getState().reopenClosedTab();
+  };
+
+  const handleTogglePinTab = () => {
+    onClose();
+    const doc = getTargetDoc();
+    if (doc) useEditorStore.getState().togglePinTab(doc.id);
   };
 
   const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -568,6 +579,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       {/* ------------------------------------------------------------- */}
       {source === 'tab' && (
         <>
+          <div onClick={handleTogglePinTab} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>{getTargetDoc()?.isPinned ? 'Unpin Tab' : 'Pin Tab'}</span>
+          </div>
+
+          <div style={menuDividerStyle} />
+
           <div onClick={handleCloseThisTab} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>Close</span>
             <span style={shortcutStyle}>Ctrl+W</span>

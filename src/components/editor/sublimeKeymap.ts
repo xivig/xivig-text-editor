@@ -42,6 +42,16 @@ import {
   selectAllBookmarks,
 } from './bookmarks';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
+import {
+  removeDuplicateLines,
+  reverseLines,
+  toTitleCase,
+  toCamelCase,
+  toSnakeCase,
+  toKebabCase,
+  trimTrailingWhitespace,
+  adjustNumberString,
+} from '../../utils/textTransformations';
 
 // Saved mark position for Ctrl+K Ctrl+Space (Sublime mark buffer)
 let savedMarkPosition: number | null = null;
@@ -372,6 +382,179 @@ export const transformToLowercase: StateCommand = ({ state, dispatch }) => {
 };
 
 /**
+ * Sublime Text: Remove Duplicate Lines
+ */
+export const removeDuplicateLinesCommand: StateCommand = ({ state, dispatch }) => {
+  const lineNumbers = new Set<number>();
+  for (const range of state.selection.ranges) {
+    const start = state.doc.lineAt(range.from).number;
+    const end = state.doc.lineAt(range.to).number;
+    for (let i = start; i <= end; i++) lineNumbers.add(i);
+  }
+
+  if (lineNumbers.size <= 1) {
+    const fullText = state.doc.toString();
+    const result = removeDuplicateLines(fullText);
+    dispatch(state.update({
+      changes: { from: 0, to: state.doc.length, insert: result },
+      userEvent: 'input',
+    }));
+    return true;
+  }
+
+  const sortedLineNums = Array.from(lineNumbers).sort((a, b) => a - b);
+  const fromLine = state.doc.line(sortedLineNums[0]);
+  const toLine = state.doc.line(sortedLineNums[sortedLineNums.length - 1]);
+  const text = state.sliceDoc(fromLine.from, toLine.to);
+  const result = removeDuplicateLines(text);
+
+  dispatch(state.update({
+    changes: { from: fromLine.from, to: toLine.to, insert: result },
+    userEvent: 'input',
+  }));
+  return true;
+};
+
+/**
+ * Sublime Text: Reverse Lines
+ */
+export const reverseLinesCommand: StateCommand = ({ state, dispatch }) => {
+  const lineNumbers = new Set<number>();
+  for (const range of state.selection.ranges) {
+    const start = state.doc.lineAt(range.from).number;
+    const end = state.doc.lineAt(range.to).number;
+    for (let i = start; i <= end; i++) lineNumbers.add(i);
+  }
+
+  if (lineNumbers.size <= 1) {
+    const fullText = state.doc.toString();
+    const result = reverseLines(fullText);
+    dispatch(state.update({
+      changes: { from: 0, to: state.doc.length, insert: result },
+      userEvent: 'input',
+    }));
+    return true;
+  }
+
+  const sortedLineNums = Array.from(lineNumbers).sort((a, b) => a - b);
+  const fromLine = state.doc.line(sortedLineNums[0]);
+  const toLine = state.doc.line(sortedLineNums[sortedLineNums.length - 1]);
+  const text = state.sliceDoc(fromLine.from, toLine.to);
+  const result = reverseLines(text);
+
+  dispatch(state.update({
+    changes: { from: fromLine.from, to: toLine.to, insert: result },
+    userEvent: 'input',
+  }));
+  return true;
+};
+
+/**
+ * Sublime Text: Trim Trailing Whitespace across entire document
+ */
+export const trimTrailingWhitespaceCommand: StateCommand = ({ state, dispatch }) => {
+  const fullText = state.doc.toString();
+  const result = trimTrailingWhitespace(fullText);
+  if (result !== fullText) {
+    dispatch(state.update({
+      changes: { from: 0, to: state.doc.length, insert: result },
+      userEvent: 'input',
+    }));
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Increment / Decrement Number under cursor or in selection
+ */
+export const adjustNumberUnderCursor = (delta: number): StateCommand => ({ state, dispatch }) => {
+  const changes: { from: number; to: number; insert: string }[] = [];
+  const newRanges: SelectionRange[] = [];
+  let offset = 0;
+
+  for (const range of state.selection.ranges) {
+    if (!range.empty) {
+      const selected = state.sliceDoc(range.from, range.to);
+      const match = selected.match(/^[+-]?\d+(?:\.\d+)?$/);
+      if (match) {
+        const replacement = adjustNumberString(selected, delta);
+        changes.push({ from: range.from, to: range.to, insert: replacement });
+        newRanges.push(EditorSelection.range(range.from + offset, range.from + offset + replacement.length));
+        offset += replacement.length - selected.length;
+        continue;
+      }
+    }
+
+    const line = state.doc.lineAt(range.head);
+    const col = range.head - line.from;
+    const regex = /[+-]?\d+(?:\.\d+)?/g;
+    let match: RegExpExecArray | null;
+    let found = false;
+
+    while ((match = regex.exec(line.text)) !== null) {
+      const start = match.index;
+      const end = start + match[0].length;
+      if (col >= start && col <= end) {
+        const numStr = match[0];
+        const replacement = adjustNumberString(numStr, delta);
+        const fromPos = line.from + start;
+        const toPos = line.from + end;
+        changes.push({ from: fromPos, to: toPos, insert: replacement });
+        const relCol = col - start;
+        const newCol = Math.min(replacement.length, relCol);
+        newRanges.push(EditorSelection.cursor(fromPos + offset + newCol));
+        offset += replacement.length - numStr.length;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      newRanges.push(range);
+    }
+  }
+
+  if (changes.length > 0) {
+    dispatch(state.update({
+      changes,
+      selection: EditorSelection.create(newRanges),
+      userEvent: 'input',
+    }));
+    return true;
+  }
+  return false;
+};
+
+export const incrementNumberCommand = adjustNumberUnderCursor(1);
+export const decrementNumberCommand = adjustNumberUnderCursor(-1);
+
+/**
+ * Generic selection string transformer
+ */
+export const transformSelection = (transform: (text: string) => string): StateCommand => ({ state, dispatch }) => {
+  const changes: { from: number; to: number; insert: string }[] = [];
+
+  for (const range of state.selection.ranges) {
+    if (!range.empty) {
+      const text = state.sliceDoc(range.from, range.to);
+      changes.push({ from: range.from, to: range.to, insert: transform(text) });
+    }
+  }
+
+  if (changes.length > 0) {
+    dispatch(state.update({ changes, userEvent: 'input' }));
+    return true;
+  }
+  return false;
+};
+
+export const transformToTitleCaseCommand = transformSelection(toTitleCase);
+export const transformToCamelCaseCommand = transformSelection(toCamelCase);
+export const transformToSnakeCaseCommand = transformSelection(toSnakeCase);
+export const transformToKebabCaseCommand = transformSelection(toKebabCase);
+
+/**
  * Sublime Text Ctrl+K Ctrl+C: Center view on cursor
  */
 export const centerCursor: Command = (view) => {
@@ -383,6 +566,9 @@ export const centerCursor: Command = (view) => {
 };
 
 export const sublimeKeybindings: readonly KeyBinding[] = [
+  // --- Numbers ---
+  { key: 'Mod-Alt-=', run: incrementNumberCommand, preventDefault: true },
+  { key: 'Mod-Alt--', run: decrementNumberCommand, preventDefault: true },
   // --- Sublime Multi-Cursor & Selection ---
   { key: 'Mod-d', run: selectNextOccurrence, preventDefault: true },
   { key: 'Alt-F3', run: selectSelectionMatches, preventDefault: true },

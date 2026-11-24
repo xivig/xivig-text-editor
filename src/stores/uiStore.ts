@@ -22,6 +22,10 @@ interface UIState {
   isUpdateCheckOpen: boolean;
   isDistractionFree: boolean;
   quickOpenInitialMode: string;
+  dirtyCloseDocId: string | null;
+
+  openDirtyCloseModal: (docId: string) => void;
+  closeDirtyCloseModal: () => void;
 
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -95,6 +99,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   isUpdateCheckOpen: false,
   isDistractionFree: false,
   quickOpenInitialMode: '',
+  dirtyCloseDocId: null,
+
+  openDirtyCloseModal: (docId: string) => set({ dirtyCloseDocId: docId }),
+  closeDirtyCloseModal: () => set({ dirtyCloseDocId: null }),
   isBottomPanelOpen: false,
   activeBottomTab: 'terminal',
 

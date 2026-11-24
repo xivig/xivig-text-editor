@@ -632,7 +632,11 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         if (activeDoc) {
-          closeDocument(activeDoc.id);
+          if (activeDoc.isDirty) {
+            useUIStore.getState().openDirtyCloseModal(activeDoc.id);
+          } else {
+            closeDocument(activeDoc.id);
+          }
         }
       } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();

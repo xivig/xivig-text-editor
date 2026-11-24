@@ -258,4 +258,22 @@ describe('TabBar Document Management', () => {
     expect(docs).toHaveLength(1);
     expect(docs[0].id).toBe('doc-2'); // only the dirty doc remains
   });
+
+  it('reorders tabs via drag and drop reorderTabs', () => {
+    useEditorStore.getState().reorderTabs('doc-1', 'doc-3');
+    const docs = useEditorStore.getState().documents;
+    expect(docs.map((d) => d.id)).toEqual(['doc-2', 'doc-3', 'doc-1']);
+  });
+
+  it('pins tabs and protects them from bulk close operations', () => {
+    useEditorStore.getState().togglePinTab('doc-3');
+    expect(useEditorStore.getState().documents.find((d) => d.id === 'doc-3')?.isPinned).toBe(true);
+
+    // Close other tabs around doc-1 -> doc-3 must remain open because it is pinned
+    useEditorStore.getState().closeOtherTabs('doc-1');
+    const docs = useEditorStore.getState().documents;
+    expect(docs.some((d) => d.id === 'doc-1')).toBe(true);
+    expect(docs.some((d) => d.id === 'doc-3')).toBe(true);
+    expect(docs.some((d) => d.id === 'doc-2')).toBe(false);
+  });
 });

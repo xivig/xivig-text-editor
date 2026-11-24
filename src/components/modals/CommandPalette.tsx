@@ -12,6 +12,20 @@ import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { goToDefinition } from '../editor/codeIntelligence';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
+import {
+  sortLines,
+  removeDuplicateLinesCommand,
+  reverseLinesCommand,
+  trimTrailingWhitespaceCommand,
+  incrementNumberCommand,
+  decrementNumberCommand,
+  transformToUppercase,
+  transformToLowercase,
+  transformToTitleCaseCommand,
+  transformToCamelCaseCommand,
+  transformToSnakeCaseCommand,
+  transformToKebabCaseCommand,
+} from '../editor/sublimeKeymap';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
   extractHtmlLinks,
@@ -158,7 +172,13 @@ export const CommandPalette: React.FC = () => {
       category: 'File',
       title: 'Close Active Tab',
       shortcut: 'Ctrl+W',
-      action: () => closeDocument(activeDoc?.id),
+      action: () => {
+        if (activeDoc && activeDoc.isDirty) {
+          useUIStore.getState().openDirtyCloseModal(activeDoc.id);
+        } else {
+          closeDocument(activeDoc?.id);
+        }
+      },
     },
     {
       id: 'file:close-others',
@@ -527,6 +547,129 @@ export const CommandPalette: React.FC = () => {
       title: 'Insert Lorem Ipsum...',
       shortcut: 'Ctrl+Alt+L',
       action: () => useUIStore.getState().openLoremIpsumModal(),
+    },
+    {
+      id: 'edit:increment-number',
+      category: 'Edit',
+      title: 'Increment Number Under Cursor',
+      shortcut: 'Ctrl+Alt+=',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) incrementNumberCommand(view);
+      },
+    },
+    {
+      id: 'edit:decrement-number',
+      category: 'Edit',
+      title: 'Decrement Number Under Cursor',
+      shortcut: 'Ctrl+Alt+-',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) decrementNumberCommand(view);
+      },
+    },
+    {
+      id: 'edit:sort-lines',
+      category: 'Edit',
+      title: 'Sort Lines',
+      shortcut: 'F9',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) sortLines(false)(view);
+      },
+    },
+    {
+      id: 'edit:sort-lines-case-sensitive',
+      category: 'Edit',
+      title: 'Sort Lines (Case Sensitive)',
+      shortcut: 'Ctrl+F9',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) sortLines(true)(view);
+      },
+    },
+    {
+      id: 'edit:remove-duplicate-lines',
+      category: 'Edit',
+      title: 'Remove Duplicate Lines',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) removeDuplicateLinesCommand(view);
+      },
+    },
+    {
+      id: 'edit:reverse-lines',
+      category: 'Edit',
+      title: 'Reverse Selected Lines',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) reverseLinesCommand(view);
+      },
+    },
+    {
+      id: 'edit:trim-trailing-whitespace',
+      category: 'Edit',
+      title: 'Trim Trailing Whitespace',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) trimTrailingWhitespaceCommand(view);
+      },
+    },
+    {
+      id: 'edit:to-uppercase',
+      category: 'Edit',
+      title: 'Transform to UPPERCASE',
+      shortcut: 'Ctrl+K Ctrl+U',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToUppercase(view);
+      },
+    },
+    {
+      id: 'edit:to-lowercase',
+      category: 'Edit',
+      title: 'Transform to lowercase',
+      shortcut: 'Ctrl+K Ctrl+L',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToLowercase(view);
+      },
+    },
+    {
+      id: 'edit:to-title-case',
+      category: 'Edit',
+      title: 'Transform to Title Case',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToTitleCaseCommand(view);
+      },
+    },
+    {
+      id: 'edit:to-camel-case',
+      category: 'Edit',
+      title: 'Transform to camelCase',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToCamelCaseCommand(view);
+      },
+    },
+    {
+      id: 'edit:to-snake-case',
+      category: 'Edit',
+      title: 'Transform to snake_case',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToSnakeCaseCommand(view);
+      },
+    },
+    {
+      id: 'edit:to-kebab-case',
+      category: 'Edit',
+      title: 'Transform to kebab-case',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transformToKebabCaseCommand(view);
+      },
     },
     {
       id: 'lang:select',
