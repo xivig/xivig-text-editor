@@ -188,6 +188,64 @@ export const DEFAULT_LANGUAGE_SERVERS: LanguageServerProfile[] = [
 ];
 
 /**
+ * Normalizes a language ID or file path into a canonical LSP language ID.
+ */
+export function normalizeLanguageId(fileNameOrPath: string, languageId?: string): string {
+  let lang = (languageId || '').trim().toLowerCase();
+
+  if (lang.includes('.') || lang.includes('/') || lang.includes('\\')) {
+    const ext = lang.split('.').pop() || '';
+    lang = ext;
+  }
+
+  if (!lang || lang === 'plaintext' || lang === 'text') {
+    const pathLower = (fileNameOrPath || '').toLowerCase();
+    const ext = pathLower.includes('.') ? pathLower.split('.').pop() || '' : '';
+    lang = ext;
+  }
+
+  switch (lang) {
+    case 'js':
+    case 'mjs':
+    case 'cjs':
+      return 'javascript';
+    case 'ts':
+    case 'mts':
+    case 'cts':
+      return 'typescript';
+    case 'jsx':
+      return 'javascriptreact';
+    case 'tsx':
+      return 'typescriptreact';
+    case 'py':
+    case 'pyi':
+      return 'python';
+    case 'htm':
+    case 'html':
+      return 'html';
+    case 'yml':
+    case 'yaml':
+      return 'yaml';
+    case 'md':
+    case 'markdown':
+      return 'markdown';
+    case 'rs':
+      return 'rust';
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+      return 'cpp';
+    case 'h':
+    case 'hpp':
+      return 'c';
+    case 'cs':
+      return 'csharp';
+    default:
+      return lang;
+  }
+}
+
+/**
  * Normalizes language and file extension to find matching language server configuration.
  */
 export function findServerProfileForFile(
@@ -195,13 +253,17 @@ export function findServerProfileForFile(
   fileNameOrPath: string,
   languageId?: string
 ): LanguageServerProfile | undefined {
+  const normalizedLang = normalizeLanguageId(fileNameOrPath, languageId);
   const lowerName = (fileNameOrPath || '').toLowerCase();
   const lowerLang = (languageId || '').toLowerCase();
 
   return servers.find((s) => {
     if (!s.enabled) return false;
 
-    // Check language ID match
+    // Check normalized or raw language ID match
+    if (normalizedLang && s.languages.some((l) => l.toLowerCase() === normalizedLang)) {
+      return true;
+    }
     if (lowerLang && s.languages.some((l) => l.toLowerCase() === lowerLang)) {
       return true;
     }

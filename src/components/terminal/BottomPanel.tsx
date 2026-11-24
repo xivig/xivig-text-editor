@@ -18,14 +18,18 @@ import {
   Cpu,
   ChevronDown,
   ChevronRight,
+  Bug,
+  Plus,
 } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useDiagnosticsStore, DiagnosticItem } from '../../stores/diagnosticsStore';
 import { useBuildStore } from '../../stores/buildStore';
+import { useTerminalStore } from '../../stores/terminalStore';
 import { FileIcon } from '../common/FileIcon';
 import { renderAnsi, formatOutputTimestamp } from '../../utils/ansi';
+import { DebugConsolePane } from './DebugConsolePane';
 
 export const BottomPanel: React.FC = () => {
   const isOpen = useUIStore((state) => state.isBottomPanelOpen);
@@ -295,6 +299,19 @@ export const BottomPanel: React.FC = () => {
                 }}
               />
             )}
+          </button>
+
+          {/* Debug Console Tab */}
+          <button
+            onClick={() => setBottomTab('debugConsole')}
+            style={{
+              ...tabBtnStyle,
+              borderBottom: activeTab === 'debugConsole' ? '2px solid var(--xivig-accent)' : '2px solid transparent',
+              color: activeTab === 'debugConsole' ? 'var(--xivig-text)' : 'var(--xivig-text-dim)',
+            }}
+          >
+            <Bug size={13} style={{ marginRight: '6px' }} />
+            <span>Debug Console</span>
           </button>
         </div>
 
@@ -641,6 +658,9 @@ export const BottomPanel: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Debug Console Surface */}
+        {activeTab === 'debugConsole' && <DebugConsolePane />}
       </div>
     </div>
   );

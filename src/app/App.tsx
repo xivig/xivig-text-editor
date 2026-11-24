@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Titlebar } from '../components/titlebar/Titlebar';
 import { Menubar } from '../components/menubar/Menubar';
 import { ActivityBar } from '../components/activitybar/ActivityBar';
@@ -55,6 +55,13 @@ import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../utils/beauti
 import { prepareContentForSave } from '../utils/saveUtils';
 import { navigationHistory } from '../utils/navigationHistory';
 import { LanguageServersModal } from '../components/modals/LanguageServersModal';
+import { FormattingSettingsModal } from '../components/modals/FormattingSettingsModal';
+import { ProjectSwitcherModal } from '../components/modals/ProjectSwitcherModal';
+import { TasksModal } from '../components/modals/TasksModal';
+import { DebugToolbar } from '../components/debug/DebugToolbar';
+import { useDebugStore } from '../stores/debugStore';
+import { useTaskStore } from '../stores/taskStore';
+import { useFormatStore } from '../formatting/formatStore';
 import {
   useLspStore,
   LspClient,
@@ -105,13 +112,19 @@ export const App: React.FC = () => {
   const chordRef = React.useRef<string | null>(null);
   const chordTimeoutRef = React.useRef<any>(null);
 
+  const [isFormattingModalOpen, setIsFormattingModalOpen] = useState(false);
+  const [isProjectSwitcherOpen, setIsProjectSwitcherOpen] = useState(false);
+
   // Restore Session and Settings on Mount
   useEffect(() => {
     async function initSession() {
-      // 1. Load persisted settings, extensions, and LSP servers first
+      // 1. Load persisted settings, extensions, LSP servers, debug, and tasks
       await useSettingsStore.getState().loadSettings();
       useExtensionStore.getState().loadInstalledExtensions();
       useLspStore.getState().initialize();
+      useDebugStore.getState().initialize();
+      useTaskStore.getState().initialize();
+      useFormatStore.getState().loadFormatters();
       const settings = useSettingsStore.getState().settings;
 
       if (!window.xivig?.restoreSession) return;
@@ -705,6 +718,44 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         useUIStore.getState().openDiffModal();
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        setIsProjectSwitcherOpen(true);
+      } else if (isCtrlOrMeta && e.shiftKey && (e.key.toLowerCase() === 'b' || e.key.toLowerCase() === 't')) {
+        e.preventDefault();
+        useTaskStore.getState().openModal();
+      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        useFileStore.getState().setActiveSidebarView('debug');
+      } else if (e.key === 'F5' && !isCtrlOrMeta && !e.shiftKey) {
+        e.preventDefault();
+        if (useDebugStore.getState().sessionState === 'paused') {
+          useDebugStore.getState().continueExecution();
+        } else if (useDebugStore.getState().sessionState === 'stopped') {
+          useDebugStore.getState().startDebugging();
+        }
+      } else if (e.key === 'F5' && e.shiftKey && !isCtrlOrMeta) {
+        e.preventDefault();
+        useDebugStore.getState().stopDebugging();
+      } else if (e.key === 'F5' && isCtrlOrMeta && e.shiftKey) {
+        e.preventDefault();
+        useDebugStore.getState().restartDebugging();
+      } else if (e.key === 'F10' && !isCtrlOrMeta) {
+        e.preventDefault();
+        useDebugStore.getState().stepOver();
+      } else if (e.key === 'F11' && !isCtrlOrMeta && !e.shiftKey) {
+        e.preventDefault();
+        useDebugStore.getState().stepInto();
+      } else if (e.key === 'F11' && e.shiftKey && !isCtrlOrMeta) {
+        e.preventDefault();
+        useDebugStore.getState().stepOut();
+      } else if (e.key === 'F9' && !isCtrlOrMeta) {
+        e.preventDefault();
+        const view = getActiveEditorView();
+        if (view && activeDoc?.path) {
+          const lineNo = view.state.doc.lineAt(view.state.selection.main.head).number;
+          useDebugStore.getState().toggleBreakpoint(activeDoc.path, lineNo);
+        }
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         if (activeDoc) {
@@ -866,6 +917,10 @@ export const App: React.FC = () => {
       <RemoveLicenseModal />
       <UpdateCheckModal />
       <LanguageServersModal />
+      <FormattingSettingsModal isOpen={isFormattingModalOpen} onClose={() => setIsFormattingModalOpen(false)} />
+      <ProjectSwitcherModal isOpen={isProjectSwitcherOpen} onClose={() => setIsProjectSwitcherOpen(false)} />
+      <TasksModal />
+      <DebugToolbar />
     </div>
   );
 };

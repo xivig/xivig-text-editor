@@ -20,6 +20,9 @@ import {
 } from '../editor/codeIntelligence';
 import { navigationHistory } from '../../utils/navigationHistory';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
+import { formatDocument, formatSelection, runOrganizeImports, runFixAllProblems } from '../../formatting/formatService';
+import { useDebugStore } from '../../stores/debugStore';
+import { useTaskStore } from '../../stores/taskStore';
 import {
   useLspStore,
   formatDocumentWithLsp,
@@ -1099,6 +1102,104 @@ export const CommandPalette: React.FC = () => {
       title: 'Reload Window',
       shortcut: 'Ctrl+R',
       action: () => window.location.reload(),
+    },
+    // --- Formatting & Code Quality ---
+    {
+      id: 'format:document',
+      category: 'Formatting',
+      title: 'Format Document',
+      shortcut: 'Alt+Shift+F',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) formatDocument(view, activeDoc?.path || undefined, activeDoc?.language);
+      },
+    },
+    {
+      id: 'format:selection',
+      category: 'Formatting',
+      title: 'Format Selection',
+      shortcut: 'Ctrl+K Ctrl+F',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) formatSelection(view, activeDoc?.path || undefined, activeDoc?.language);
+      },
+    },
+    {
+      id: 'format:organize-imports',
+      category: 'Source',
+      title: 'Organize Imports',
+      shortcut: 'Alt+Shift+O',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) runOrganizeImports(view, activeDoc?.path || undefined, activeDoc?.language);
+      },
+    },
+    {
+      id: 'format:fix-all',
+      category: 'Source',
+      title: 'Fix All Auto-Fixable Problems',
+      shortcut: 'Ctrl+Alt+F',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) runFixAllProblems(view, activeDoc?.path || undefined, activeDoc?.language);
+      },
+    },
+    // --- Tasks ---
+    {
+      id: 'tasks:run-task',
+      category: 'Tasks',
+      title: 'Run Task...',
+      shortcut: 'Ctrl+Shift+B',
+      action: () => useTaskStore.getState().openModal(),
+    },
+    // --- Debugging ---
+    {
+      id: 'debug:start',
+      category: 'Debug',
+      title: 'Start Debugging',
+      shortcut: 'F5',
+      action: () => useDebugStore.getState().startDebugging(),
+    },
+    {
+      id: 'debug:stop',
+      category: 'Debug',
+      title: 'Stop Debugging',
+      shortcut: 'Shift+F5',
+      action: () => useDebugStore.getState().stopDebugging(),
+    },
+    {
+      id: 'debug:step-over',
+      category: 'Debug',
+      title: 'Step Over',
+      shortcut: 'F10',
+      action: () => useDebugStore.getState().stepOver(),
+    },
+    {
+      id: 'debug:step-into',
+      category: 'Debug',
+      title: 'Step Into',
+      shortcut: 'F11',
+      action: () => useDebugStore.getState().stepInto(),
+    },
+    {
+      id: 'debug:step-out',
+      category: 'Debug',
+      title: 'Step Out',
+      shortcut: 'Shift+F11',
+      action: () => useDebugStore.getState().stepOut(),
+    },
+    {
+      id: 'debug:toggle-breakpoint',
+      category: 'Debug',
+      title: 'Toggle Breakpoint',
+      shortcut: 'F9',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view && activeDoc?.path) {
+          const lineNo = view.state.doc.lineAt(view.state.selection.main.head).number;
+          useDebugStore.getState().toggleBreakpoint(activeDoc.path, lineNo);
+        }
+      },
     },
   ];
 

@@ -33,7 +33,20 @@ import {
   unstageAll,
   discardChanges,
   getGitDiff,
+  getGitBranches,
+  createBranch,
+  deleteBranch,
+  switchBranch,
+  mergeBranch,
+  rebaseBranch,
+  gitStash,
+  getGitLog,
+  getGitBlame,
+  gitRemoteOperation,
 } from './git';
+import { formatSourceCode, lintAndFixCode, getSupportedFormatters } from './formatters';
+import { dapManager } from './dap/dapManager';
+import { taskManager } from './tasks/taskManager';
 import { runBuildProcess, stopBuildProcess, stopAllBuildProcesses, RunBuildOptions } from './build';
 import {
   startLiveServer,
@@ -215,6 +228,7 @@ async function createWindow() {
     stopBuildProcess(currentWin);
     stopLiveServer(currentWin);
     clearWindowPermissions(currentWin.id);
+    dapManager.stopAllForWindow(currentWin.id);
 
     openWindows.delete(currentWin);
     if (activeWindow === currentWin) {
@@ -734,12 +748,12 @@ ipcMain.handle('git:diff', async (event, { cwd, filePath, staged }: { cwd: strin
   }
 });
 
-ipcMain.handle('git:commit', async (event, { cwd, message }: { cwd: string; message: string }) => {
+ipcMain.handle('git:commit', async (event, { cwd, message, amend }: { cwd: string; message: string; amend?: boolean }) => {
   const targetWin = getValidatedWindow(event);
   try {
     const safeCwd = validatePathInput(cwd);
     assertPathAuthorized(targetWin.id, safeCwd, 'git:commit');
-    return await commitChanges(targetWin.id, safeCwd, message);
+    return await commitChanges(targetWin.id, safeCwd, message, Boolean(amend));
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -915,3 +929,107 @@ ipcMain.handle(
     return lspManager.sendRequest(target, method, params);
   }
 );
+
+// --- Formatter & Code Quality IPC Handlers ---
+ipcMain.handle('formatter:list-available', async (event, workspaceRoot?: string) => {
+  if (!validateIpcSender(event)) return [];
+  return getSupportedFormatters(workspaceRoot);
+});
+
+ipcMain.handle('formatter:format-source-code', async (event, text: string, options: any) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC' };
+  return formatSourceCode(text, options || {});
+});
+
+ipcMain.handle('formatter:lint-and-fix', async (event, text: string, linterId: string, filePath?: string) => {
+  if (!validateIpcSender(event)) return { success: false, error: 'Unauthorized IPC' };
+  return lintAndFixCode(text, linterId, filePath);
+});
+
+// --- Extended Git IPC Handlers ---
+ipcMain.handle('git:branches', async (event, cwd: string) => {
+  const win = getValidatedWindow(event);
+  return getGitBranches(win.id, cwd);
+});
+
+ipcMain.handle('git:create-branch', async (event, cwd: string, branchName: string, checkout = true) => {
+  const win = getValidatedWindow(event);
+  return createBranch(win.id, cwd, branchName, checkout);
+});
+
+ipcMain.handle('git:delete-branch', async (event, cwd: string, branchName: string, force = false) => {
+  const win = getValidatedWindow(event);
+  return deleteBranch(win.id, cwd, branchName, force);
+});
+
+ipcMain.handle('git:switch-branch', async (event, cwd: string, branchName: string) => {
+  const win = getValidatedWindow(event);
+  return switchBranch(win.id, cwd, branchName);
+});
+
+ipcMain.handle('git:merge-branch', async (event, cwd: string, branchName: string) => {
+  const win = getValidatedWindow(event);
+  return mergeBranch(win.id, cwd, branchName);
+});
+
+ipcMain.handle('git:rebase-branch', async (event, cwd: string, branchName: string) => {
+  const win = getValidatedWindow(event);
+  return rebaseBranch(win.id, cwd, branchName);
+});
+
+ipcMain.handle('git:stash', async (event, cwd: string, action: 'save' | 'pop' | 'list', msg?: string) => {
+  const win = getValidatedWindow(event);
+  return gitStash(win.id, cwd, action, msg);
+});
+
+ipcMain.handle('git:log', async (event, cwd: string, maxCount = 50, filePath?: string) => {
+  const win = getValidatedWindow(event);
+  return getGitLog(win.id, cwd, maxCount, filePath);
+});
+
+ipcMain.handle('git:blame', async (event, cwd: string, filePath: string) => {
+  const win = getValidatedWindow(event);
+  return getGitBlame(win.id, cwd, filePath);
+});
+
+ipcMain.handle('git:remote-operation', async (event, cwd: string, op: 'fetch' | 'pull' | 'push', remote = 'origin', branch?: string) => {
+  const win = getValidatedWindow(event);
+  return gitRemoteOperation(win.id, cwd, op, remote, branch);
+});
+
+// --- DAP (Debug Adapter Protocol) IPC Handlers ---
+ipcMain.handle('dap:start-session', async (event, sessionId: string, config: any) => {
+  const win = getValidatedWindow(event);
+  return dapManager.startSession(win, sessionId, config);
+});
+
+ipcMain.handle('dap:stop-session', async (event, sessionId: string) => {
+  if (!validateIpcSender(event)) return;
+  return dapManager.stopSession(sessionId);
+});
+
+ipcMain.handle('dap:send-request', async (event, sessionId: string, command: string, args?: any) => {
+  if (!validateIpcSender(event)) throw new Error('Unauthorized IPC');
+  return dapManager.sendRequest(sessionId, command, args);
+});
+
+ipcMain.handle('dap:set-breakpoints', async (event, sessionId: string, filePath: string, breakpoints: any[]) => {
+  if (!validateIpcSender(event)) throw new Error('Unauthorized IPC');
+  return dapManager.setBreakpoints(sessionId, filePath, breakpoints);
+});
+
+// --- Tasks IPC Handlers ---
+ipcMain.handle('tasks:load', async (event, workspaceRoot: string) => {
+  if (!validateIpcSender(event)) return [];
+  return taskManager.loadWorkspaceTasks(workspaceRoot);
+});
+
+ipcMain.handle('tasks:run', async (event, workspaceRoot: string, task: any) => {
+  const win = getValidatedWindow(event);
+  return taskManager.runTask(win, workspaceRoot, task);
+});
+
+ipcMain.handle('tasks:stop', async (event, taskId: string) => {
+  if (!validateIpcSender(event)) return false;
+  return taskManager.stopTask(taskId);
+});

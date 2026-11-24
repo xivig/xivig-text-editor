@@ -107,12 +107,13 @@ export interface XivigAPI {
   terminalInit: (options?: string | { cwd?: string; shell?: string; cols?: number; rows?: number; terminalId?: string }) => Promise<boolean>;
   terminalWrite: (data: string | { data: string; terminalId?: string }) => void;
   terminalResize?: (options: { cols: number; rows: number; terminalId?: string }) => Promise<boolean>;
+  terminalStop?: (terminalId?: string) => Promise<boolean>;
   getAvailableShells?: () => Promise<Array<{ name: string; path: string; executable: string }>>;
   onTerminalData: (callback: (data: string) => void) => () => void;
 
   // Git
   getGitStatus: (cwd: string) => Promise<GitStatusResult>;
-  commitGit: (cwd: string, message: string) => Promise<{ success: boolean; output?: string; error?: string }>;
+  commitGit: (cwd: string, message: string, amend?: boolean) => Promise<{ success: boolean; output?: string; error?: string }>;
   stageGitFile?: (cwd: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
   unstageGitFile?: (cwd: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
   stageAllGit?: (cwd: string) => Promise<{ success: boolean; error?: string }>;
@@ -179,6 +180,47 @@ export interface XivigAPI {
     onDiagnostics: (callback: (data: any) => void) => () => void;
     onServersChanged: (callback: (servers: any[]) => void) => () => void;
     onNotification: (callback: (notification: any) => void) => () => void;
+  };
+
+  // Formatters & Code Quality
+  formatter?: {
+    listAvailable: (workspaceRoot?: string) => Promise<any[]>;
+    formatSourceCode: (text: string, options: any) => Promise<any>;
+    lintAndFix: (text: string, linterId: string, filePath?: string) => Promise<any>;
+  };
+
+  // Extended Git
+  gitBranches?: (cwd: string) => Promise<{ success: boolean; branches: any[]; currentBranch: string; error?: string }>;
+  gitCreateBranch?: (cwd: string, branchName: string, checkout?: boolean) => Promise<{ success: boolean; error?: string }>;
+  gitDeleteBranch?: (cwd: string, branchName: string, force?: boolean) => Promise<{ success: boolean; error?: string }>;
+  gitSwitchBranch?: (cwd: string, branchName: string) => Promise<{ success: boolean; error?: string }>;
+  gitMergeBranch?: (cwd: string, branchName: string) => Promise<{ success: boolean; output?: string; error?: string }>;
+  gitRebaseBranch?: (cwd: string, branchName: string) => Promise<{ success: boolean; output?: string; error?: string }>;
+  gitStash?: (cwd: string, action: 'save' | 'pop' | 'list', msg?: string) => Promise<{ success: boolean; stashes?: any[]; error?: string }>;
+  gitLog?: (cwd: string, maxCount?: number, filePath?: string) => Promise<{ success: boolean; commits: any[]; error?: string }>;
+  gitBlame?: (cwd: string, filePath: string) => Promise<{ success: boolean; lines: any[]; error?: string }>;
+  gitRemoteOperation?: (cwd: string, op: 'fetch' | 'pull' | 'push', remote?: string, branch?: string) => Promise<{ success: boolean; output?: string; error?: string }>;
+
+  // Debug Adapter Protocol (DAP)
+  dap?: {
+    startSession: (sessionId: string, config: any) => Promise<{ success: boolean; error?: string }>;
+    stopSession: (sessionId: string) => Promise<void>;
+    sendRequest: (sessionId: string, command: string, args?: any) => Promise<any>;
+    setBreakpoints: (sessionId: string, filePath: string, breakpoints: any[]) => Promise<any>;
+    onStopped: (callback: (data: any) => void) => () => void;
+    onContinued: (callback: (data: any) => void) => () => void;
+    onOutput: (callback: (data: any) => void) => () => void;
+    onTerminated: (callback: (data: any) => void) => () => void;
+  };
+
+  // Workspace Tasks Runner
+  tasks?: {
+    loadTasks: (workspaceRoot: string) => Promise<any[]>;
+    runTask: (workspaceRoot: string, task: any) => Promise<{ success: boolean; taskId: string; error?: string }>;
+    stopTask: (taskId: string) => Promise<boolean>;
+    onOutput: (callback: (data: any) => void) => () => void;
+    onProblem: (callback: (data: any) => void) => () => void;
+    onCompleted: (callback: (data: any) => void) => () => void;
   };
 
   // System info

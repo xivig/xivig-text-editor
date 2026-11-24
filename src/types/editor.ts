@@ -27,4 +27,4 @@ export interface FileItem {
   isExpanded?: boolean;
 }
 
-export type ActiveSidebarView = 'explorer' | 'search' | 'git' | 'extensions' | 'settings' | null;
+export type ActiveSidebarView = 'explorer' | 'search' | 'git' | 'extensions' | 'settings' | 'debug' | null;

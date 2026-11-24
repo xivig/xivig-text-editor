@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Folder,
   FolderOpen,
@@ -15,14 +15,49 @@ import {
   Plus,
   Minus,
   RotateCcw,
+  FoldVertical,
+  Filter,
+  GitBranch,
+  DownloadCloud,
+  UploadCloud,
+  Archive,
 } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
+import { useGitStore } from '../../stores/gitStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon, FolderIcon } from '../common/FileIcon';
 import { ExtensionsView } from '../extensions/ExtensionsView';
 import { ProjectSearchView } from '../search/ProjectSearchView';
+import { DebugPanel } from '../debug/DebugPanel';
 import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
+
+function filterFileTree(items: FileItem[], query: string): FileItem[] {
+  if (!query.trim()) return items;
+  const q = query.trim().toLowerCase();
+
+  function itemMatches(item: FileItem): FileItem | null {
+    if (item.isDirectory) {
+      const filteredChildren = (item.children || [])
+        .map(itemMatches)
+        .filter((child): child is FileItem => child !== null);
+      if (item.name.toLowerCase().includes(q) || filteredChildren.length > 0) {
+        return {
+          ...item,
+          isExpanded: true,
+          children: filteredChildren,
+        };
+      }
+      return null;
+    }
+    if (item.name.toLowerCase().includes(q)) {
+      return item;
+    }
+    return null;
+  }
+
+  return items.map(itemMatches).filter((item): item is FileItem => item !== null);
+}
 
 export const Sidebar: React.FC = () => {
   const isSidebarOpen = useFileStore((state) => state.isSidebarOpen);
@@ -36,6 +71,9 @@ export const Sidebar: React.FC = () => {
   const refreshCurrentFolder = useFileStore((state) => state.refreshCurrentFolder);
   const toggleFolderExpanded = useFileStore((state) => state.toggleFolderExpanded);
   const setFolderChildren = useFileStore((state) => state.setFolderChildren);
+  const collapseAllFolders = useFileStore((state) => state.collapseAllFolders);
+  const fileFilterQuery = useFileStore((state) => state.fileFilterQuery);
+  const setFileFilterQuery = useFileStore((state) => state.setFileFilterQuery);
   const gitChanges = useFileStore((state) => state.gitChanges);
   const isGitRepo = useFileStore((state) => state.isGitRepo);
   const commitGitChanges = useFileStore((state) => state.commitGitChanges);
@@ -46,11 +84,25 @@ export const Sidebar: React.FC = () => {
   const unstageAllGit = useFileStore((state) => state.unstageAllGit);
   const discardGitFile = useFileStore((state) => state.discardGitFile);
 
+  // Extended Git store
+  const branches = useGitStore((state) => state.branches);
+  const currentBranch = useGitStore((state) => state.currentBranch);
+  const loadBranches = useGitStore((state) => state.loadBranches);
+  const switchBranch = useGitStore((state) => state.switchBranch);
+  const createBranch = useGitStore((state) => state.createBranch);
+  const remotePull = useGitStore((state) => state.remotePull);
+  const remotePush = useGitStore((state) => state.remotePush);
+  const saveStash = useGitStore((state) => state.saveStash);
+  const isAmending = useGitStore((state) => state.isAmending);
+  const setIsAmending = useGitStore((state) => state.setIsAmending);
+  const cycleCommitHistory = useGitStore((state) => state.cycleCommitHistory);
+
   const openDocument = useEditorStore((state) => state.openDocument);
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
 
   // New file / folder inline prompt modal state
   const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [promptType, setPromptType] = useState<'file' | 'folder'>('file');
   const [promptTargetDir, setPromptTargetDir] = useState<string>('');
   const [promptInput, setPromptInput] = useState<string>('');
@@ -59,6 +111,16 @@ export const Sidebar: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: ContextMenuTarget } | null>(null);
   const [renameTarget, setRenameTarget] = useState<ContextMenuTarget | null>(null);
   const [renameInput, setRenameInput] = useState('');
+
+  useEffect(() => {
+    if (activeView === 'git' && isGitRepo) {
+      loadBranches();
+    }
+  }, [activeView, isGitRepo]);
+
+  const visibleTree = useMemo(() => {
+    return filterFileTree(fileTree, fileFilterQuery);
+  }, [fileTree, fileFilterQuery]);
 
   if (!isSidebarOpen) return null;
 
@@ -335,9 +397,70 @@ export const Sidebar: React.FC = () => {
             >
               <RefreshCw size={13} />
             </button>
+            <button
+              onClick={() => collapseAllFolders()}
+              style={actionBtnStyle}
+              title="Collapse All Folders"
+            >
+              <FoldVertical size={13} />
+            </button>
+            <button
+              onClick={() => setIsFilterVisible(!isFilterVisible)}
+              style={{
+                ...actionBtnStyle,
+                color: isFilterVisible || fileFilterQuery ? 'var(--xivig-accent)' : undefined,
+              }}
+              title="Filter Files"
+            >
+              <Filter size={13} />
+            </button>
           </div>
         )}
       </div>
+
+      {/* File Filter Input Bar */}
+      {activeView === 'explorer' && currentFolderPath && (isFilterVisible || Boolean(fileFilterQuery)) && (
+        <div style={{ padding: '4px 10px 8px 10px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input
+              type="text"
+              value={fileFilterQuery}
+              onChange={(e) => setFileFilterQuery(e.target.value)}
+              placeholder="Filter files (e.g. .ts, component)..."
+              style={{
+                width: '100%',
+                padding: '4px 22px 4px 8px',
+                fontSize: '11px',
+                backgroundColor: 'var(--xivig-surface)',
+                border: '1px solid var(--xivig-border)',
+                borderRadius: '4px',
+                color: 'var(--xivig-text)',
+                outline: 'none',
+              }}
+            />
+            {fileFilterQuery && (
+              <button
+                type="button"
+                onClick={() => setFileFilterQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--xivig-text-dim)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                }}
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Inline Create Prompt */}
       {isPromptOpen && (
@@ -376,10 +499,12 @@ export const Sidebar: React.FC = () => {
                   <span style={projectNameStyle}>{currentFolderName}</span>
                 </div>
                 <div style={{ marginTop: '2px' }}>
-                  {fileTree.length > 0 ? (
-                    renderTree(fileTree)
+                  {visibleTree.length > 0 ? (
+                    renderTree(visibleTree)
                   ) : (
-                    <div style={emptyTreeNoticeStyle}>Folder is empty</div>
+                    <div style={emptyTreeNoticeStyle}>
+                      {fileFilterQuery ? 'No matching files found' : 'Folder is empty'}
+                    </div>
                   )}
                 </div>
               </div>
@@ -448,16 +573,111 @@ export const Sidebar: React.FC = () => {
               </div>
             ) : (
               <div>
+                {/* Branch Switcher & Remote Bar */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '10px',
+                    padding: '4px 8px',
+                    backgroundColor: 'var(--xivig-surface)',
+                    border: '1px solid var(--xivig-border)',
+                    borderRadius: '4px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+                    <GitBranch size={13} style={{ color: 'var(--xivig-accent)', flexShrink: 0 }} />
+                    <select
+                      value={currentBranch}
+                      onChange={async (e) => {
+                        const target = e.target.value;
+                        if (target === '__new__') {
+                          const name = prompt('Enter new branch name:');
+                          if (name && name.trim()) {
+                            await createBranch(name.trim(), true);
+                            await loadBranches();
+                            await loadGitStatus();
+                          }
+                        } else {
+                          await switchBranch(target);
+                          await loadBranches();
+                          await loadGitStatus();
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--xivig-text)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        width: '100%',
+                      }}
+                    >
+                      <option value={currentBranch}>{currentBranch}</option>
+                      {branches
+                        .filter((b) => b.name !== currentBranch && !b.isRemote)
+                        .map((b) => (
+                          <option key={b.name} value={b.name}>
+                            {b.name}
+                          </option>
+                        ))}
+                      <option value="__new__">+ New Branch...</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', marginLeft: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await remotePull();
+                        await loadGitStatus();
+                      }}
+                      title="Pull from Remote"
+                      style={actionBtnStyle}
+                    >
+                      <DownloadCloud size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await remotePush();
+                        await loadGitStatus();
+                      }}
+                      title="Push to Remote"
+                      style={actionBtnStyle}
+                    >
+                      <UploadCloud size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const msg = prompt('Enter stash message (optional):');
+                        if (msg !== null) {
+                          await saveStash(msg);
+                          await loadGitStatus();
+                        }
+                      }}
+                      title="Git Stash"
+                      style={actionBtnStyle}
+                    >
+                      <Archive size={13} />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Commit Box */}
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
                     if (!commitMessage.trim()) return;
                     setIsCommitting(true);
-                    const res = await commitGitChanges(commitMessage);
+                    const res = await commitGitChanges(commitMessage, isAmending);
                     setIsCommitting(false);
                     if (res.success) {
                       setCommitMessage('');
+                      setIsAmending(false);
                     } else {
                       alert(`Commit failed: ${res.error}`);
                     }
@@ -468,17 +688,49 @@ export const Sidebar: React.FC = () => {
                     rows={3}
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
-                    placeholder="Message (Ctrl+Enter to commit staged changes)"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        const stagedCount = gitChanges.filter((c) => c.staged).length;
+                        if ((stagedCount > 0 || isAmending) && commitMessage.trim()) {
+                          (e.currentTarget.form as HTMLFormElement)?.requestSubmit();
+                        }
+                      } else if (
+                        e.key === 'ArrowUp' &&
+                        e.currentTarget.selectionStart === 0 &&
+                        e.currentTarget.selectionEnd === 0
+                      ) {
+                        e.preventDefault();
+                        cycleCommitHistory('up');
+                      } else if (
+                        e.key === 'ArrowDown' &&
+                        e.currentTarget.selectionStart === e.currentTarget.value.length
+                      ) {
+                        e.preventDefault();
+                        cycleCommitHistory('down');
+                      }
+                    }}
+                    placeholder="Message (Ctrl+Enter to commit, Up/Down for history)"
                     style={{
                       width: '100%',
                       resize: 'none',
                       fontSize: '12px',
-                      marginBottom: '8px',
+                      marginBottom: '6px',
                     }}
                   />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--xivig-text-dim)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={isAmending}
+                        onChange={(e) => setIsAmending(e.target.checked)}
+                      />
+                      Amend Commit
+                    </label>
+                  </div>
                   {(() => {
                     const stagedCount = gitChanges.filter((c) => c.staged).length;
-                    const canCommit = stagedCount > 0 && Boolean(commitMessage.trim());
+                    const canCommit = (stagedCount > 0 || isAmending) && Boolean(commitMessage.trim());
                     return (
                       <button
                         type="submit"
@@ -496,6 +748,8 @@ export const Sidebar: React.FC = () => {
                       >
                         {isCommitting
                           ? 'Committing...'
+                          : isAmending
+                          ? 'Amend Last Commit'
                           : stagedCount > 0
                           ? `Commit Staged (${stagedCount})`
                           : 'Stage Changes to Commit'}
@@ -705,6 +959,8 @@ export const Sidebar: React.FC = () => {
             </button>
           </div>
         )}
+
+        {activeView === 'debug' && <DebugPanel />}
       </div>
 
       {/* Context Menu */}

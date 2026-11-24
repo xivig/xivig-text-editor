@@ -78,6 +78,11 @@ export class LspManager {
   }
 
   public async restartServer(serverId: string): Promise<boolean> {
+    const profile = this.profiles.get(serverId);
+    if (profile) {
+      profile.status = 'stopped';
+      profile.statusMessage = undefined;
+    }
     await this.stopServer(serverId);
     return this.startServer(serverId);
   }
@@ -103,11 +108,15 @@ export class LspManager {
     if (!profile || !profile.enabled) return undefined;
 
     let proc = this.activeProcesses.get(profile.id);
-    if (!proc || !proc.isRunning) {
-      if (profile.autoStart) {
-        await this.startServer(profile.id);
-        proc = this.activeProcesses.get(profile.id);
-      }
+    if (proc && proc.isRunning) {
+      return proc;
+    }
+
+    // Only auto-start if the server profile is currently stopped.
+    // Avoid loop-spawning a server that previously failed ('error') or is already 'starting'.
+    if (profile.autoStart && profile.status === 'stopped') {
+      await this.startServer(profile.id);
+      proc = this.activeProcesses.get(profile.id);
     }
     return proc;
   }
@@ -154,10 +163,16 @@ export class LspManager {
     }
 
     if (!proc || !proc.isRunning) {
-      throw new Error(`No active language server found for target: ${JSON.stringify(target)}`);
+      // Gracefully return null rather than throwing so IPC handlers do not crash or log uncaught errors
+      return null;
     }
 
-    return proc.sendRequest(method, params);
+    try {
+      return await proc.sendRequest(method, params);
+    } catch (err: any) {
+      console.debug(`[LSP:${proc.profile.id}] Request '${method}' failed:`, err?.message);
+      return null;
+    }
   }
 
   public async shutdownAll(): Promise<void> {

@@ -63,15 +63,22 @@ export class LspProcess {
       });
 
       this.childProcess.on('error', (err) => {
-        console.error(`[LSP:${this.profile.id}] Process execution error:`, err);
-        this.setStatus('error', `Failed to execute: ${err.message}`);
+        console.warn(`[LSP:${this.profile.id}] Process execution error:`, err.message);
+        this.setStatus('error', `Not installed or failed to start: ${this.profile.installGuide || err.message}`);
         this.cleanupPendingRequests(err);
       });
 
       this.childProcess.on('close', (code, signal) => {
-        this.setStatus('stopped', `Process exited (code ${code ?? signal})`);
+        if (code !== 0 && this.profile.status === 'starting') {
+          this.setStatus(
+            'error',
+            `Server exited with code ${code ?? signal}. Install: ${this.profile.installGuide || 'check server installation'}`
+          );
+        } else {
+          this.setStatus('stopped', `Process exited (code ${code ?? signal})`);
+        }
         this.childProcess = null;
-        this.cleanupPendingRequests(new Error(`Server closed with code ${code}`));
+        this.cleanupPendingRequests(new Error(`Server closed with code ${code ?? signal}`));
       });
 
       // Send standard LSP initialize handshake
@@ -94,8 +101,11 @@ export class LspProcess {
       return true;
     } catch (err: any) {
       console.warn(`[LSP:${this.profile.id}] Start handshake failed:`, err.message);
-      this.setStatus('error', err.message || 'Initialization failed');
-      this.stop();
+      this.setStatus(
+        'error',
+        `Start failed: ${err.message}. ${this.profile.installGuide ? `Install via: ${this.profile.installGuide}` : ''}`
+      );
+      this.stop(true);
       return false;
     }
   }
@@ -179,8 +189,13 @@ export class LspProcess {
     });
   }
 
-  public async stop(): Promise<void> {
-    if (!this.childProcess) return;
+  public async stop(preserveStatus = false): Promise<void> {
+    if (!this.childProcess) {
+      if (!preserveStatus && this.profile.status !== 'error') {
+        this.setStatus('stopped', 'Server stopped');
+      }
+      return;
+    }
 
     try {
       // Graceful shutdown attempt
@@ -200,7 +215,9 @@ export class LspProcess {
       this.decoder.reset();
       this.openDocuments.clear();
       this.cleanupPendingRequests(new Error('Language server stopped'));
-      this.setStatus('stopped', 'Server stopped');
+      if (!preserveStatus && this.profile.status !== 'error') {
+        this.setStatus('stopped', 'Server stopped');
+      }
     }
   }
 

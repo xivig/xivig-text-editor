@@ -41,6 +41,7 @@ const xivigAPI = {
   terminalWrite: (data: string | { data: string; terminalId?: string }) => ipcRenderer.send('terminal:write', data),
   terminalResize: (options: { cols: number; rows: number; terminalId?: string }) =>
     ipcRenderer.invoke('terminal:resize', options),
+  terminalStop: (terminalId?: string) => ipcRenderer.invoke('terminal:stop', terminalId),
   getAvailableShells: () => ipcRenderer.invoke('terminal:shells'),
   onTerminalData: (callback: (data: string) => void) => {
     const handler = (_: any, data: string) => callback(data);
@@ -52,7 +53,7 @@ const xivigAPI = {
 
   // Git operations
   getGitStatus: (cwd: string) => ipcRenderer.invoke('git:status', cwd),
-  commitGit: (cwd: string, message: string) => ipcRenderer.invoke('git:commit', { cwd, message }),
+  commitGit: (cwd: string, message: string, amend?: boolean) => ipcRenderer.invoke('git:commit', { cwd, message, amend }),
   stageGitFile: (cwd: string, filePath: string) => ipcRenderer.invoke('git:stage', { cwd, filePath }),
   unstageGitFile: (cwd: string, filePath: string) => ipcRenderer.invoke('git:unstage', { cwd, filePath }),
   stageAllGit: (cwd: string) => ipcRenderer.invoke('git:stageAll', cwd),
@@ -195,6 +196,94 @@ const xivigAPI = {
       return () => {
         ipcRenderer.removeListener('lsp:notification', handler);
       };
+    },
+  },
+
+  // Formatters & Code Quality
+  formatter: {
+    listAvailable: (workspaceRoot?: string) =>
+      ipcRenderer.invoke('formatter:list-available', workspaceRoot),
+    formatSourceCode: (text: string, options: any) =>
+      ipcRenderer.invoke('formatter:format-source-code', text, options),
+    lintAndFix: (text: string, linterId: string, filePath?: string) =>
+      ipcRenderer.invoke('formatter:lint-and-fix', text, linterId, filePath),
+  },
+
+  // Extended Git
+  gitBranches: (cwd: string) => ipcRenderer.invoke('git:branches', cwd),
+  gitCreateBranch: (cwd: string, branchName: string, checkout = true) =>
+    ipcRenderer.invoke('git:create-branch', cwd, branchName, checkout),
+  gitDeleteBranch: (cwd: string, branchName: string, force = false) =>
+    ipcRenderer.invoke('git:delete-branch', cwd, branchName, force),
+  gitSwitchBranch: (cwd: string, branchName: string) =>
+    ipcRenderer.invoke('git:switch-branch', cwd, branchName),
+  gitMergeBranch: (cwd: string, branchName: string) =>
+    ipcRenderer.invoke('git:merge-branch', cwd, branchName),
+  gitRebaseBranch: (cwd: string, branchName: string) =>
+    ipcRenderer.invoke('git:rebase-branch', cwd, branchName),
+  gitStash: (cwd: string, action: 'save' | 'pop' | 'list', msg?: string) =>
+    ipcRenderer.invoke('git:stash', cwd, action, msg),
+  gitLog: (cwd: string, maxCount = 50, filePath?: string) =>
+    ipcRenderer.invoke('git:log', cwd, maxCount, filePath),
+  gitBlame: (cwd: string, filePath: string) =>
+    ipcRenderer.invoke('git:blame', cwd, filePath),
+  gitRemoteOperation: (cwd: string, op: 'fetch' | 'pull' | 'push', remote = 'origin', branch?: string) =>
+    ipcRenderer.invoke('git:remote-operation', cwd, op, remote, branch),
+
+  // Debug Adapter Protocol (DAP)
+  dap: {
+    startSession: (sessionId: string, config: any) =>
+      ipcRenderer.invoke('dap:start-session', sessionId, config),
+    stopSession: (sessionId: string) =>
+      ipcRenderer.invoke('dap:stop-session', sessionId),
+    sendRequest: (sessionId: string, command: string, args?: any) =>
+      ipcRenderer.invoke('dap:send-request', sessionId, command, args),
+    setBreakpoints: (sessionId: string, filePath: string, breakpoints: any[]) =>
+      ipcRenderer.invoke('dap:set-breakpoints', sessionId, filePath, breakpoints),
+    onStopped: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('dap:stopped', handler);
+      return () => ipcRenderer.removeListener('dap:stopped', handler);
+    },
+    onContinued: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('dap:continued', handler);
+      return () => ipcRenderer.removeListener('dap:continued', handler);
+    },
+    onOutput: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('dap:output', handler);
+      return () => ipcRenderer.removeListener('dap:output', handler);
+    },
+    onTerminated: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('dap:terminated', handler);
+      return () => ipcRenderer.removeListener('dap:terminated', handler);
+    },
+  },
+
+  // Workspace Tasks Runner
+  tasks: {
+    loadTasks: (workspaceRoot: string) =>
+      ipcRenderer.invoke('tasks:load', workspaceRoot),
+    runTask: (workspaceRoot: string, task: any) =>
+      ipcRenderer.invoke('tasks:run', workspaceRoot, task),
+    stopTask: (taskId: string) =>
+      ipcRenderer.invoke('tasks:stop', taskId),
+    onOutput: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('task:output', handler);
+      return () => ipcRenderer.removeListener('task:output', handler);
+    },
+    onProblem: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('task:problem', handler);
+      return () => ipcRenderer.removeListener('task:problem', handler);
+    },
+    onCompleted: (callback: (data: any) => void) => {
+      const handler = (_: any, data: any) => callback(data);
+      ipcRenderer.on('task:completed', handler);
+      return () => ipcRenderer.removeListener('task:completed', handler);
     },
   },
 

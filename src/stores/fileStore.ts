@@ -18,9 +18,20 @@ interface FileState {
   isSidebarOpen: boolean;
   recentFiles: RecentItem[];
   recentWorkspaces: RecentItem[];
+  workspaceFolders: Array<{ path: string; name: string }>;
+  trustedWorkspaces: Record<string, boolean>;
   fileClipboard: FileClipboardItem | null;
   searchFolderFilter: string | null;
   workspaceSearchQuery: string;
+  fileFilterQuery: string;
+
+  // Actions
+  addWorkspaceFolder: (folderPath: string) => Promise<void>;
+  removeWorkspaceFolder: (folderPath: string) => void;
+  setWorkspaceTrust: (folderPath: string, trusted: boolean) => void;
+  isWorkspaceTrusted: (folderPath?: string) => boolean;
+  collapseAllFolders: () => void;
+  setFileFilterQuery: (query: string) => void;
 
   // Git state
   gitBranch: string;
@@ -47,7 +58,7 @@ interface FileState {
   stageAllGit: () => Promise<void>;
   unstageAllGit: () => Promise<void>;
   discardGitFile: (filePath: string) => Promise<void>;
-  commitGitChanges: (msg: string) => Promise<{ success: boolean; error?: string }>;
+  commitGitChanges: (msg: string, amend?: boolean) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -58,12 +69,53 @@ export const useFileStore = create<FileState>((set, get) => ({
   isSidebarOpen: true,
   recentFiles: [],
   recentWorkspaces: [],
+  workspaceFolders: [],
+  trustedWorkspaces: {},
   fileClipboard: null,
   searchFolderFilter: null,
   workspaceSearchQuery: '',
+  fileFilterQuery: '',
   gitBranch: 'main',
   gitChanges: [],
   isGitRepo: false,
+
+  addWorkspaceFolder: async (folderPath: string) => {
+    const name = folderPath.split(/[/\\]/).filter(Boolean).pop() || folderPath;
+    const { workspaceFolders } = get();
+    if (!workspaceFolders.some((f) => f.path === folderPath)) {
+      set({ workspaceFolders: [...workspaceFolders, { path: folderPath, name }] });
+    }
+  },
+
+  removeWorkspaceFolder: (folderPath: string) => {
+    set((state) => ({
+      workspaceFolders: state.workspaceFolders.filter((f) => f.path !== folderPath),
+    }));
+  },
+
+  setWorkspaceTrust: (folderPath: string, trusted: boolean) => {
+    set((state) => ({
+      trustedWorkspaces: { ...state.trustedWorkspaces, [folderPath]: trusted },
+    }));
+  },
+
+  isWorkspaceTrusted: (folderPath?: string) => {
+    const target = folderPath || get().currentFolderPath;
+    if (!target) return true;
+    return get().trustedWorkspaces[target] ?? true;
+  },
+
+  collapseAllFolders: () => {
+    const collapseRec = (items: FileItem[]): FileItem[] =>
+      items.map((item) => ({
+        ...item,
+        isExpanded: false,
+        children: item.children ? collapseRec(item.children) : undefined,
+      }));
+    set((state) => ({ fileTree: collapseRec(state.fileTree) }));
+  },
+
+  setFileFilterQuery: (query: string) => set({ fileFilterQuery: query }),
 
   setSearchFolderFilter: (folder) => set({ searchFolderFilter: folder }),
   setWorkspaceSearchQuery: (query) => set({ workspaceSearchQuery: query, activeSidebarView: 'search', isSidebarOpen: true }),
@@ -172,13 +224,13 @@ export const useFileStore = create<FileState>((set, get) => ({
     await refreshCurrentFolder();
   },
 
-  commitGitChanges: async (msg: string) => {
+  commitGitChanges: async (msg: string, amend?: boolean) => {
     const { currentFolderPath, loadGitStatus, refreshCurrentFolder } = get();
     if (!currentFolderPath || !window.xivig?.commitGit) {
       return { success: false, error: 'No workspace open' };
     }
 
-    const res = await window.xivig.commitGit(currentFolderPath, msg);
+    const res = await window.xivig.commitGit(currentFolderPath, msg, amend);
     if (res.success) {
       await loadGitStatus();
       await refreshCurrentFolder();

@@ -8,7 +8,7 @@ interface UIState {
   isMinimapOpen: boolean;
   isLanguageSelectorOpen: boolean;
   isBottomPanelOpen: boolean;
-  activeBottomTab: 'terminal' | 'output' | 'problems';
+  activeBottomTab: 'terminal' | 'output' | 'problems' | 'debugConsole';
   isKeymapModalOpen: boolean;
   isBuildSystemModalOpen: boolean;
   isWrapWithAbbreviationOpen: boolean;
@@ -100,8 +100,8 @@ interface UIState {
   openUpdateCheckModal: () => void;
   closeUpdateCheckModal: () => void;
 
-  toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems') => void;
-  setBottomTab: (tab: 'terminal' | 'output' | 'problems') => void;
+  toggleBottomPanel: (tab?: 'terminal' | 'output' | 'problems' | 'debugConsole') => void;
+  setBottomTab: (tab: 'terminal' | 'output' | 'problems' | 'debugConsole') => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({

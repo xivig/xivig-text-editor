@@ -62,8 +62,12 @@ import {
   createLspCodeLensExtension,
   createLspSemanticTokensExtension,
   useLspStore,
+  normalizeLanguageId,
 } from '../../lsp';
 import { beautifyActiveEditor } from '../../utils/beautify';
+import { formatDocument, formatSelection, runOrganizeImports, runFixAllProblems } from '../../formatting/formatService';
+import { createGitDiffGutterExtension } from './gitDiffGutter';
+import { createDebugGutterExtension } from './debugGutter';
 import { extensionManager } from '../../extensions/runtime/extensionManager';
 import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
@@ -120,9 +124,11 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const isConflict = conflictDocId === activeDoc?.id;
   const isLargeFile = (activeDoc?.content?.length || 0) > 1_500_000;
 
+  const docLanguage = activeDoc ? normalizeLanguageId(activeDoc.path || activeDoc.name, activeDoc.language) : '';
+
   useEffect(() => {
-    useLspStore.getState().updateActiveServerForDoc(activeDoc?.path || undefined, activeDoc?.language);
-  }, [activeDoc?.path, activeDoc?.language]);
+    useLspStore.getState().updateActiveServerForDoc(activeDoc?.path || undefined, docLanguage);
+  }, [activeDoc?.path, docLanguage]);
 
   // Maintain active document ID in ref for updateListener
   const docIdRef = useRef(activeDocumentId);
@@ -194,13 +200,15 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         ...(!isLargeFile ? [
           autoRenameTagExtension,
           cssColorHighlighterExtension,
-          createLspSyncExtension(activeDoc.path || '', activeDoc.language || ''),
-          createLspHoverExtension(activeDoc.path || '', activeDoc.language || ''),
-          createLspSignatureHelpExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspSyncExtension(activeDoc.path || '', docLanguage),
+          createLspHoverExtension(activeDoc.path || '', docLanguage),
+          createLspSignatureHelpExtension(activeDoc.path || '', docLanguage),
           createLspDiagnosticsLinter(activeDoc.path || ''),
-          createLspInlayHintsExtension(activeDoc.path || '', activeDoc.language || ''),
-          createLspCodeLensExtension(activeDoc.path || '', activeDoc.language || ''),
-          createLspSemanticTokensExtension(activeDoc.path || '', activeDoc.language || ''),
+          createLspInlayHintsExtension(activeDoc.path || '', docLanguage),
+          createLspCodeLensExtension(activeDoc.path || '', docLanguage),
+          createLspSemanticTokensExtension(activeDoc.path || '', docLanguage),
+          createDebugGutterExtension(activeDoc.path || undefined),
+          createGitDiffGutterExtension(),
         ] : []),
         ...(!isLargeFile ? createDiagnosticsLinter(activeDoc.id, activeDoc.path, activeDoc.name) : []),
         drawSelection(),
@@ -211,7 +219,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         closeBrackets(),
         autocompletion({
           override: [
-            createLspCompletionSource(activeDoc.path || '', activeDoc.language || ''),
+            createLspCompletionSource(activeDoc.path || '', docLanguage),
             createEmmetCompletionSource(() => detectEmmetSyntax(activeDoc.name || activeDoc.language)),
             createLanguageCompletionSource(() => activeDoc.name || activeDoc.language),
             getCustomSnippetSource(activeDoc.language || activeDoc.name),
@@ -243,11 +251,31 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           },
           {
             key: 'Ctrl-Alt-b',
-            run: beautifyActiveEditor,
+            run: (v) => {
+              formatDocument(v, activeDoc.path || undefined, activeDoc.language);
+              return true;
+            },
           },
           {
             key: 'Alt-Shift-f',
-            run: beautifyActiveEditor,
+            run: (v) => {
+              formatDocument(v, activeDoc.path || undefined, activeDoc.language);
+              return true;
+            },
+          },
+          {
+            key: 'Alt-Shift-o',
+            run: (v) => {
+              runOrganizeImports(v, activeDoc.path || undefined, activeDoc.language);
+              return true;
+            },
+          },
+          {
+            key: 'Ctrl-Alt-f',
+            run: (v) => {
+              runFixAllProblems(v, activeDoc.path || undefined, activeDoc.language);
+              return true;
+            },
           },
           {
             key: 'Ctrl-Shift-h',
