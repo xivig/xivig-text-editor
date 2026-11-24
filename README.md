@@ -33,20 +33,72 @@ Download the official release binaries for your operating system:
 
 | Platform | Format | Direct Download Link | Description |
 |---|---|---|---|
-| **Windows** | `.exe` (Installer) | [**Download Setup (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig.Text.Editor.Setup.1.4.0.exe) | NSIS Installer with desktop and start menu shortcuts |
-| **Windows** | `.exe` (Portable) | [**Download Portable (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig.Text.Editor.1.4.0.exe) | Zero-install standalone executable |
-| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig-Text-Editor-1.4.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
-| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig-Text-Editor-1.4.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
-| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig-Text-Editor-1.4.0.AppImage) | Standalone Linux x64 AppImage |
-| **Linux** | `.deb` (x64) | [**Download DEB (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/xivig-text-editor_1.4.0_amd64.deb) | Debian / Ubuntu amd64 package |
-| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig-Text-Editor-1.4.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
-| **Linux** | `.zip` (x64) | [**Download zip (v1.4.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig-Text-Editor-1.4.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
+| **Windows** | `.exe` (Installer) | [**Download Setup (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig.Text.Editor.Setup.1.5.0.exe) | NSIS Installer with desktop and start menu shortcuts |
+| **Windows** | `.exe` (Portable) | [**Download Portable (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig.Text.Editor.1.5.0.exe) | Zero-install standalone executable |
+| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
+| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
+| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0.AppImage) | Standalone Linux x64 AppImage |
+| **Linux** | `.deb` (x64) | [**Download DEB (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/xivig-text-editor_1.5.0_amd64.deb) | Debian / Ubuntu amd64 package |
+| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
+| **Linux** | `.zip` (x64) | [**Download zip (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
 
 > All releases, release notes, and SHA-256 checksums are hosted on the [GitHub Releases Page](https://github.com/xivig/xivig-text-editor/releases).
 
 ---
 
 ## ✨ Key Features
+
+### 🌐 Web Development Toolkit (New in v1.5.0)
+- **Static HTML Validator & Linter**: In-editor analysis for HTML structure, unclosed tags, void closing elements, and deprecated markup.
+- **Accessibility (a11y) & SEO Audit**:
+  - Validates `<img>` alt tags, empty buttons/links without accessible names (`aria-label`), and duplicate ID collisions.
+  - Checks `<title>`, meta description, viewport `<meta name="viewport">`, and OpenGraph social preview tags.
+- **Hierarchical DOM Outline**: Instant tree view of HTML tags, element IDs, and CSS classes with one-click line jumps.
+- **CSS Specificity Inspector**: Real-time `(a, b, c)` specificity scoring across IDs, classes, attributes, pseudo-classes, and type selectors.
+- **CSS Variable & Class Navigator**: Discover and inspect custom properties (`--var`) and class selectors with source line numbers.
+- **CSS Selector Validator**: Immediate syntax checking preventing malformed selectors or unclosed brackets.
+- **Visual CSS Studio Modal**:
+  - **Flexbox Helper**: Visual direction, justify, align, wrap, and gap controls with live preview and "Insert into Editor".
+  - **CSS Grid Helper**: Visual column/row template builder with gap settings and CSS generation.
+  - **Gradient Studio**: Interactive linear and radial gradient builder with color stops and angle manipulation.
+  - **Animation Previewer**: Keyframe animation previewer for pulse, bounce, slide, spin, and shake.
+- **Advanced Live Web Preview**:
+  - **Responsive Device Presets**: Switch between *Responsive*, *iPhone 14*, *Pixel 7*, *iPad Air*, and *Desktop HD*.
+  - **Viewport Controls**: One-click Portrait/Landscape rotation and Zoom scaling (50% to 200%).
+  - **Inspect Element Mode**: Visual bounding boxes, element tags, classes, dimensions, and computed styles on hover.
+  - **Live Browser Console**: Integrated console logger with error/warning filtering.
+
+### 📝 Markdown & Documentation Studio (New in v1.5.0)
+- **GitHub Flavored Markdown (GFM)**: Tables, strikethrough, autolinks, syntax-highlighted code blocks, and YAML frontmatter metadata cards.
+- **Interactive Two-Way Task Lists**: Interactive checkboxes `[ ]` / `[x]` in preview write back directly to the source markdown document!
+- **Math Equations**: Seamless KaTeX-compatible inline math (`$E=mc^2$`) and block equations (`$$...$$`).
+- **Mermaid Diagram Engine**: SVG flowchart and sequence diagram renderer with node cards, connecting arrows, and labels.
+- **Live Synchronized Proportional Scrolling**: Bidirectional scroll tracking with line-anchored mapping between editor and preview.
+- **Table of Contents & Anchors**: Automatic TOC generation with heading anchors (`#slug`) and jump links.
+- **Markdown Table Generator Modal**: Visual table editor to add/remove rows, columns, and configure alignments.
+- **Document Exporter**: One-click export to standalone styled HTML documents and native Print to PDF.
+
+### 🛡️ Isolated Extension Host & Marketplace (New in v1.5.0)
+- **Capability-Based Permission Sandbox**: Third-party extensions run within isolated execution boundaries with granular permissions (`workspace.read`, `workspace.write`, `ui.notifications`, `ui.statusbar`, `commands.register`, `network.fetch`).
+- **Secure Sandboxed Commands**: Extensions register commands and status bar items safely without access to privileged Electron main process APIs.
+
+### 🎨 Theme Studio & Appearance Personalization (New in v1.5.0)
+- **Theme Customizer Studio**: Custom palette editor with UI color pickers and CodeMirror syntax color controls.
+- **Live Syntax Sandbox**: Test color theme adjustments in real time on code snippets.
+- **Theme Portability**: Export and import custom theme JSON files and apply instantly to CSS variables.
+
+### 🧰 Developer Productivity Toolbox (New in v1.5.0)
+- **Universal Dev Toolbox (`Ctrl+Alt+T`)**:
+  - **JSON Studio**: Beautifier, minifier, and error validator with JSON path inspection.
+  - **Regex Workbench**: Interactive regex tester with flags, match groups, and replacement preview.
+  - **Codecs & Hashes**: Base64 encode/decode, URL encode/decode, SHA-256 hash calculator, and UUID v4 generator.
+  - **Format Converters**: HEX/RGB/HSL color converter, Unix/ISO timestamp converter, and character/word/byte counter.
+  - **Persistent Scratchpad**: Multi-tab temporary buffer that persists across editor restarts.
+  - **Clipboard History**: Snippet bank and clipboard history tracker.
+- **AI Coding Assistant Panel**: Sidebar panel supporting OpenAI and Ollama/local models for code explanation, refactoring, unit test generation, and diff preview with one-click apply.
+- **Sticky Scroll Scope Header**: Pins the current enclosing function, class, or tag at the top of the editor during scroll.
+- **Column Ruler Guidelines**: Configurable vertical column guides at 80 and 120 columns.
+
 
 ### 🔍 Complete Search & Navigation Engine
 - **Breadcrumb Bar with Active Symbol**: Folder breadcrumbs plus active function/class/method symbol tracker under the cursor.
@@ -218,17 +270,17 @@ Xivig Text Editor is packaged for **Windows**, **Linux**, and **macOS**.
 
 ### Binary Types Produced
 - **Windows**:
-  - `Xivig.Text.Editor.Setup.1.4.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
-  - `Xivig.Text.Editor.1.4.0.exe` (Zero-install standalone portable executable)
+  - `Xivig.Text.Editor.Setup.1.5.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
+  - `Xivig.Text.Editor.1.5.0.exe` (Zero-install standalone portable executable)
   - `win-unpacked/` (Direct portable folder)
 - **Linux**:
-  - `Xivig-Text-Editor-1.4.0.AppImage` (Universal plug-and-play Linux executable)
-  - `xivig-text-editor_1.4.0_amd64.deb` (Debian / Ubuntu amd64 package)
-  - `Xivig-Text-Editor-1.4.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
-  - `Xivig-Text-Editor-1.4.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
+  - `Xivig-Text-Editor-1.5.0.AppImage` (Universal plug-and-play Linux executable)
+  - `xivig-text-editor_1.5.0_amd64.deb` (Debian / Ubuntu amd64 package)
+  - `Xivig-Text-Editor-1.5.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
+  - `Xivig-Text-Editor-1.5.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
 - **macOS**:
-  - `Xivig-Text-Editor-1.4.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
-  - `Xivig-Text-Editor-1.4.0-mac.zip` (Native macOS .app bundle: Universal binary)
+  - `Xivig-Text-Editor-1.5.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
+  - `Xivig-Text-Editor-1.5.0-mac.zip` (Native macOS .app bundle: Universal binary)
 
 ---
 
@@ -278,14 +330,14 @@ Automated cross-platform compilation is powered by GitHub Actions in [`.github/w
 - Builds native Windows `.exe` installers on `windows-latest`.
 - Builds universal Linux `.AppImage` and `.deb` binaries on `ubuntu-latest`.
 - Builds signed macOS `.dmg` and `.zip` binaries on `macos-latest`.
-- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.4.0`).
+- Automatically publishes release assets to GitHub Releases upon tagging a version (e.g. `v1.5.0`).
 
 ---
 
 ## 📄 Release Information & Attributions
 
 - **App Name**: Xivig Text Editor
-- **Release Version**: 1.4 (Build 1.4.0)
+- **Release Version**: 1.5 (Build 1.5.0)
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 - **Legal**: Copyright © 2026 Xivig. All rights reserved.

@@ -1,6 +1,6 @@
 {
   "name": "xivig-text-editor",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "productName": "Xivig Text Editor",
   "private": true,
   "description": "⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect design tooling.",

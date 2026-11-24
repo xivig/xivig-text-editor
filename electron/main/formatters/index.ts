@@ -77,11 +77,21 @@ function runStdinFormatter(
   return new Promise((resolve, reject) => {
     let proc;
     try {
-      proc = spawn(execPath, args, {
-        cwd: cwd || process.cwd(),
-        shell: process.platform === 'win32' && execPath.endsWith('.cmd'),
-        env: { ...process.env },
-      });
+      const isWin = process.platform === 'win32';
+      const isCmd = isWin && execPath.endsWith('.cmd');
+      if (isCmd) {
+        proc = spawn('cmd.exe', ['/d', '/s', '/c', execPath, ...args], {
+          cwd: cwd || process.cwd(),
+          shell: false,
+          env: { ...process.env },
+        });
+      } else {
+        proc = spawn(execPath, args, {
+          cwd: cwd || process.cwd(),
+          shell: false,
+          env: { ...process.env },
+        });
+      }
     } catch (err) {
       return reject(err);
     }

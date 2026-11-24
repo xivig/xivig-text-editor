@@ -1,5 +1,5 @@
 import React from 'react';
-import { Files, Search, GitBranch, Package, Settings, RotateCw, Bug } from 'lucide-react';
+import { Files, Search, GitBranch, Package, Settings, RotateCw, Bug, Globe, Sparkles } from 'lucide-react';
 import { useFileStore } from '../../stores/fileStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { useUpdateStore } from '../../stores/updateStore';
@@ -19,6 +19,8 @@ export const ActivityBar: React.FC = () => {
     { id: 'git', icon: <GitBranch size={20} />, label: 'Source Control (Ctrl+Shift+G)' },
     { id: 'debug', icon: <Bug size={20} />, label: 'Run & Debug (Ctrl+Shift+D)' },
     { id: 'extensions', icon: <Package size={20} />, label: 'Extensions (Ctrl+Shift+X)' },
+    { id: 'web', icon: <Globe size={20} />, label: 'Web Development Toolkit' },
+    { id: 'ai', icon: <Sparkles size={20} />, label: 'AI Assistant' },
   ];
 
   return (

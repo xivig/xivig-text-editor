@@ -27,6 +27,11 @@ import { PeekDefinitionModal } from '../components/modals/PeekDefinitionModal';
 import { IndexingStatusModal } from '../components/modals/IndexingStatusModal';
 import { RemoveLicenseModal } from '../components/modals/RemoveLicenseModal';
 import { UpdateCheckModal } from '../components/modals/UpdateCheckModal';
+import { ThemeEditorModal } from '../components/modals/ThemeEditorModal';
+import { DevToolboxModal } from '../components/modals/DevToolboxModal';
+import { DiagnosticLogModal } from '../components/modals/DiagnosticLogModal';
+import { CssHelpersModal } from '../components/webToolkit/CssHelpersModal';
+import { MarkdownTableEditorModal } from '../components/modals/MarkdownTableEditorModal';
 import { UpdateNotificationBanner } from '../components/common/UpdateNotificationBanner';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
@@ -108,6 +113,20 @@ export const App: React.FC = () => {
   const closeBuildSystemModal = useUIStore((state) => state.closeBuildSystemModal);
   const openWrapWithAbbreviation = useUIStore((state) => state.openWrapWithAbbreviation);
   const closeWrapWithAbbreviation = useUIStore((state) => state.closeWrapWithAbbreviation);
+
+  const isThemeEditorOpen = useUIStore((state) => state.isThemeEditorOpen);
+  const closeThemeEditor = useUIStore((state) => state.closeThemeEditor);
+  const isDevToolboxOpen = useUIStore((state) => state.isDevToolboxOpen);
+  const devToolboxInitialTab = useUIStore((state) => state.devToolboxInitialTab);
+  const openDevToolbox = useUIStore((state) => state.openDevToolbox);
+  const closeDevToolbox = useUIStore((state) => state.closeDevToolbox);
+  const isDiagnosticLogOpen = useUIStore((state) => state.isDiagnosticLogOpen);
+  const closeDiagnosticLog = useUIStore((state) => state.closeDiagnosticLog);
+  const isCssHelpersOpen = useUIStore((state) => state.isCssHelpersOpen);
+  const cssHelpersInitialTab = useUIStore((state) => state.cssHelpersInitialTab);
+  const closeCssHelpers = useUIStore((state) => state.closeCssHelpers);
+  const isMarkdownTableEditorOpen = useUIStore((state) => state.isMarkdownTableEditorOpen);
+  const closeMarkdownTableEditor = useUIStore((state) => state.closeMarkdownTableEditor);
 
   const chordRef = React.useRef<string | null>(null);
   const chordTimeoutRef = React.useRef<any>(null);
@@ -262,6 +281,11 @@ export const App: React.FC = () => {
         closeKeymapModal();
         closeBuildSystemModal();
         closeWrapWithAbbreviation();
+        closeThemeEditor();
+        closeDevToolbox();
+        closeDiagnosticLog();
+        closeCssHelpers();
+        closeMarkdownTableEditor();
         chordRef.current = null;
         return;
       }
@@ -724,6 +748,9 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.shiftKey && (e.key.toLowerCase() === 'b' || e.key.toLowerCase() === 't')) {
         e.preventDefault();
         useTaskStore.getState().openModal();
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        openDevToolbox();
       } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         useFileStore.getState().setActiveSidebarView('debug');
@@ -921,6 +948,11 @@ export const App: React.FC = () => {
       <ProjectSwitcherModal isOpen={isProjectSwitcherOpen} onClose={() => setIsProjectSwitcherOpen(false)} />
       <TasksModal />
       <DebugToolbar />
+      <ThemeEditorModal isOpen={isThemeEditorOpen} onClose={closeThemeEditor} />
+      <DevToolboxModal isOpen={isDevToolboxOpen} onClose={closeDevToolbox} initialTab={devToolboxInitialTab} />
+      <DiagnosticLogModal isOpen={isDiagnosticLogOpen} onClose={closeDiagnosticLog} />
+      <CssHelpersModal isOpen={isCssHelpersOpen} onClose={closeCssHelpers} initialTab={cssHelpersInitialTab} />
+      <MarkdownTableEditorModal isOpen={isMarkdownTableEditorOpen} onClose={closeMarkdownTableEditor} />
     </div>
   );
 };

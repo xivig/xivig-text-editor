@@ -70,6 +70,7 @@ import { createGitDiffGutterExtension } from './gitDiffGutter';
 import { createDebugGutterExtension } from './debugGutter';
 import { extensionManager } from '../../extensions/runtime/extensionManager';
 import { Minimap } from './Minimap';
+import { StickyScroll } from './StickyScroll';
 import { SettingsView } from '../settings/SettingsView';
 import { WelcomeView } from '../welcome/WelcomeView';
 import { FileContextMenu } from '../common/FileContextMenu';
@@ -702,6 +703,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       )}
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+        <StickyScroll view={viewRef.current} content={activeDoc.content} />
         <div
           ref={containerRef}
           style={{

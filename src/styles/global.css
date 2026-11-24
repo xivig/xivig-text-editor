@@ -245,3 +245,21 @@ input, textarea {
   box-shadow: 0 0 0 2px var(--xivig-accent), 0 2px 6px rgba(0, 0, 0, 0.6) !important;
 }
 
+/* Editor Column Ruler */
+.cm-column-ruler {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--xivig-border-subtle, rgba(255, 255, 255, 0.08));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Indentation Guide lines */
+.cm-indent-guide {
+  display: inline-block;
+  border-left: 1px solid var(--xivig-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+

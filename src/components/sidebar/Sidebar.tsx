@@ -30,6 +30,8 @@ import { FileIcon, FolderIcon } from '../common/FileIcon';
 import { ExtensionsView } from '../extensions/ExtensionsView';
 import { ProjectSearchView } from '../search/ProjectSearchView';
 import { DebugPanel } from '../debug/DebugPanel';
+import { WebToolkitPanel } from '../webToolkit/WebToolkitPanel';
+import { AiAssistantPanel } from '../ai/AiAssistantPanel';
 import { FileContextMenu, ContextMenuTarget } from '../common/FileContextMenu';
 
 function filterFileTree(items: FileItem[], query: string): FileItem[] {
@@ -362,7 +364,10 @@ export const Sidebar: React.FC = () => {
           {activeView === 'explorer' && 'EXPLORER'}
           {activeView === 'search' && 'SEARCH'}
           {activeView === 'git' && 'SOURCE CONTROL'}
+          {activeView === 'debug' && 'RUN & DEBUG'}
           {activeView === 'extensions' && 'EXTENSIONS'}
+          {activeView === 'web' && 'WEB TOOLKIT'}
+          {activeView === 'ai' && 'AI ASSISTANT'}
           {activeView === 'settings' && 'SETTINGS'}
         </span>
 
@@ -961,6 +966,8 @@ export const Sidebar: React.FC = () => {
         )}
 
         {activeView === 'debug' && <DebugPanel />}
+        {activeView === 'web' && <WebToolkitPanel />}
+        {activeView === 'ai' && <AiAssistantPanel />}
       </div>
 
       {/* Context Menu */}

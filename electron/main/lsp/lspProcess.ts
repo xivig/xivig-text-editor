@@ -36,15 +36,30 @@ export class LspProcess {
     const rootUri = workspaceRootPath ? `file:///${workspaceRootPath.replace(/\\/g, '/')}` : null;
 
     try {
-      this.childProcess = spawn(this.profile.command, this.profile.args, {
-        cwd: workspaceRootPath || process.cwd(),
-        shell: process.platform === 'win32',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-          ...process.env,
-          ...(this.profile.env || {}),
-        },
-      });
+      const isWin = process.platform === 'win32';
+      const isBatch = isWin && (this.profile.command.endsWith('.cmd') || this.profile.command.endsWith('.bat'));
+
+      if (isWin && isBatch) {
+        this.childProcess = spawn('cmd.exe', ['/d', '/s', '/c', this.profile.command, ...this.profile.args], {
+          cwd: workspaceRootPath || process.cwd(),
+          shell: false,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            ...(this.profile.env || {}),
+          },
+        });
+      } else {
+        this.childProcess = spawn(this.profile.command, this.profile.args, {
+          cwd: workspaceRootPath || process.cwd(),
+          shell: false,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            ...(this.profile.env || {}),
+          },
+        });
+      }
 
       this.profile.pid = this.childProcess.pid;
 
@@ -58,7 +73,11 @@ export class LspProcess {
       this.childProcess.stderr?.on('data', (errChunk: Buffer) => {
         const errText = errChunk.toString('utf-8').trim();
         if (errText) {
-          console.debug(`[LSP:${this.profile.id} stderr]`, errText);
+          if (errText.includes('is not recognized as an internal or external command') || errText.includes('not found')) {
+            console.info(`[LSP:${this.profile.id}] Server binary not found on PATH. Install via: ${this.profile.installGuide || 'check server'}`);
+          } else {
+            console.debug(`[LSP:${this.profile.id} stderr]`, errText);
+          }
         }
       });
 
@@ -90,7 +109,7 @@ export class LspProcess {
         capabilities: this.getClientCapabilities(),
         clientInfo: {
           name: 'Xivig Text Editor',
-          version: '1.4.0',
+          version: '1.5.0',
         },
         initializationOptions: {},
       }, 12000);
@@ -100,10 +119,14 @@ export class LspProcess {
       this.setStatus('running', 'Active and responsive');
       return true;
     } catch (err: any) {
-      console.warn(`[LSP:${this.profile.id}] Start handshake failed:`, err.message);
+      if (err.message.includes('Server closed with code 1') || err.message.includes('ENOENT')) {
+        console.info(`[LSP:${this.profile.id}] Server executable not installed or closed early. Install: ${this.profile.installGuide || 'check server'}`);
+      } else {
+        console.warn(`[LSP:${this.profile.id}] Start handshake failed:`, err.message);
+      }
       this.setStatus(
         'error',
-        `Start failed: ${err.message}. ${this.profile.installGuide ? `Install via: ${this.profile.installGuide}` : ''}`
+        `Not installed or start failed. ${this.profile.installGuide ? `Install via: ${this.profile.installGuide}` : ''}`
       );
       this.stop(true);
       return false;

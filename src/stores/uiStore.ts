@@ -36,6 +36,28 @@ interface UIState {
   quickOpenInitialMode: string;
   dirtyCloseDocId: string | null;
 
+  isThemeEditorOpen: boolean;
+  openThemeEditor: () => void;
+  closeThemeEditor: () => void;
+
+  isDevToolboxOpen: boolean;
+  devToolboxInitialTab: 'json' | 'regex' | 'encoding' | 'converters' | 'scratch' | 'clipboard';
+  openDevToolbox: (tab?: 'json' | 'regex' | 'encoding' | 'converters' | 'scratch' | 'clipboard') => void;
+  closeDevToolbox: () => void;
+
+  isDiagnosticLogOpen: boolean;
+  openDiagnosticLog: () => void;
+  closeDiagnosticLog: () => void;
+
+  isCssHelpersOpen: boolean;
+  cssHelpersInitialTab: 'flexbox' | 'grid' | 'gradient' | 'animation';
+  openCssHelpers: (tab?: 'flexbox' | 'grid' | 'gradient' | 'animation') => void;
+  closeCssHelpers: () => void;
+
+  isMarkdownTableEditorOpen: boolean;
+  openMarkdownTableEditor: () => void;
+  closeMarkdownTableEditor: () => void;
+
   openDiffModal: () => void;
   closeDiffModal: () => void;
   openRenameSymbolModal: (target: { oldName: string; line: number; col: number }) => void;
@@ -130,6 +152,28 @@ export const useUIStore = create<UIState>((set, get) => ({
   peekDefinitionData: null,
   quickOpenInitialMode: '',
   dirtyCloseDocId: null,
+
+  isThemeEditorOpen: false,
+  openThemeEditor: () => set({ isThemeEditorOpen: true }),
+  closeThemeEditor: () => set({ isThemeEditorOpen: false }),
+
+  isDevToolboxOpen: false,
+  devToolboxInitialTab: 'json',
+  openDevToolbox: (tab = 'json') => set({ isDevToolboxOpen: true, devToolboxInitialTab: tab }),
+  closeDevToolbox: () => set({ isDevToolboxOpen: false }),
+
+  isDiagnosticLogOpen: false,
+  openDiagnosticLog: () => set({ isDiagnosticLogOpen: true }),
+  closeDiagnosticLog: () => set({ isDiagnosticLogOpen: false }),
+
+  isCssHelpersOpen: false,
+  cssHelpersInitialTab: 'flexbox',
+  openCssHelpers: (tab = 'flexbox') => set({ isCssHelpersOpen: true, cssHelpersInitialTab: tab }),
+  closeCssHelpers: () => set({ isCssHelpersOpen: false }),
+
+  isMarkdownTableEditorOpen: false,
+  openMarkdownTableEditor: () => set({ isMarkdownTableEditorOpen: true }),
+  closeMarkdownTableEditor: () => set({ isMarkdownTableEditorOpen: false }),
 
   openDiffModal: () => set({ isDiffModalOpen: true }),
   closeDiffModal: () => set({ isDiffModalOpen: false }),

@@ -6,10 +6,31 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import { X, Copy, Check, BookOpen, ArrowUpDown } from 'lucide-react';
+import {
+  X,
+  Copy,
+  Check,
+  BookOpen,
+  ArrowUpDown,
+  Download,
+  Printer,
+  Table,
+  ListTree,
+  AlertCircle,
+} from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
-import { renderAndSanitizeMarkdown } from '../../utils/markdownSanitizer';
+import {
+  renderAndSanitizeMarkdown,
+  extractTableOfContents,
+  lintMarkdown,
+} from '../../utils/markdownSanitizer';
+import {
+  exportMarkdownToHtml,
+  downloadHtmlFile,
+  printMarkdownDocument,
+} from '../../utils/markdownExporter';
+import { MarkdownTableEditorModal } from '../modals/MarkdownTableEditorModal';
 import {
   subscribeActiveEditorView,
   getActiveEditorView,
@@ -43,6 +64,9 @@ export const MarkdownPreviewPane: React.FC = () => {
   const closePreview = useEditorStore((state) => state.closePreview);
   const [copied, setCopied] = useState(false);
   const [syncScroll, setSyncScroll] = useState(true);
+  const [isTableEditorOpen, setIsTableEditorOpen] = useState(false);
+  const [showToc, setShowToc] = useState(false);
+  const [showLintIssues, setShowLintIssues] = useState(false);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewContentRef = useRef<HTMLDivElement>(null);
@@ -62,6 +86,9 @@ export const MarkdownPreviewPane: React.FC = () => {
     ? activeDoc.path.replace(/[/\\][^/\\]+$/, '')
     : currentFolderPath || undefined;
   const workspaceRoot = currentFolderPath || undefined;
+
+  const tocItems = useMemo(() => extractTableOfContents(markdownContent), [markdownContent]);
+  const lintIssues = useMemo(() => lintMarkdown(markdownContent), [markdownContent]);
 
   const stats = useMemo(() => {
     const text = markdownContent.trim();
@@ -84,6 +111,60 @@ export const MarkdownPreviewPane: React.FC = () => {
       window.setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('[MarkdownPreview] Unable to copy rendered HTML:', error);
+    }
+  };
+
+  const handleExportHtml = () => {
+    downloadHtmlFile(activeDoc?.name || 'document', htmlContent);
+  };
+
+  const handlePrintPdf = () => {
+    printMarkdownDocument(activeDoc?.name || 'document', htmlContent);
+  };
+
+  const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+
+    // 1. Copy button in code fences
+    if (target.classList.contains('markdown-copy-btn')) {
+      const code = decodeURIComponent(target.getAttribute('data-code') || '');
+      if (code) {
+        navigator.clipboard.writeText(code);
+        target.textContent = 'Copied!';
+        setTimeout(() => {
+          target.textContent = 'Copy';
+        }, 1500);
+      }
+      return;
+    }
+
+    // 2. Interactive task checkbox toggle
+    if (target.classList.contains('task-checkbox-input')) {
+      const taskLine = parseInt(target.getAttribute('data-task-line') || '', 10);
+      if (!isNaN(taskLine) && activeDoc) {
+        const view = getTargetView();
+        const lines = activeDoc.content.split('\n');
+        if (taskLine >= 1 && taskLine <= lines.length) {
+          const currentLineText = lines[taskLine - 1];
+          let updatedLineText = currentLineText;
+          if (/\[ \]/i.test(currentLineText)) {
+            updatedLineText = currentLineText.replace(/\[ \]/, '[x]');
+          } else if (/\[x\]/i.test(currentLineText)) {
+            updatedLineText = currentLineText.replace(/\[x\]/i, '[ ]');
+          }
+          if (updatedLineText !== currentLineText) {
+            lines[taskLine - 1] = updatedLineText;
+            const newDocText = lines.join('\n');
+            useEditorStore.getState().updateDocumentContent(activeDoc.id, newDocText);
+            if (view) {
+              const lineInfo = view.state.doc.line(taskLine);
+              view.dispatch({
+                changes: { from: lineInfo.from, to: lineInfo.to, insert: updatedLineText },
+              });
+            }
+          }
+        }
+      }
     }
   };
 
@@ -443,6 +524,144 @@ export const MarkdownPreviewPane: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {/* Outline / TOC Dropdown */}
+          {tocItems.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowToc(!showToc)}
+                title="Table of Contents (Headings)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: '3px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  border: showToc ? '1px solid rgba(108, 140, 255, 0.4)' : '1px solid #3c3c3c',
+                  backgroundColor: showToc ? 'rgba(108, 140, 255, 0.15)' : '#2d2d2d',
+                  color: showToc ? '#6c8cff' : '#cccccc',
+                }}
+              >
+                <ListTree size={12} />
+                <span>TOC ({tocItems.length})</span>
+              </button>
+              {showToc && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '4px',
+                    width: '240px',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    backgroundColor: '#1e222b',
+                    border: '1px solid #2d3748',
+                    borderRadius: '6px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    padding: '6px',
+                    zIndex: 100,
+                  }}
+                >
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#888', padding: '4px 6px', textTransform: 'uppercase' }}>
+                    Document Headings
+                  </div>
+                  {tocItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setShowToc(false);
+                        const el = document.getElementById(item.slug);
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      style={{
+                        padding: '4px 6px',
+                        paddingLeft: `${(item.level - 1) * 10 + 6}px`,
+                        fontSize: '11px',
+                        color: item.level === 1 ? '#fff' : item.level === 2 ? '#4ec9b0' : '#d4d4d4',
+                        cursor: 'pointer',
+                        borderRadius: '3px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      {item.title}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Table Generator Modal Trigger */}
+          <button
+            onClick={() => setIsTableEditorOpen(true)}
+            title="Insert Markdown Table"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              border: '1px solid #3c3c3c',
+              backgroundColor: '#2d2d2d',
+              color: '#cccccc',
+            }}
+          >
+            <Table size={12} />
+            <span>Table</span>
+          </button>
+
+          {/* Export HTML Button */}
+          <button
+            onClick={handleExportHtml}
+            title="Export to HTML File"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              border: '1px solid #3c3c3c',
+              backgroundColor: '#2d2d2d',
+              color: '#cccccc',
+            }}
+          >
+            <Download size={12} />
+            <span>HTML</span>
+          </button>
+
+          {/* Print to PDF Button */}
+          <button
+            onClick={handlePrintPdf}
+            title="Print or Export to PDF"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              border: '1px solid #3c3c3c',
+              backgroundColor: '#2d2d2d',
+              color: '#cccccc',
+            }}
+          >
+            <Printer size={12} />
+            <span>Print</span>
+          </button>
+
           {/* Synchronized Live Scrolling Toggle */}
           <button
             onClick={() => {
@@ -490,7 +709,7 @@ export const MarkdownPreviewPane: React.FC = () => {
             }}
           >
             {copied ? <Check size={12} style={{ color: '#4ade80' }} /> : <Copy size={12} />}
-            <span>{copied ? 'Copied HTML' : 'Copy HTML'}</span>
+            <span>{copied ? 'Copied' : 'Copy'}</span>
           </button>
 
           {/* Close Preview Button */}
@@ -717,10 +936,16 @@ export const MarkdownPreviewPane: React.FC = () => {
         `}</style>
         <div
           ref={previewContentRef}
+          onClick={handlePreviewClick}
           style={{ maxWidth: '850px', margin: '0 auto' }}
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       </div>
+
+      <MarkdownTableEditorModal
+        isOpen={isTableEditorOpen}
+        onClose={() => setIsTableEditorOpen(false)}
+      />
     </div>
   );
 };

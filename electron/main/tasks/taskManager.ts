@@ -73,11 +73,29 @@ export class TaskManager {
     const taskCwd = task.cwd ? path.resolve(workspaceRoot, task.cwd) : workspaceRoot;
 
     try {
-      const proc = spawn(task.command, task.args || [], {
-        cwd: taskCwd,
-        shell: true,
-        env: { ...process.env },
-      });
+      const isWin = process.platform === 'win32';
+      let proc: ChildProcess;
+      if (task.args && task.args.length > 0) {
+        if (isWin) {
+          proc = spawn('cmd.exe', ['/d', '/s', '/c', task.command, ...task.args], {
+            cwd: taskCwd,
+            shell: false,
+            env: { ...process.env },
+          });
+        } else {
+          proc = spawn(task.command, task.args, {
+            cwd: taskCwd,
+            shell: false,
+            env: { ...process.env },
+          });
+        }
+      } else {
+        proc = spawn(task.command, {
+          cwd: taskCwd,
+          shell: true,
+          env: { ...process.env },
+        });
+      }
 
       this.runningTasks.set(taskId, proc);
 

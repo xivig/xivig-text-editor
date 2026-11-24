@@ -1201,6 +1201,103 @@ export const CommandPalette: React.FC = () => {
         }
       },
     },
+    {
+      id: 'developer:toolbox',
+      category: 'Developer',
+      title: 'Developer Productivity Toolbox (JSON, Regex, Encoders, Scratchpad)',
+      shortcut: 'Ctrl+Alt+T',
+      action: () => useUIStore.getState().openDevToolbox(),
+    },
+    {
+      id: 'developer:json',
+      category: 'Developer',
+      title: 'JSON Formatter, Validator & Minifier',
+      action: () => useUIStore.getState().openDevToolbox('json'),
+    },
+    {
+      id: 'developer:regex',
+      category: 'Developer',
+      title: 'Regular Expression Tester & Replacement Preview',
+      action: () => useUIStore.getState().openDevToolbox('regex'),
+    },
+    {
+      id: 'developer:encoders',
+      category: 'Developer',
+      title: 'Base64 & URL Encoder/Decoder, Hashes & UUID',
+      action: () => useUIStore.getState().openDevToolbox('encoding'),
+    },
+    {
+      id: 'developer:scratchpad',
+      category: 'Developer',
+      title: 'Open Scratchpad & Temporary Buffer',
+      action: () => useUIStore.getState().openDevToolbox('scratch'),
+    },
+    {
+      id: 'developer:clipboard',
+      category: 'Developer',
+      title: 'Clipboard History & Snippet Bank',
+      action: () => useUIStore.getState().openDevToolbox('clipboard'),
+    },
+    {
+      id: 'theme:editor',
+      category: 'Preferences',
+      title: 'Theme Studio & Color Palette Customizer',
+      action: () => useUIStore.getState().openThemeEditor(),
+    },
+    {
+      id: 'help:diagnostic-logs',
+      category: 'Help',
+      title: 'Diagnostic Logs, Extension Sandbox & System Health',
+      action: () => useUIStore.getState().openDiagnosticLog(),
+    },
+    {
+      id: 'web:css-helpers',
+      category: 'Web Toolkit',
+      title: 'CSS Design Studio (Flexbox, Grid, Gradient, Animations)',
+      action: () => useUIStore.getState().openCssHelpers(),
+    },
+    {
+      id: 'web:css-flexbox',
+      category: 'Web Toolkit',
+      title: 'CSS Flexbox Visual Helper',
+      action: () => useUIStore.getState().openCssHelpers('flexbox'),
+    },
+    {
+      id: 'web:css-grid',
+      category: 'Web Toolkit',
+      title: 'CSS Grid Visual Helper',
+      action: () => useUIStore.getState().openCssHelpers('grid'),
+    },
+    {
+      id: 'web:css-gradient',
+      category: 'Web Toolkit',
+      title: 'CSS Gradient Generator',
+      action: () => useUIStore.getState().openCssHelpers('gradient'),
+    },
+    {
+      id: 'web:css-animation',
+      category: 'Web Toolkit',
+      title: 'CSS Keyframe Animation Previewer',
+      action: () => useUIStore.getState().openCssHelpers('animation'),
+    },
+    {
+      id: 'markdown:table-editor',
+      category: 'Markdown',
+      title: 'Insert & Edit Markdown Table',
+      action: () => useUIStore.getState().openMarkdownTableEditor(),
+    },
+    {
+      id: 'view:web-toolkit',
+      category: 'View',
+      title: 'Show Web Development Toolkit Panel',
+      action: () => setActiveSidebarView('web'),
+    },
+    {
+      id: 'view:ai-assistant',
+      category: 'View',
+      title: 'Show AI Assistant Panel',
+      action: () => setActiveSidebarView('ai'),
+    },
   ];
 
   const filteredCommands = commands.filter((cmd) => {
