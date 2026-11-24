@@ -390,9 +390,12 @@ export const MarkdownPreviewPane: React.FC = () => {
   }, [syncScroll, scheduleSync]);
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] border-l border-[#2e2e2e] select-text text-gray-200">
+    <div
+      className="flex flex-col h-full min-h-0 bg-[#1e1e1e] border-l border-[#2e2e2e] select-text text-gray-200 overflow-hidden"
+      style={{ height: '100%', minHeight: 0 }}
+    >
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#2e2e2e] text-xs select-none gap-2">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#2e2e2e] text-xs select-none gap-2 flex-shrink-0">
         <div className="flex items-center space-x-1.5 text-gray-300 font-medium min-w-0">
           <BookOpen size={14} className="text-[#569cd6] flex-shrink-0" />
           <span className="truncate">Markdown Live Preview</span>
@@ -445,13 +448,40 @@ export const MarkdownPreviewPane: React.FC = () => {
         </div>
       </div>
 
-      {/* Rendered Markdown Body with exact positioning and constrained image sizing */}
+      {/* Rendered Markdown Body with exact positioning, constrained image sizing and custom visible scrollbar */}
       <div
         ref={previewContainerRef}
-        style={{ position: 'relative' }}
-        className="flex-1 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
+        style={{ position: 'relative', minHeight: 0, overflowY: 'auto' }}
+        className="flex-1 min-h-0 overflow-y-auto px-6 py-4 markdown-preview font-sans selection:bg-[#264f78] selection:text-white"
       >
         <style>{`
+          .markdown-preview {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.28) rgba(0, 0, 0, 0.2);
+          }
+          .markdown-preview::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+            display: block;
+          }
+          .markdown-preview::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+          }
+          .markdown-preview::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.28);
+            border-radius: 5px;
+            border: 2px solid #1e1e1e;
+            background-clip: padding-box;
+          }
+          .markdown-preview::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.45);
+          }
+          .markdown-preview::-webkit-scrollbar-thumb:active {
+            background-color: rgba(255, 255, 255, 0.6);
+          }
+          .markdown-preview::-webkit-scrollbar-corner {
+            background: transparent;
+          }
           .markdown-preview img {
             max-width: 100%;
             height: auto;
