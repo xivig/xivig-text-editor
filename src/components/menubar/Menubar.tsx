@@ -25,6 +25,16 @@ import {
   transformToKebabCaseCommand,
   transposeWordsCommand,
 } from '../editor/sublimeKeymap';
+import {
+  goToDefinition,
+  goToDeclaration,
+  goToTypeDefinition,
+  findImplementations,
+  peekDefinition,
+  findReferences,
+  renameSymbol,
+} from '../editor/codeIntelligence';
+import { navigationHistory } from '../../utils/navigationHistory';
 import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket } from '@codemirror/commands';
 
 interface MenuItem {
@@ -459,6 +469,91 @@ export const Menubar: React.FC = () => {
         },
       },
       { label: 'Delete Line', shortcut: 'Ctrl+Shift+K' },
+    ],
+    Go: [
+      {
+        label: 'Back',
+        shortcut: 'Alt+Left',
+        action: () => navigationHistory.goBack(),
+      },
+      {
+        label: 'Forward',
+        shortcut: 'Alt+Right',
+        action: () => navigationHistory.goForward(),
+      },
+      { divider: true, label: '' },
+      { label: 'Go to File...', shortcut: 'Ctrl+P', action: openQuickOpen },
+      {
+        label: 'Go to Symbol in Document...',
+        shortcut: 'Ctrl+R',
+        action: () => useUIStore.getState().openQuickOpenWithMode('@'),
+      },
+      {
+        label: 'Go to Symbol in Workspace...',
+        shortcut: 'Ctrl+;',
+        action: () => useUIStore.getState().openQuickOpenWithMode('#'),
+      },
+      {
+        label: 'Go to Line/Column...',
+        shortcut: 'Ctrl+G',
+        action: () => useUIStore.getState().openQuickOpenWithMode(':'),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Go to Definition',
+        shortcut: 'F12',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) goToDefinition(view);
+        },
+      },
+      {
+        label: 'Go to Declaration',
+        shortcut: 'Ctrl+F12',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) goToDeclaration(view);
+        },
+      },
+      {
+        label: 'Go to Type Definition',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) goToTypeDefinition(view);
+        },
+      },
+      {
+        label: 'Go to Implementations',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) findImplementations(view);
+        },
+      },
+      {
+        label: 'Peek Definition',
+        shortcut: 'Alt+F12',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) peekDefinition(view);
+        },
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Find References',
+        shortcut: 'Shift+F12',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) findReferences(view);
+        },
+      },
+      {
+        label: 'Rename Symbol',
+        shortcut: 'F2',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) renameSymbol(view);
+        },
+      },
     ],
     View: [
       { label: 'Command Palette...', shortcut: 'Ctrl+Shift+P', action: openCommandPalette },

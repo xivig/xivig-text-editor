@@ -19,11 +19,16 @@ interface FileState {
   recentFiles: RecentItem[];
   recentWorkspaces: RecentItem[];
   fileClipboard: FileClipboardItem | null;
+  searchFolderFilter: string | null;
+  workspaceSearchQuery: string;
 
   // Git state
   gitBranch: string;
   gitChanges: GitFileChange[];
   isGitRepo: boolean;
+
+  setSearchFolderFilter: (folder: string | null) => void;
+  setWorkspaceSearchQuery: (query: string) => void;
 
   setCurrentFolder: (folderPath: string, items: Array<{ path: string; name: string; isDirectory: boolean }>) => void;
   closeCurrentFolder: () => void;
@@ -54,9 +59,14 @@ export const useFileStore = create<FileState>((set, get) => ({
   recentFiles: [],
   recentWorkspaces: [],
   fileClipboard: null,
+  searchFolderFilter: null,
+  workspaceSearchQuery: '',
   gitBranch: 'main',
   gitChanges: [],
   isGitRepo: false,
+
+  setSearchFolderFilter: (folder) => set({ searchFolderFilter: folder }),
+  setWorkspaceSearchQuery: (query) => set({ workspaceSearchQuery: query, activeSidebarView: 'search', isSidebarOpen: true }),
 
   setFileClipboard: (item) => set({ fileClipboard: item }),
 

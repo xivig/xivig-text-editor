@@ -22,11 +22,33 @@ interface UIState {
   isUpdateCheckOpen: boolean;
   isDistractionFree: boolean;
   isDiffModalOpen: boolean;
+  isRenameSymbolOpen: boolean;
+  renameSymbolTarget: { oldName: string; line: number; col: number } | null;
+  isPeekDefinitionOpen: boolean;
+  peekDefinitionData: {
+    symbol: string;
+    filePath?: string;
+    fileName: string;
+    line: number;
+    col: number;
+    previewCode: string;
+  } | null;
   quickOpenInitialMode: string;
   dirtyCloseDocId: string | null;
 
   openDiffModal: () => void;
   closeDiffModal: () => void;
+  openRenameSymbolModal: (target: { oldName: string; line: number; col: number }) => void;
+  closeRenameSymbolModal: () => void;
+  openPeekDefinitionModal: (data: {
+    symbol: string;
+    filePath?: string;
+    fileName: string;
+    line: number;
+    col: number;
+    previewCode: string;
+  }) => void;
+  closePeekDefinitionModal: () => void;
   openDirtyCloseModal: (docId: string) => void;
   closeDirtyCloseModal: () => void;
 
@@ -102,11 +124,19 @@ export const useUIStore = create<UIState>((set, get) => ({
   isUpdateCheckOpen: false,
   isDistractionFree: false,
   isDiffModalOpen: false,
+  isRenameSymbolOpen: false,
+  renameSymbolTarget: null,
+  isPeekDefinitionOpen: false,
+  peekDefinitionData: null,
   quickOpenInitialMode: '',
   dirtyCloseDocId: null,
 
   openDiffModal: () => set({ isDiffModalOpen: true }),
   closeDiffModal: () => set({ isDiffModalOpen: false }),
+  openRenameSymbolModal: (target) => set({ isRenameSymbolOpen: true, renameSymbolTarget: target }),
+  closeRenameSymbolModal: () => set({ isRenameSymbolOpen: false, renameSymbolTarget: null }),
+  openPeekDefinitionModal: (data) => set({ isPeekDefinitionOpen: true, peekDefinitionData: data }),
+  closePeekDefinitionModal: () => set({ isPeekDefinitionOpen: false, peekDefinitionData: null }),
   openDirtyCloseModal: (docId: string) => set({ dirtyCloseDocId: docId }),
   closeDirtyCloseModal: () => set({ dirtyCloseDocId: null }),
   isBottomPanelOpen: false,

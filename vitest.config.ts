@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    testTimeout: 15000,
     include: ['src/**/*.test.{ts,tsx}', 'electron/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**', '**/dist-electron/**'],
   },

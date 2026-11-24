@@ -4,6 +4,7 @@ import { useEditorStore } from '../../stores/editorStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useBuildStore } from '../../stores/buildStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
+import { goToDefinition, peekDefinition, findReferences, renameSymbol } from '../editor/codeIntelligence';
 import { beautifyActiveEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
@@ -387,6 +388,30 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
   };
 
+  const handleGoToDefinition = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) goToDefinition(view);
+  };
+
+  const handlePeekDefinition = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) peekDefinition(view);
+  };
+
+  const handleFindReferences = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) findReferences(view);
+  };
+
+  const handleRenameSymbol = () => {
+    onClose();
+    const view = getActiveEditorView();
+    if (view) renameSymbol(view);
+  };
+
   // ==========================================================================
   // PATH COPYING & REVEAL
   // ==========================================================================
@@ -530,6 +555,25 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
           <div style={menuDividerStyle} />
 
+          <div onClick={handleGoToDefinition} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Go to Definition</span>
+            <span style={shortcutStyle}>F12</span>
+          </div>
+          <div onClick={handlePeekDefinition} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Peek Definition</span>
+            <span style={shortcutStyle}>Alt+F12</span>
+          </div>
+          <div onClick={handleFindReferences} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Find All References</span>
+            <span style={shortcutStyle}>Shift+F12</span>
+          </div>
+          <div onClick={handleRenameSymbol} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>Rename Symbol</span>
+            <span style={shortcutStyle}>F2</span>
+          </div>
+
+          <div style={menuDividerStyle} />
+
           <div onClick={handleFormatDocument} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>Format Document</span>
             <span style={shortcutStyle}>Ctrl+Alt+B</span>
@@ -649,6 +693,22 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
           <div onClick={handleNewFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>New Folder...</span>
           </div>
+
+          {target.isDirectory && (
+            <div
+              onClick={() => {
+                onClose();
+                useFileStore.getState().setSearchFolderFilter(target.path);
+                useFileStore.getState().setActiveSidebarView('search');
+              }}
+              style={menuItemStyle}
+              onMouseEnter={onHover}
+              onMouseLeave={onUnhover}
+            >
+              <span>Find in Folder...</span>
+              <span style={shortcutStyle}>Ctrl+Shift+F</span>
+            </div>
+          )}
 
           <div style={menuDividerStyle} />
 

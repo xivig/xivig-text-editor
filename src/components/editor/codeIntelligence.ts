@@ -705,22 +705,34 @@ export const parameterHintsExtension = hoverTooltip((view: EditorView, pos: numb
 });
 
 // ============================================================================
-// 5. GO TO DEFINITION COMMAND (F12)
+// 5. CODE INTELLIGENCE COMMANDS & SYMBOL NAVIGATION
 // ============================================================================
 
-export function goToDefinition(view: EditorView): boolean {
+export function getSymbolAtCursor(view: EditorView): { symbol: string; from: number; to: number; line: number; col: number } | null {
   const head = view.state.selection.main.head;
   const line = view.state.doc.lineAt(head);
   const col = head - line.from;
 
-  // Extract word at cursor
   let start = col;
   let end = col;
   while (start > 0 && /[\w$]/.test(line.text[start - 1])) start--;
   while (end < line.text.length && /[\w$]/.test(line.text[end])) end++;
 
-  if (start === end) return false;
+  if (start === end) return null;
   const symbol = line.text.slice(start, end);
+  return {
+    symbol,
+    from: line.from + start,
+    to: line.from + end,
+    line: line.number,
+    col: start + 1,
+  };
+}
+
+export function goToDefinition(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+  const symbol = sym.symbol;
 
   // Search active document for definition
   const fullText = view.state.doc.toString();
@@ -764,9 +776,143 @@ export function goToDefinition(view: EditorView): boolean {
   return false;
 }
 
+export function goToDeclaration(view: EditorView): boolean {
+  return goToDefinition(view);
+}
+
+export function goToTypeDefinition(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+  const symbol = sym.symbol;
+
+  const fullText = view.state.doc.toString();
+  const symbols = extractDocumentSymbols(fullText, 'js');
+  const target = symbols.find(
+    (s) => (s.kind === 'interface' || s.kind === 'class') && s.name.replace(/\(\)$/, '') === symbol
+  );
+
+  if (target) {
+    const targetLine = view.state.doc.line(target.line);
+    view.dispatch({
+      selection: EditorSelection.cursor(targetLine.from + target.col - 1),
+      effects: EditorView.scrollIntoView(targetLine.from, { y: 'center' }),
+    });
+    view.focus();
+    return true;
+  }
+
+  return goToDefinition(view);
+}
+
+export function findImplementations(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+  return findReferences(view);
+}
+
+export function peekDefinition(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+  const symbol = sym.symbol;
+
+  const fullText = view.state.doc.toString();
+  const symbols = extractDocumentSymbols(fullText, 'js');
+  const target = symbols.find((s) => s.name.replace(/\(\)$/, '') === symbol);
+  const activeDoc = useEditorStore.getState().getActiveDocument();
+
+  if (target) {
+    const lines = fullText.split('\n');
+    const startLine = Math.max(0, target.line - 2);
+    const endLine = Math.min(lines.length, target.line + 10);
+    const previewCode = lines.slice(startLine, endLine).join('\n');
+
+    import('../../stores/uiStore').then(({ useUIStore }) => {
+      useUIStore.getState().openPeekDefinitionModal({
+        symbol,
+        fileName: activeDoc?.name || 'Untitled',
+        filePath: activeDoc?.path || undefined,
+        line: target.line,
+        col: target.col,
+        previewCode,
+      });
+    });
+    return true;
+  }
+
+  // Cross-document peek
+  const allDocs = useEditorStore.getState().documents;
+  for (const doc of allDocs) {
+    if (doc.content && doc.content.includes(symbol)) {
+      const docSymbols = extractDocumentSymbols(doc.content, doc.language || 'js');
+      const found = docSymbols.find((s) => s.name.replace(/\(\)$/, '') === symbol);
+      if (found) {
+        const lines = doc.content.split('\n');
+        const startLine = Math.max(0, found.line - 2);
+        const endLine = Math.min(lines.length, found.line + 10);
+        const previewCode = lines.slice(startLine, endLine).join('\n');
+
+        import('../../stores/uiStore').then(({ useUIStore }) => {
+          useUIStore.getState().openPeekDefinitionModal({
+            symbol,
+            fileName: doc.name,
+            filePath: doc.path || undefined,
+            line: found.line,
+            col: found.col,
+            previewCode,
+          });
+        });
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function findReferences(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+
+  import('../../stores/fileStore').then(({ useFileStore }) => {
+    useFileStore.getState().setWorkspaceSearchQuery(sym.symbol);
+    useFileStore.getState().setActiveSidebarView('search');
+  });
+  return true;
+}
+
+export function renameSymbol(view: EditorView): boolean {
+  const sym = getSymbolAtCursor(view);
+  if (!sym) return false;
+
+  import('../../stores/uiStore').then(({ useUIStore }) => {
+    useUIStore.getState().openRenameSymbolModal({
+      oldName: sym.symbol,
+      line: sym.line,
+      col: sym.col,
+    });
+  });
+  return true;
+}
+
 export const codeIntelligenceKeymap = keymap.of([
   {
     key: 'F12',
     run: (view) => goToDefinition(view),
+  },
+  {
+    key: 'Alt-F12',
+    run: (view) => peekDefinition(view),
+  },
+  {
+    key: 'Shift-F12',
+    run: (view) => findReferences(view),
+  },
+  {
+    key: 'F2',
+    run: (view) => renameSymbol(view),
+  },
+  {
+    key: 'Mod-F12',
+    run: (view) => goToDeclaration(view),
   },
 ]);

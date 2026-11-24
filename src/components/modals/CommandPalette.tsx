@@ -9,7 +9,16 @@ import { useExtensionStore } from '../../stores/extensionStore';
 import { useLiveServerStore } from '../../stores/liveServerStore';
 import { useUpdateStore } from '../../stores/updateStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
-import { goToDefinition } from '../editor/codeIntelligence';
+import {
+  goToDefinition,
+  goToDeclaration,
+  goToTypeDefinition,
+  findImplementations,
+  peekDefinition,
+  findReferences,
+  renameSymbol,
+} from '../editor/codeIntelligence';
+import { navigationHistory } from '../../utils/navigationHistory';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
@@ -539,6 +548,20 @@ export const CommandPalette: React.FC = () => {
       action: () => useUIStore.getState().openQuickOpenWithMode('@'),
     },
     {
+      id: 'goto:workspace-symbol',
+      category: 'Navigation',
+      title: 'Go to Symbol in Workspace...',
+      shortcut: 'Ctrl+;',
+      action: () => useUIStore.getState().openQuickOpenWithMode('#'),
+    },
+    {
+      id: 'goto:line-col',
+      category: 'Navigation',
+      title: 'Go to Line and Column...',
+      shortcut: 'Ctrl+G',
+      action: () => useUIStore.getState().openQuickOpenWithMode(':'),
+    },
+    {
       id: 'goto:definition',
       category: 'Navigation',
       title: 'Go to Definition',
@@ -549,6 +572,90 @@ export const CommandPalette: React.FC = () => {
           goToDefinition(view);
         }
       },
+    },
+    {
+      id: 'goto:declaration',
+      category: 'Navigation',
+      title: 'Go to Declaration',
+      shortcut: 'Ctrl+F12',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          goToDeclaration(view);
+        }
+      },
+    },
+    {
+      id: 'goto:type-definition',
+      category: 'Navigation',
+      title: 'Go to Type Definition',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          goToTypeDefinition(view);
+        }
+      },
+    },
+    {
+      id: 'goto:implementations',
+      category: 'Navigation',
+      title: 'Go to Implementations',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          findImplementations(view);
+        }
+      },
+    },
+    {
+      id: 'goto:peek-definition',
+      category: 'Navigation',
+      title: 'Peek Definition',
+      shortcut: 'Alt+F12',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          peekDefinition(view);
+        }
+      },
+    },
+    {
+      id: 'goto:find-references',
+      category: 'Navigation',
+      title: 'Find All References',
+      shortcut: 'Shift+F12',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          findReferences(view);
+        }
+      },
+    },
+    {
+      id: 'edit:rename-symbol',
+      category: 'Edit',
+      title: 'Rename Symbol',
+      shortcut: 'F2',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          renameSymbol(view);
+        }
+      },
+    },
+    {
+      id: 'navigate:back',
+      category: 'Navigation',
+      title: 'Navigate Backward in Edit Locations',
+      shortcut: 'Alt+Left',
+      action: () => navigationHistory.goBack(),
+    },
+    {
+      id: 'navigate:forward',
+      category: 'Navigation',
+      title: 'Navigate Forward in Edit Locations',
+      shortcut: 'Alt+Right',
+      action: () => navigationHistory.goForward(),
     },
     {
       id: 'format:beautify',

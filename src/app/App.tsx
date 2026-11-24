@@ -8,6 +8,7 @@ import { Editor } from '../components/editor/Editor';
 import { LivePreviewPane } from '../components/editor/LivePreviewPane';
 import { MarkdownPreviewPane } from '../components/editor/MarkdownPreviewPane';
 import { LinkedFileBanner } from '../components/editor/LinkedFileBanner';
+import { BreadcrumbBar } from '../components/editor/BreadcrumbBar';
 import { StatusBar } from '../components/statusbar/StatusBar';
 import { BottomPanel } from '../components/terminal/BottomPanel';
 import { CommandPalette } from '../components/modals/CommandPalette';
@@ -21,6 +22,8 @@ import { BracketsColorPickerModal } from '../components/modals/BracketsColorPick
 import { LoremIpsumModal } from '../components/modals/LoremIpsumModal';
 import { AboutModal } from '../components/modals/AboutModal';
 import { DiffModal } from '../components/modals/DiffModal';
+import { RenameSymbolModal } from '../components/modals/RenameSymbolModal';
+import { PeekDefinitionModal } from '../components/modals/PeekDefinitionModal';
 import { IndexingStatusModal } from '../components/modals/IndexingStatusModal';
 import { RemoveLicenseModal } from '../components/modals/RemoveLicenseModal';
 import { UpdateCheckModal } from '../components/modals/UpdateCheckModal';
@@ -50,6 +53,7 @@ import { unfoldAll } from '@codemirror/language';
 import { findNext, findPrevious } from '@codemirror/search';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../utils/beautify';
 import { prepareContentForSave } from '../utils/saveUtils';
+import { navigationHistory } from '../utils/navigationHistory';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -435,6 +439,13 @@ export const App: React.FC = () => {
         return;
       }
 
+      // Go to Line and Column (Ctrl+G)
+      if (isCtrlOrMeta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        useUIStore.getState().openQuickOpenWithMode(':');
+        return;
+      }
+
       // Reopen Closed Tab (Ctrl+Shift+T)
       if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 't') {
         e.preventDefault();
@@ -465,6 +476,20 @@ export const App: React.FC = () => {
         e.preventDefault();
         const tabIndex = e.key === '0' ? 9 : parseInt(e.key, 10) - 1;
         useEditorStore.getState().switchToTab(tabIndex);
+        return;
+      }
+
+      // Navigate Backward in Edit History (Alt+Left)
+      if (e.altKey && !e.shiftKey && !isCtrlOrMeta && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigationHistory.goBack();
+        return;
+      }
+
+      // Navigate Forward in Edit History (Alt+Right)
+      if (e.altKey && !e.shiftKey && !isCtrlOrMeta && e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigationHistory.goForward();
         return;
       }
 
@@ -698,6 +723,7 @@ export const App: React.FC = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
               <TabBar pane="primary" />
               <LinkedFileBanner />
+              <BreadcrumbBar pane="primary" />
               <div style={editorSurfaceStyle}>
                 <SearchPanel />
                 <Editor pane="primary" />
@@ -715,6 +741,7 @@ export const App: React.FC = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
               <TabBar pane="primary" />
               <LinkedFileBanner />
+              <BreadcrumbBar pane="primary" />
               <div style={editorSurfaceStyle}>
                 <SearchPanel />
                 <Editor pane="primary" />
@@ -727,6 +754,7 @@ export const App: React.FC = () => {
               ) : (
                 <>
                   <TabBar pane="secondary" />
+                  <BreadcrumbBar pane="secondary" />
                   <div style={editorSurfaceStyle}>
                     <Editor pane="secondary" />
                   </div>
@@ -740,6 +768,7 @@ export const App: React.FC = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', borderBottom: '1px solid var(--xivig-border-subtle)', overflow: 'hidden' }}>
               <TabBar pane="primary" />
               <LinkedFileBanner />
+              <BreadcrumbBar pane="primary" />
               <div style={editorSurfaceStyle}>
                 <SearchPanel />
                 <Editor pane="primary" />
@@ -752,6 +781,7 @@ export const App: React.FC = () => {
               ) : (
                 <>
                   <TabBar pane="secondary" />
+                  <BreadcrumbBar pane="secondary" />
                   <div style={editorSurfaceStyle}>
                     <Editor pane="secondary" />
                   </div>
@@ -778,6 +808,8 @@ export const App: React.FC = () => {
       <LoremIpsumModal />
       <AboutModal />
       <DiffModal />
+      <RenameSymbolModal />
+      <PeekDefinitionModal />
       <IndexingStatusModal />
       <RemoveLicenseModal />
       <UpdateCheckModal />

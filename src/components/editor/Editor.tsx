@@ -58,6 +58,7 @@ import { Minimap } from './Minimap';
 import { SettingsView } from '../settings/SettingsView';
 import { WelcomeView } from '../welcome/WelcomeView';
 import { FileContextMenu } from '../common/FileContextMenu';
+import { navigationHistory } from '../../utils/navigationHistory';
 import { FileIcon } from '../common/FileIcon';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -245,6 +246,12 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             const lineNum = line.number;
             const colNum = head - line.from + 1;
             updateCursor(docIdRef.current, lineNum, colNum);
+            navigationHistory.pushLocation({
+              docId: docIdRef.current,
+              path: activeDoc.path || undefined,
+              line: lineNum,
+              col: colNum,
+            });
           }
 
           // Track content changes

@@ -34,9 +34,21 @@ export const SearchPanel: React.FC = () => {
   const [wholeWord, setWholeWord] = useState(false);
   const [regexp, setRegexp] = useState(false);
   const [matchCount, setMatchCount] = useState<number | null>(null);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [draftSearch, setDraftSearch] = useState<string>('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  const saveToHistory = (term: string) => {
+    if (!term.trim()) return;
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((item) => item !== term);
+      return [term, ...filtered].slice(0, 50);
+    });
+    setHistoryIndex(-1);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -86,7 +98,7 @@ export const SearchPanel: React.FC = () => {
       const doc = view.state.doc;
       if (regexp) {
         try {
-          const flags = caseSensitive ? 'g' : 'gi';
+          const flags = caseSensitive ? 'gm' : 'gim';
           const rx = new RegExp(searchQueryText, flags);
           const cursor = new RegExpCursor(doc, rx.source, { ignoreCase: !caseSensitive });
           while (!cursor.next().done) {
@@ -116,29 +128,61 @@ export const SearchPanel: React.FC = () => {
   }, [searchQueryText, replaceQueryText, caseSensitive, wholeWord, regexp]);
 
   const handleFindNext = () => {
+    saveToHistory(searchQueryText);
     const view = getActiveEditorView();
     if (view) findNext(view);
   };
 
   const handleFindPrevious = () => {
+    saveToHistory(searchQueryText);
     const view = getActiveEditorView();
     if (view) findPrevious(view);
   };
 
   const handleReplaceNext = () => {
+    saveToHistory(searchQueryText);
     const view = getActiveEditorView();
     if (view) replaceNext(view);
   };
 
   const handleReplaceAll = () => {
+    saveToHistory(searchQueryText);
     const view = getActiveEditorView();
-    if (view) replaceAll(view);
+    if (!view) return;
+    if (matchCount && matchCount > 10) {
+      if (!confirm(`Replace all ${matchCount} matches in current file?`)) {
+        return;
+      }
+    }
+    replaceAll(view);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       close();
+    } else if (e.key === 'ArrowUp' && searchHistory.length > 0) {
+      e.preventDefault();
+      if (historyIndex === -1) {
+        setDraftSearch(searchQueryText);
+        const nextIdx = 0;
+        setHistoryIndex(nextIdx);
+        setSearchQueryText(searchHistory[nextIdx]);
+      } else if (historyIndex < searchHistory.length - 1) {
+        const nextIdx = historyIndex + 1;
+        setHistoryIndex(nextIdx);
+        setSearchQueryText(searchHistory[nextIdx]);
+      }
+    } else if (e.key === 'ArrowDown' && historyIndex >= 0) {
+      e.preventDefault();
+      if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setSearchQueryText(draftSearch);
+      } else {
+        const nextIdx = historyIndex - 1;
+        setHistoryIndex(nextIdx);
+        setSearchQueryText(searchHistory[nextIdx]);
+      }
     } else if (e.altKey && e.key.toLowerCase() === 'c') {
       e.preventDefault();
       setCaseSensitive((prev) => !prev);

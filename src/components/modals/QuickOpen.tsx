@@ -77,15 +77,17 @@ export const QuickOpen: React.FC = () => {
     return extractDocumentSymbols(activeDoc.content, activeDoc.language || 'text');
   }, [activeDoc?.content, activeDoc?.language]);
 
-  // Jump to specific line in active editor
-  const jumpToLine = (lineNum: number) => {
+  // Jump to specific line and column in active editor
+  const jumpToLineAndCol = (lineNum: number, colNum: number = 1) => {
     const view = getActiveEditorView();
     if (view) {
-      const clamped = Math.max(1, Math.min(lineNum, view.state.doc.lines));
-      const line = view.state.doc.line(clamped);
+      const clampedLine = Math.max(1, Math.min(lineNum, view.state.doc.lines));
+      const line = view.state.doc.line(clampedLine);
+      const clampedCol = Math.max(1, Math.min(colNum, line.length + 1));
+      const pos = line.from + clampedCol - 1;
       view.dispatch({
-        selection: EditorSelection.cursor(line.from),
-        effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
+        selection: EditorSelection.cursor(pos),
+        effects: EditorView.scrollIntoView(pos, { y: 'center' }),
       });
       view.focus();
     }
@@ -93,6 +95,42 @@ export const QuickOpen: React.FC = () => {
 
   const isLineMode = query.startsWith(':');
   const isSymbolMode = query.startsWith('@');
+  const isWorkspaceSymbolMode = query.startsWith('#');
+
+  const parsedLineAndCol = React.useMemo(() => {
+    if (!isLineMode) return null;
+    const match = query.substring(1).trim().match(/^(\d+)(?:[:,\s](\d+))?/);
+    if (!match) return null;
+    return {
+      line: parseInt(match[1], 10),
+      col: match[2] ? parseInt(match[2], 10) : 1,
+    };
+  }, [isLineMode, query]);
+
+  const workspaceSymbols = React.useMemo(() => {
+    if (!isWorkspaceSymbolMode) return [];
+    const syms: Array<ExtractedSymbol & { fileName: string; filePath: string }> = [];
+    const docs = useEditorStore.getState().documents;
+
+    for (const d of docs) {
+      if (d.content) {
+        const fileSyms = extractDocumentSymbols(d.content, d.language || d.name);
+        for (const s of fileSyms) {
+          syms.push({ ...s, fileName: d.name, filePath: d.path || d.name });
+        }
+      }
+    }
+    return syms;
+  }, [isWorkspaceSymbolMode, isOpen]);
+
+  const filteredWorkspaceSymbols = React.useMemo(() => {
+    if (!isWorkspaceSymbolMode) return [];
+    const q = query.substring(1).trim().toLowerCase();
+    if (!q) return workspaceSymbols.slice(0, 50);
+    return workspaceSymbols
+      .filter((s) => s.name.toLowerCase().includes(q) || (s.fileName && s.fileName.toLowerCase().includes(q)))
+      .slice(0, 50);
+  }, [isWorkspaceSymbolMode, query, workspaceSymbols]);
 
   const filteredSymbols = symbols.filter((s) => {
     const q = query.substring(1).trim().toLowerCase();
@@ -100,16 +138,14 @@ export const QuickOpen: React.FC = () => {
     return s.name.toLowerCase().includes(q);
   });
 
-  const parsedLineNumber = isLineMode ? parseInt(query.substring(1).trim(), 10) : null;
-
   const filteredFiles = flatFiles.filter((f) => {
-    if (isLineMode || isSymbolMode) return false;
-    const cleanQuery = query.split(':')[0].trim().toLowerCase();
+    if (isLineMode || isSymbolMode || isWorkspaceSymbolMode) return false;
+    const cleanQuery = query.split(/[:,\s]/)[0].trim().toLowerCase();
     if (!cleanQuery) return true;
     return f.name.toLowerCase().includes(cleanQuery) || f.relativePath.toLowerCase().includes(cleanQuery);
   });
 
-  const handleSelectFile = async (file: FlatFile, targetLine?: number) => {
+  const handleSelectFile = async (file: FlatFile, targetLine?: number, targetCol?: number) => {
     close();
     if (window.xivig?.readFile) {
       const res = await window.xivig.readFile(file.path);
@@ -122,7 +158,7 @@ export const QuickOpen: React.FC = () => {
         });
 
         if (targetLine && targetLine > 0) {
-          setTimeout(() => jumpToLine(targetLine), 60);
+          setTimeout(() => jumpToLineAndCol(targetLine, targetCol || 1), 60);
         }
       }
     }
@@ -134,24 +170,40 @@ export const QuickOpen: React.FC = () => {
       close();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      const count = isLineMode ? 1 : isSymbolMode ? filteredSymbols.length : filteredFiles.length;
+      const count = isLineMode
+        ? 1
+        : isWorkspaceSymbolMode
+        ? filteredWorkspaceSymbols.length
+        : isSymbolMode
+        ? filteredSymbols.length
+        : filteredFiles.length;
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, count));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const count = isLineMode ? 1 : isSymbolMode ? filteredSymbols.length : filteredFiles.length;
+      const count = isLineMode
+        ? 1
+        : isWorkspaceSymbolMode
+        ? filteredWorkspaceSymbols.length
+        : isSymbolMode
+        ? filteredSymbols.length
+        : filteredFiles.length;
       setSelectedIndex((prev) => (prev - 1 + count) % Math.max(1, count));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (isLineMode && parsedLineNumber && !isNaN(parsedLineNumber)) {
-        jumpToLine(parsedLineNumber);
+      if (isLineMode && parsedLineAndCol) {
+        jumpToLineAndCol(parsedLineAndCol.line, parsedLineAndCol.col);
         close();
+      } else if (isWorkspaceSymbolMode && filteredWorkspaceSymbols[selectedIndex]) {
+        const sym = filteredWorkspaceSymbols[selectedIndex];
+        handleSelectFile({ path: sym.filePath, name: sym.fileName, relativePath: sym.fileName }, sym.line, sym.col);
       } else if (isSymbolMode && filteredSymbols[selectedIndex]) {
-        jumpToLine(filteredSymbols[selectedIndex].line);
+        jumpToLineAndCol(filteredSymbols[selectedIndex].line, filteredSymbols[selectedIndex].col);
         close();
       } else if (filteredFiles[selectedIndex]) {
-        const parts = query.split(':');
-        const targetLine = parts.length > 1 ? parseInt(parts[1], 10) : undefined;
-        handleSelectFile(filteredFiles[selectedIndex], targetLine);
+        const match = query.match(/[:,\s](\d+)(?:[:,\s](\d+))?/);
+        const targetLine = match ? parseInt(match[1], 10) : undefined;
+        const targetCol = match && match[2] ? parseInt(match[2], 10) : undefined;
+        handleSelectFile(filteredFiles[selectedIndex], targetLine, targetCol);
       }
     }
   };
@@ -174,6 +226,8 @@ export const QuickOpen: React.FC = () => {
         <div style={searchHeaderStyle}>
           {isLineMode ? (
             <Navigation size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
+          ) : isWorkspaceSymbolMode ? (
+            <Hash size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
           ) : isSymbolMode ? (
             <Code size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
           ) : (
@@ -190,10 +244,12 @@ export const QuickOpen: React.FC = () => {
             onKeyDown={handleKeyDown}
             placeholder={
               isLineMode
-                ? 'Type line number to jump to (e.g. :42)...'
+                ? 'Type line:col to jump to (e.g. :42:15)...'
+                : isWorkspaceSymbolMode
+                ? 'Search symbol across workspace (#function, #class)...'
                 : isSymbolMode
-                ? 'Search symbol in file (e.g. @function, @class)...'
-                : 'Type file name, or :line to jump, or @symbol...'
+                ? 'Search document symbol or outline (@function, @class)...'
+                : 'Type file name, or :line:col to jump, or @symbol, or #workspace-symbol...'
             }
             style={inputStyle}
           />
@@ -204,8 +260,8 @@ export const QuickOpen: React.FC = () => {
           {isLineMode ? (
             <div
               onClick={() => {
-                if (parsedLineNumber && !isNaN(parsedLineNumber)) {
-                  jumpToLine(parsedLineNumber);
+                if (parsedLineAndCol) {
+                  jumpToLineAndCol(parsedLineAndCol.line, parsedLineAndCol.col);
                   close();
                 }
               }}
@@ -218,13 +274,76 @@ export const QuickOpen: React.FC = () => {
               <div style={itemContentStyle}>
                 <Navigation size={15} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
                 <span style={fileNameStyle}>
-                  {parsedLineNumber && !isNaN(parsedLineNumber)
-                    ? `Jump to Line ${parsedLineNumber}`
-                    : 'Type line number after : (e.g. :25)'}
+                  {parsedLineAndCol
+                    ? `Jump to Line ${parsedLineAndCol.line}${parsedLineAndCol.col > 1 ? `, Column ${parsedLineAndCol.col}` : ''}`
+                    : 'Type line number after : (e.g. :42 or :42:10)'}
                 </span>
                 <span style={filePathStyle}>Press Enter to jump</span>
               </div>
             </div>
+          ) : isWorkspaceSymbolMode ? (
+            filteredWorkspaceSymbols.length > 0 ? (
+              filteredWorkspaceSymbols.map((sym, idx) => {
+                const isSelected = idx === selectedIndex;
+                const kindBadge =
+                  sym.kind === 'function' || sym.kind === 'method'
+                    ? 'ƒ'
+                    : sym.kind === 'class'
+                    ? 'C'
+                    : sym.kind === 'interface'
+                    ? 'I'
+                    : sym.kind === 'variable'
+                    ? 'v'
+                    : '#';
+
+                return (
+                  <div
+                    key={`${sym.filePath}-${sym.name}-${sym.line}-${idx}`}
+                    onClick={() => {
+                      handleSelectFile(
+                        { path: sym.filePath, name: sym.fileName, relativePath: sym.fileName },
+                        sym.line,
+                        sym.col
+                      );
+                    }}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    style={{
+                      ...itemStyle,
+                      backgroundColor: isSelected ? 'var(--xivig-accent-active)' : 'transparent',
+                      borderLeft: isSelected ? '2px solid var(--xivig-accent)' : '2px solid transparent',
+                    }}
+                  >
+                    <div style={itemContentStyle}>
+                      <span
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '3px',
+                          backgroundColor: '#2d2d30',
+                          color: '#b180f0',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          marginRight: '8px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {kindBadge}
+                      </span>
+                      <span style={fileNameStyle}>{sym.name}</span>
+                      <span style={{ ...filePathStyle, marginRight: 'auto', marginLeft: '8px', opacity: 0.6 }}>
+                        {sym.fileName}
+                      </span>
+                      <span style={filePathStyle}>Line {sym.line}</span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={emptyStyle}>No matching symbols in workspace</div>
+            )
           ) : isSymbolMode ? (
             filteredSymbols.length > 0 ? (
               filteredSymbols.map((sym, idx) => {
@@ -252,7 +371,7 @@ export const QuickOpen: React.FC = () => {
                   <div
                     key={`${sym.name}-${sym.line}-${idx}`}
                     onClick={() => {
-                      jumpToLine(sym.line);
+                      jumpToLineAndCol(sym.line, sym.col || 1);
                       close();
                     }}
                     onMouseEnter={() => setSelectedIndex(idx)}
