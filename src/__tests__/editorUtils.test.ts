@@ -40,6 +40,17 @@ describe('Comment Language Detection', () => {
     expect(htmlTokens.block?.close).toBe(' -->');
   });
 
+  it('returns Blade block comments for Blade templates', () => {
+    const bladeTokens = getCommentTokens('home.blade.php');
+    expect(bladeTokens.block?.open).toBe('{{-- ');
+    expect(bladeTokens.block?.close).toBe(' --}}');
+    expect(bladeTokens.line).toBeUndefined();
+
+    const bladeShort = getCommentTokens('welcome.blade');
+    expect(bladeShort.block?.open).toBe('{{-- ');
+    expect(bladeShort.block?.close).toBe(' --}}');
+  });
+
   it('returns hash line comments for Python and YAML', () => {
     const pyTokens = getCommentTokens('script.py');
     expect(pyTokens.line).toBe('# ');

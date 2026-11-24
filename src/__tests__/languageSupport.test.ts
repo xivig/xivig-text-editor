@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { syntaxTree, indentRange } from '@codemirror/language';
+import { toggleComment, toggleBlockComment } from '@codemirror/commands';
 import { getLanguageExtension, detectLanguageName } from '../components/editor/languageSupport';
+import { smartToggleLineComment, smartToggleBlockComment } from '../utils/commentUtils';
 import {
   autoIndentAndFormatEditor,
   beautifyCode,
@@ -582,6 +584,51 @@ div class = "wrapper row3" >`;
       expect(formatted).toContain('-webkit-transform: scale(1);');
       expect(formatted).toContain('border-radius: 4px;');
       expect(formatted).toContain('color: #F45B69;');
+    });
+
+    it('toggles Blade syntax comments {{-- ... --}} in Blade files instead of HTML comments', () => {
+      const bladeExt = getLanguageExtension('blade', 'welcome.blade.php');
+      let state = EditorState.create({
+        doc: '<div class="container">\n  <h1>Hello Blade</h1>\n</div>',
+        selection: { anchor: 26, head: 46 }, // select <h1>Hello Blade</h1>
+        extensions: [bladeExt],
+      });
+
+      const mockView: any = {
+        state,
+        dispatch: (tr: any) => {
+          state = state.update(tr).state;
+          mockView.state = state;
+        },
+      };
+
+      // 1. Toggle block comment on selection using CodeMirror command
+      const blockToggled = toggleBlockComment(mockView);
+      expect(blockToggled).toBe(true);
+      const commentedDoc = state.doc.toString();
+      expect(commentedDoc).toContain('{{-- <h1>Hello Blade</h1> --}}');
+      expect(commentedDoc).not.toContain('<!--');
+
+      // 2. Toggle off returns original
+      toggleBlockComment(mockView);
+      expect(state.doc.toString()).toBe('<div class="container">\n  <h1>Hello Blade</h1>\n</div>');
+
+      // 3. Toggle line comment on entire line
+      mockView.state = EditorState.create({
+        doc: '<p>Line to comment</p>',
+        selection: { anchor: 5 },
+        extensions: [bladeExt],
+      });
+      state = mockView.state;
+
+      const lineToggled = smartToggleLineComment(mockView, 'welcome.blade.php');
+      expect(lineToggled).toBe(true);
+      expect(mockView.state.doc.toString()).toContain('{{-- <p>Line to comment</p> --}}');
+      expect(mockView.state.doc.toString()).not.toContain('<!--');
+
+      // 4. Toggle off restores line
+      smartToggleLineComment(mockView, 'welcome.blade.php');
+      expect(mockView.state.doc.toString()).toBe('<p>Line to comment</p>');
     });
   });
 });

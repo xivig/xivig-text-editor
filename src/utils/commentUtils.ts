@@ -9,7 +9,16 @@ export interface CommentTokens {
 }
 
 export function getCommentTokens(filenameOrLang = ''): CommentTokens {
-  const ext = filenameOrLang.split('.').pop()?.toLowerCase() || filenameOrLang.toLowerCase();
+  const lower = (filenameOrLang || '').toLowerCase().trim();
+
+  // Laravel Blade templates: must be checked before .php!
+  if (lower.endsWith('.blade.php') || lower.endsWith('.blade') || lower === 'blade') {
+    return {
+      block: { open: '{{-- ', close: ' --}}' },
+    };
+  }
+
+  const ext = lower.split('.').pop() || lower;
 
   // HTML / XML / SVG / Vue
   if (['html', 'htm', 'xhtml', 'xml', 'svg', 'vue'].includes(ext)) {
@@ -150,8 +159,6 @@ export function smartToggleLineComment(view: EditorView, filenameOrLang?: string
   const activeDoc = useEditorStore.getState().getActiveDocument();
   const langKey = filenameOrLang || activeDoc?.name || activeDoc?.language || 'file.js';
   const tokens = getCommentTokens(langKey);
-  const linePrefix = tokens.line || '// ';
-
   const state = view.state;
   const lineNumbers = new Set<number>();
   for (const range of state.selection.ranges) {
@@ -161,12 +168,62 @@ export function smartToggleLineComment(view: EditorView, filenameOrLang?: string
   }
 
   const sortedLines = Array.from(lineNumbers).sort((a, b) => a - b);
+  const changes: { from: number; to: number; insert: string }[] = [];
+
+  // For languages without single-line comment tokens (e.g., Blade or HTML), wrap each line in block comment delimiters
+  if (!tokens.line && tokens.block) {
+    const block = tokens.block;
+    const openTrim = block.open.trim();
+    const closeTrim = block.close.trim();
+
+    const allBlockCommented = sortedLines.every((num) => {
+      const text = state.doc.line(num).text.trim();
+      return (text.startsWith(openTrim) && text.endsWith(closeTrim)) || text.length === 0;
+    });
+
+    for (const num of sortedLines) {
+      const line = state.doc.line(num);
+      const text = line.text;
+      const trimmed = text.trim();
+      if (!trimmed) continue;
+
+      if (allBlockCommented) {
+        // Remove block comment from line
+        const match = text.match(new RegExp(`^(\\s*)${escapeRegex(openTrim)}\\s?(.*?)\\s?${escapeRegex(closeTrim)}(\\s*)$`));
+        if (match) {
+          changes.push({
+            from: line.from + match[1].length,
+            to: line.to - match[3].length,
+            insert: match[2],
+          });
+        }
+      } else {
+        // Wrap line in block comment
+        const leadingWhitespace = text.match(/^\s*/)?.[0] || '';
+        const content = text.slice(leadingWhitespace.length);
+        changes.push({
+          from: line.from,
+          to: line.to,
+          insert: `${leadingWhitespace}${block.open}${content}${block.close}`,
+        });
+      }
+    }
+
+    if (changes.length > 0) {
+      view.dispatch({
+        changes,
+        userEvent: 'comment',
+      });
+      return true;
+    }
+    return false;
+  }
+
+  const linePrefix = tokens.line || '// ';
   const allCommented = sortedLines.every((num) => {
     const text = state.doc.line(num).text.trim();
     return text.startsWith(linePrefix.trim()) || text.length === 0;
   });
-
-  const changes: { from: number; to: number; insert: string }[] = [];
 
   for (const num of sortedLines) {
     const line = state.doc.line(num);

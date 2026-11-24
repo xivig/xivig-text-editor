@@ -1,7 +1,7 @@
 import { Extension } from '@codemirror/state';
 import { StreamLanguage, StringStream } from '@codemirror/language';
 import { javascript } from '@codemirror/lang-javascript';
-import { html } from '@codemirror/lang-html';
+import { html, htmlLanguage } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
@@ -1090,7 +1090,14 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
     return goLanguage;
   }
   if (target.endsWith('.blade.php') || target.endsWith('.blade') || target === 'blade') {
-    return html();
+    return [
+      html(),
+      htmlLanguage.data.of({
+        commentTokens: {
+          block: { open: '{{--', close: '--}}' },
+        },
+      }),
+    ];
   }
   if (target.endsWith('.php') || target.endsWith('.phtml')) {
     return phpLanguage;
@@ -1158,6 +1165,15 @@ export function getLanguageExtension(languageOrFilename?: string, fallbackFilena
     case 'go':
     case 'golang':
       return goLanguage;
+    case 'blade':
+      return [
+        html(),
+        htmlLanguage.data.of({
+          commentTokens: {
+            block: { open: '{{--', close: '--}}' },
+          },
+        }),
+      ];
     case 'php':
       return phpLanguage;
     case 'sql':
@@ -1256,6 +1272,8 @@ export function detectLanguageName(filenameOrLang?: string, fallbackLangId?: str
     case 'go':
     case 'golang':
       return 'Go';
+    case 'blade':
+      return 'Blade';
     case 'php':
     case 'phtml':
       return 'PHP';
