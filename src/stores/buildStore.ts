@@ -124,7 +124,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
       {
         id: 'init-2',
         type: 'system',
-        text: 'Press Ctrl+B to run build, Ctrl+Shift+B to select build target.',
+        text: 'Press Ctrl+Shift+B or F7 to run build, Ctrl+Shift+B (Config) to select build target.',
         timestamp: formatOutputTimestamp(new Date()),
       },
     ],

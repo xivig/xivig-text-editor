@@ -577,6 +577,7 @@ export const Menubar: React.FC = () => {
       { label: 'Live Server: Open in Browser', action: () => useLiveServerStore.getState().openInBrowser() },
       { divider: true, label: '' },
       { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: toggleSidebar },
+      { label: 'Toggle Bottom Panel', shortcut: 'Ctrl+J / Ctrl+`', action: () => toggleBottomPanel() },
       { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: () => toggleBottomPanel('terminal') },
       { label: 'Toggle Problems Panel', action: () => toggleBottomPanel('problems') },
       { label: 'Toggle Output Panel', action: () => toggleBottomPanel('output') },
@@ -615,12 +616,12 @@ export const Menubar: React.FC = () => {
       { divider: true, label: '' },
       {
         label: 'Build',
-        shortcut: 'Ctrl+B',
+        shortcut: 'Ctrl+Shift+B / F7',
         action: () => useBuildStore.getState().executeBuild(),
       },
       {
         label: 'Build With...',
-        shortcut: 'Ctrl+Shift+B',
+        shortcut: 'Config',
         action: openBuildSystemModal,
       },
       {

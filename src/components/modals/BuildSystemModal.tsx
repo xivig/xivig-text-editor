@@ -259,7 +259,7 @@ export const BuildSystemModal: React.FC = () => {
         {/* Footer */}
         <div style={footerStyle}>
           <span>Use <b>↑ ↓</b> to navigate, <b>Enter</b> to execute, <b>Esc</b> to dismiss</span>
-          <span style={{ color: 'var(--xivig-accent)' }}>Default: <b>Ctrl+B</b></span>
+          <span style={{ color: 'var(--xivig-accent)' }}>Default: <b>Ctrl+Shift+B / F7</b></span>
         </div>
       </div>
     </div>

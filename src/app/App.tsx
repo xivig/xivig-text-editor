@@ -792,12 +792,15 @@ export const App: React.FC = () => {
             closeDocument(activeDoc.id);
           }
         }
-      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        openBuildSystemModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
+        toggleSidebar();
+      } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
         useBuildStore.getState().executeBuild();
+      } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        toggleBottomPanel();
       } else if (e.key === 'F7') {
         e.preventDefault();
         useBuildStore.getState().executeBuild();

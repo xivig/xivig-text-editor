@@ -330,7 +330,7 @@ export const CommandPalette: React.FC = () => {
       id: 'build:run',
       category: 'Build',
       title: 'Build: Run Active File / Default Target',
-      shortcut: 'Ctrl+B / F7',
+      shortcut: 'Ctrl+Shift+B / F7',
       action: () => useBuildStore.getState().executeBuild(),
     },
     {
@@ -408,6 +408,13 @@ export const CommandPalette: React.FC = () => {
       title: 'Toggle Sidebar',
       shortcut: 'Ctrl+B',
       action: toggleSidebar,
+    },
+    {
+      id: 'view:bottom-panel',
+      category: 'View',
+      title: 'Toggle Bottom Panel',
+      shortcut: 'Ctrl+J / Ctrl+`',
+      action: () => toggleBottomPanel(),
     },
     {
       id: 'view:terminal',

@@ -342,7 +342,7 @@ export const BottomPanel: React.FC = () => {
                 <button
                   onClick={() => executeBuild()}
                   style={{ ...iconBtnStyle, color: '#35b779' }}
-                  title={`Run Task: ${currentBuildTarget.name} (Ctrl+B)`}
+                  title={`Run Task: ${currentBuildTarget.name} (Ctrl+Shift+B / F7)`}
                 >
                   <Play size={12} fill="#35b779" />
                 </button>
@@ -591,7 +591,7 @@ export const BottomPanel: React.FC = () => {
                     style={{ ...btnActionStyle, backgroundColor: 'var(--xivig-accent)', color: '#ffffff' }}
                   >
                     <Play size={11} style={{ marginRight: '4px' }} fill="#ffffff" />
-                    Run (Ctrl+B)
+                    Run (Ctrl+Shift+B / F7)
                   </button>
                 )}
               </div>
@@ -602,7 +602,7 @@ export const BottomPanel: React.FC = () => {
               {outputLines.length === 0 ? (
                 <div style={emptyPanelContentStyle}>
                   <p style={{ color: 'var(--xivig-text-dim)', fontSize: '12px' }}>
-                    Output log is empty. Press Run (Ctrl+B) to execute a task.
+                    Output log is empty. Press Run (Ctrl+Shift+B / F7) to execute a task.
                   </p>
                 </div>
               ) : (

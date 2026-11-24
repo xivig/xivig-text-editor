@@ -1,6 +1,6 @@
 # Xivig Text Editor — Comprehensive How-To Guide 📖
 
-Welcome to the official user manual and how-to guide for **Xivig Text Editor** (Release 1.3 — Build 1.3.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
+Welcome to the official user manual and how-to guide for **Xivig Text Editor** (Release 1.5 — Build 1.5.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
 
 ---
 
@@ -19,7 +19,10 @@ Welcome to the official user manual and how-to guide for **Xivig Text Editor** (
 12. [Rainbow Brackets & Indentation Guides](#12-rainbow-brackets--indentation-guides)
 13. [Themes & Graphical Settings](#13-themes--graphical-settings)
 14. [Seamless In-Place Auto-Updater](#14-seamless-in-place-auto-updater)
-15. [Troubleshooting & FAQs](#15-troubleshooting--faqs)
+15. [Language Intelligence (LSP)](#15-language-intelligence-lsp)
+16. [Interactive Debugger (DAP)](#16-interactive-debugger-dap)
+17. [Vim Mode & Developer Productivity Suite](#17-vim-mode--developer-productivity-suite)
+18. [Troubleshooting & FAQs](#18-troubleshooting--faqs)
 
 ---
 
@@ -182,10 +185,11 @@ Xivig features a zero-dependency local HTTP development server with live reload:
   - Linux/macOS: **bash** / **zsh**
 - Supports full ANSI color codes, xterm.js acceleration, shell resizing, and process killing.
 
-### Build Systems (`Ctrl+B` / `Ctrl+Shift+B`)
-- Press `Ctrl+B` to execute the active project build (runs `npm run build`, `cargo build`, `make`, or user-defined build script).
-- Press `Ctrl+Shift+B` to select build targets.
-- The build output streams in real-time to the **Output** bottom panel.
+### Build Systems (`Ctrl+Shift+B` / `F7`)
+- Press **`Ctrl+Shift+B`** or **`F7`** to execute the active project build (runs `npm run build`, `cargo build`, `make`, or user-defined build script).
+- Press `Ctrl+B` anytime to toggle the primary sidebar without interrupting builds.
+- Press `Ctrl+J` or `Ctrl+\`` to toggle the bottom drawer panel (Terminal, Output, Problems, Debugger).
+- The build output streams in real-time to the **Output** bottom panel with ANSI color rendering.
 
 ---
 
@@ -282,7 +286,69 @@ Xivig features a VS Code-style auto-update workflow:
 
 ---
 
-## 15. Troubleshooting & FAQs
+## 15. Language Intelligence (LSP)
+
+Xivig includes a full Language Server Protocol (LSP) client over JSON-RPC 2.0:
+- **Real-Time Diagnostics**: Inline error/warning squiggles with instant sync to the Problems bottom drawer (`Ctrl+J`). Click any problem entry to jump directly to the faulty line and column.
+- **Hover Documentation**: Hover over functions, variables, types, or classes to inspect type signatures and markdown docstrings.
+- **Go to Definition (`F12`)**: Instantly jump to the origin definition of any symbol across workspace files.
+- **Go to Declaration (`Ctrl+F12`) & Type Definition**: Jump to type signatures or interface declarations.
+- **Find References (`Shift+F12`)**: Search and list all references to the symbol under cursor across the workspace.
+- **Code Actions & Quick Fixes (`Ctrl+.`)**: Trigger automated refactorings, import resolution, and error fixes provided by the active language server.
+- **Parameter Signature Help**: Contextual documentation and parameter highlight while typing arguments inside parentheses.
+- **Inlay Hints**: Inline visual hints for parameter names and inferred return types without modifying file content.
+
+---
+
+## 16. Interactive Debugger (DAP)
+
+Xivig provides full Debug Adapter Protocol (DAP) client capabilities:
+- **Toggle Breakpoints**: Click in the editor gutter or press `F9` on any line. Supports standard breakpoints, conditional breakpoints (`x > 5`), and logpoints.
+- **Execution Controls**:
+  - **Start / Continue (`F5`)**: Launch or resume program execution.
+  - **Step Over (`F10`)**: Execute next line without entering function bodies.
+  - **Step Into (`F11`)**: Step into the called function.
+  - **Step Out (`Shift+F11`)**: Run until current function completes.
+  - **Restart (`Ctrl+Shift+F5`)**: Relaunch the active debug session.
+  - **Stop (`Shift+F5`)**: Terminate the debugging session.
+- **Call Stack & Threads**: Inspect all active execution threads, stack frames, and jump across execution scopes.
+- **Variables & Scopes**: Inspect Local, Closure, and Global variables with collapsible properties and real-time evaluation.
+- **Watch Expressions & REPL**: Add watch expressions to track values on every step, and execute arbitrary code in the Debug Console.
+
+---
+
+## 17. Vim Mode & Developer Productivity Suite
+
+### Vim Modal Editing
+Xivig includes native Vim modal editing:
+- **Modes**: Toggle seamlessly between **Normal**, **Insert** (`i`, `a`, `o`, `I`, `A`, `O`), **Visual** (`v`), and **Visual Line** (`V`) modes.
+- **Motions**: Standard `h`, `j`, `k`, `l`, word jumps `w`, `b`, `e`, line boundaries `0`, `$`, `^`, document boundaries `gg`, `G`, and character find `f`, `F`, `t`, `T`.
+- **Text Objects**: `iw` (inner word), `aw` (a word), `i"` (inside quotes), `i(` (inside parentheses), `i{` (inside curly braces).
+- **Ex Commands**: Press `:` in Normal mode to access `:w` (save), `:q` (close), `:wq` / `:x` (save and close), and regex find/replace `:s/target/replacement/g`.
+
+### Keystroke Macros
+- Press **`Ctrl+Shift+R`** to begin recording keystrokes (red recording indicator in status bar).
+- Perform any editing sequence across lines or selections.
+- Press **`Ctrl+Shift+R`** again to stop recording.
+- Open Command Palette (`Ctrl+Shift+P`) and choose **Replay Macro** or map to a custom shortcut to replay the sequence anytime.
+
+### Universal Developer Toolbox (`Ctrl+Alt+T`)
+Press `Ctrl+Alt+T` to open the quick-access developer drawer:
+- **JSON Studio**: Beautify, minify, and validate JSON with path inspection.
+- **Regex Workbench**: Interactive regular expression tester with flags and match group capture.
+- **Base64 & URL Codecs**: Encode and decode text snippets on the fly.
+- **Hashes & UUIDs**: Generate SHA-256 hashes, MD5 checksums, and random UUID v4 identifiers.
+- **Color & Timestamp Converters**: Convert between HEX/RGB/HSL and Unix/ISO timestamps.
+- **Persistent Scratchpad**: Multi-tab temporary buffer that saves across editor sessions.
+
+### AI Coding Companion
+Open the AI Assistant sidebar panel:
+- Connect to OpenAI API keys or local **Ollama** instances (`http://localhost:11434`).
+- Explain code, generate unit tests, suggest refactorings, and insert diffs with a single click.
+
+---
+
+## 18. Troubleshooting & FAQs
 
 ### Q: Why are ligatures not showing up?
 **A**: Ensure **Font Ligatures** is toggled ON in Settings (`Ctrl+,`). Also make sure your chosen font is set to a ligature-supporting family such as `Fira Code`, `JetBrains Mono`, or `Cascadia Code`.

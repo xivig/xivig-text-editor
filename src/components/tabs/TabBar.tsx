@@ -280,7 +280,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
-              title={`Run ${activeDoc?.name || 'File'} (${currentTarget.name}) (Ctrl+B)`}
+              title={`Run ${activeDoc?.name || 'File'} (${currentTarget.name}) (Ctrl+Shift+B / F7)`}
             >
               <Play size={13} fill="#35b779" />
             </button>
