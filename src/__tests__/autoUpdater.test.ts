@@ -59,8 +59,8 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
   it('performs manual check when application is up to date', async () => {
     const upToDateResult: UpdateCheckResult = {
       updateAvailable: false,
-      currentVersion: '1.3.0',
-      latestVersion: '1.3.0',
+      currentVersion: '1.4.0',
+      latestVersion: '1.4.0',
     };
     mockXivig.checkForUpdates.mockResolvedValueOnce(upToDateResult);
 
@@ -69,17 +69,17 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
     expect(result).toEqual(upToDateResult);
     expect(useUpdateStore.getState().isChecking).toBe(false);
     expect(useUpdateStore.getState().updateInfo).toEqual(upToDateResult);
-    expect(useUpdateStore.getState().statusMessage).toContain("You're up to date! Xivig v1.3.0 is the latest version.");
+    expect(useUpdateStore.getState().statusMessage).toContain("You're up to date! Xivig v1.4.0 is the latest version.");
     expect(useUpdateStore.getState().isBannerDismissed).toBe(false);
   });
 
   it('automatically initiates background download when update is found', async () => {
     const updateAvailableResult: UpdateCheckResult = {
       updateAvailable: true,
-      currentVersion: '1.2.0',
-      latestVersion: '1.3.0',
-      downloadUrl: 'https://github.com/xivig/xivig-text-editor/releases/download/v1.3.0/Xivig.Text.Editor.Setup.1.3.0.exe',
-      releaseNotes: 'Dracula Theme and Rainbow Brackets release.',
+      currentVersion: '1.3.0',
+      latestVersion: '1.4.0',
+      downloadUrl: 'https://github.com/xivig/xivig-text-editor/releases/download/v1.4.0/Xivig.Text.Editor.Setup.1.4.0.exe',
+      releaseNotes: 'Search and navigation, tab reordering, and advanced editing release.',
     };
     mockXivig.checkForUpdates.mockResolvedValueOnce(updateAvailableResult);
     mockXivig.startUpdateDownload.mockResolvedValueOnce({ success: true });
@@ -118,10 +118,10 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
     // 1. Simulate update-available event
     availableCallback!({
       updateAvailable: true,
-      currentVersion: '1.2.0',
-      latestVersion: '1.3.0',
+      currentVersion: '1.3.0',
+      latestVersion: '1.4.0',
     });
-    expect(useUpdateStore.getState().updateInfo?.latestVersion).toBe('1.3.0');
+    expect(useUpdateStore.getState().updateInfo?.latestVersion).toBe('1.4.0');
 
     // 2. Simulate download-progress event
     const progress: UpdateProgress = { percent: 45.5, transferred: 45500000, total: 100000000 };
@@ -131,10 +131,10 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
 
     // 3. Simulate update-downloaded event
     const downloadedInfo: DownloadedUpdateInfo = {
-      version: '1.3.0',
+      version: '1.4.0',
       filePath: 'C:\\Users\\Mock\\AppData\\Local\\xivig-updater\\update.exe',
-      assetName: 'Xivig.Text.Editor.Setup.1.3.0.exe',
-      releaseName: 'Xivig v1.3.0',
+      assetName: 'Xivig.Text.Editor.Setup.1.4.0.exe',
+      releaseName: 'Xivig v1.4.0',
     };
     downloadedCallback!(downloadedInfo);
     expect(useUpdateStore.getState().isDownloading).toBe(false);

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-11-24 — *Search & Navigation Suite, Advanced Editing Engine & Developer Tooling Release*
+
+### 🔍 Search & Code Navigation Suite
+* **Full-Spectrum Workspace Search (`Ctrl+Shift+F`)**:
+  - Regular expression, case-sensitive, and whole-word search options.
+  - File-grouped match listings with line number preview and match counts.
+  - Global search-and-replace with safety confirmation modal.
+  - Include and exclude glob pattern filtering.
+  - Explicit opt-in toggles for searching hidden files and gitignored directories.
+* **Symbol Navigation & Code Intelligence**:
+  - **Breadcrumb Navigation**: Path breadcrumbs with dynamic symbol display showing active function, class, or method under cursor.
+  - **Quick Open Symbol Extensions**: Document Symbol Outline (`@`) and Workspace Symbol Search (`#`).
+  - **Go to Line & Column**: Direct coordinate navigation (`:line:col` or `Ctrl+G`).
+  - **Code Intelligence**: Go to Definition (`F12`), Go to Declaration (`Ctrl+F12`), Find References (`Shift+F12`), Go to Implementation, and Type Definition.
+  - **Peek Definition (`Alt+F12`)**: Inline definition modal with jump-to-source capability.
+  - **Rename Symbol (`F2`)**: Workspace symbol renaming with match preview and confirmation.
+  - **Navigation History**: Jump backward (`Alt+Left`) and forward (`Alt+Right`) through cursor and edit history.
+
+### 📑 Tab Management & Core Editor Robustness
+* **Tab Drag-and-Drop**: Smooth visual tab reordering across the editor tab bar.
+* **Tab Pinning Protection**: Pin critical tabs (`Pin Tab`); pinned tabs are protected against bulk closure.
+* **Dirty File Confirmation**: Interactive modal prompting to save or discard unsaved changes when closing modified tabs.
+* **Comprehensive Tab Closure Operations**: Close Active, Close to the Right, Close to the Left, Close Others, Close Saved, and Close All across Tab Bar, Tab Context Menu, Menubar, and Command Palette.
+* **Read-Only Mode (`Ctrl+Alt+R`)**: Lock files against accidental modifications with status bar badge.
+* **File Diff Comparison (`Ctrl+Alt+D`)**: Side-by-side file comparison with visual diff highlighting and change summary.
+* **Whitespace & Line Ending Tools**: Trailing whitespace visualization, configurable trim-on-save option, and automatic LF/CRLF detection.
+
+### ⚡ Sublime-Style Editing Transformations & Snippet Extensions
+* **Text & Case Transformations**:
+  - Transform to UPPERCASE (`Ctrl+K Ctrl+U`), lowercase (`Ctrl+K Ctrl+L`), Title Case, CamelCase, snake_case, and kebab-case.
+  - Multi-key chord handling with fallback for word-under-cursor transformations.
+  - Sort selected lines alphabetically or in reverse.
+  - Remove duplicate / unique lines from selection.
+  - Increment / decrement numbers (`Ctrl+Up` / `Ctrl+Down`).
+  - Transpose characters (`Ctrl+T`) and transpose words (`Alt+T`).
+* **High-Contrast Selection Highlighting**:
+  - Semi-transparent active line tint (`--xivig-active-line`) eliminating layer occlusion of selection rectangles.
+  - Vivid selection background (`rgba(108, 140, 255, 0.45)`) across focused, unfocused, and context menu states.
+  - Multi-occurrence selection match highlight (`.cm-selectionMatch`) with outline border.
+* **Bootstrap 5 & Font Awesome Snippets**: Built-in comprehensive snippet pack for Bootstrap 5 components and Font Awesome 6 icons.
+* **Laravel All-In-One & PHP Intelligence**: Native Blade comment syntax (`{{-- ... --}}`), Blade formatting preservation on save, and rich PHP completion intelligence.
+* **ANSI Color Output Panel**: Colorized terminal and execution output logs with clean timestamp alignment.
+
+---
+
 ## [1.3.0] - 2026-11-24 — *Extension System, Theme Suite & Seamless In-Place Auto-Updater Release*
 
 ### 🌈 Rainbow Brackets & Indentation Guides Extension

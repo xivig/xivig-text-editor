@@ -60,13 +60,13 @@ export const useUpdateStore = create<UpdateStoreState>((set, get) => ({
         // Fallback for mock/browser testing
         const fallbackResult: UpdateCheckResult = {
           updateAvailable: false,
-          currentVersion: '1.3.0',
-          latestVersion: '1.3.0',
+          currentVersion: '1.4.0',
+          latestVersion: '1.4.0',
         };
         set({
           isChecking: false,
           updateInfo: fallbackResult,
-          statusMessage: manual ? `You're up to date! Xivig v1.3.0 is the latest version.` : null,
+          statusMessage: manual ? `You're up to date! Xivig v1.4.0 is the latest version.` : null,
         });
         return fallbackResult;
       }
@@ -102,10 +102,10 @@ export const useUpdateStore = create<UpdateStoreState>((set, get) => ({
             isDownloading: false,
             downloadProgress: null,
             downloadedInfo: {
-              version: '1.3.0',
+              version: '1.4.0',
               filePath: 'mock-update.exe',
-              assetName: 'Xivig.Text.Editor.Setup.1.3.0.exe',
-              releaseName: 'Xivig v1.3.0',
+              assetName: 'Xivig.Text.Editor.Setup.1.4.0.exe',
+              releaseName: 'Xivig v1.4.0',
             },
             isBannerDismissed: false,
           });
