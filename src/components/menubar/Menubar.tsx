@@ -263,22 +263,6 @@ export const Menubar: React.FC = () => {
       { label: 'Replace', shortcut: 'Ctrl+H', action: () => openSearchPanel('replace') },
       { divider: true, label: '' },
       {
-        label: 'Emmet: Expand Abbreviation',
-        shortcut: 'Tab / Ctrl+E',
-        action: () => {
-          const view = getActiveEditorView();
-          if (view && activeDoc) {
-            expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
-          }
-        },
-      },
-      {
-        label: 'Emmet: Wrap with Abbreviation...',
-        shortcut: 'Ctrl+Alt+W',
-        action: () => useUIStore.getState().openWrapWithAbbreviation(),
-      },
-      { divider: true, label: '' },
-      {
         label: 'Format Document',
         shortcut: 'Ctrl+Alt+B',
         action: () => {
@@ -311,23 +295,6 @@ export const Menubar: React.FC = () => {
         },
       },
       { divider: true, label: '' },
-      {
-        label: 'Color Picker',
-        shortcut: 'Ctrl+Alt+C',
-        action: () => {
-          const view = getActiveEditorView();
-          let colorStr = '#6c8cff';
-          let range: { from: number; to: number } | null = null;
-          if (view) {
-            const sel = view.state.selection.main;
-            if (!sel.empty) {
-              colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
-              range = { from: sel.from, to: sel.to };
-            }
-          }
-          useUIStore.getState().openColorPicker(colorStr, range || undefined);
-        },
-      },
       {
         label: 'Insert Lorem Ipsum...',
         shortcut: 'Ctrl+Alt+L',
@@ -633,6 +600,39 @@ export const Menubar: React.FC = () => {
         label: 'Extensions',
         shortcut: 'Ctrl+Shift+X',
         action: () => setActiveSidebarView('extensions'),
+      },
+      { divider: true, label: '' },
+      {
+        label: 'Emmet: Expand Abbreviation',
+        shortcut: 'Tab / Ctrl+E',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view && activeDoc) {
+            expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
+          }
+        },
+      },
+      {
+        label: 'Emmet: Wrap with Abbreviation...',
+        shortcut: 'Ctrl+Alt+W',
+        action: () => useUIStore.getState().openWrapWithAbbreviation(),
+      },
+      {
+        label: 'Color Picker',
+        shortcut: 'Ctrl+Alt+C',
+        action: () => {
+          const view = getActiveEditorView();
+          let colorStr = '#6c8cff';
+          let range: { from: number; to: number } | null = null;
+          if (view) {
+            const sel = view.state.selection.main;
+            if (!sel.empty) {
+              colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
+              range = { from: sel.from, to: sel.to };
+            }
+          }
+          useUIStore.getState().openColorPicker(colorStr, range || undefined);
+        },
       },
       { divider: true, label: '' },
       {
