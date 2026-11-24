@@ -20,6 +20,7 @@ import { BuildSystemModal } from '../components/modals/BuildSystemModal';
 import { BracketsColorPickerModal } from '../components/modals/BracketsColorPickerModal';
 import { LoremIpsumModal } from '../components/modals/LoremIpsumModal';
 import { AboutModal } from '../components/modals/AboutModal';
+import { DiffModal } from '../components/modals/DiffModal';
 import { IndexingStatusModal } from '../components/modals/IndexingStatusModal';
 import { RemoveLicenseModal } from '../components/modals/RemoveLicenseModal';
 import { UpdateCheckModal } from '../components/modals/UpdateCheckModal';
@@ -48,6 +49,7 @@ import { deleteToLineEnd, deleteToLineStart } from '@codemirror/commands';
 import { unfoldAll } from '@codemirror/language';
 import { findNext, findPrevious } from '@codemirror/search';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../utils/beautify';
+import { prepareContentForSave } from '../utils/saveUtils';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -576,11 +578,8 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (!activeDoc) return;
-        const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
         const view = getActiveEditorView();
-        const contentToSave = autoIndentOnSave
-          ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
-          : (view ? view.state.doc.toString() : activeDoc.content);
+        const contentToSave = prepareContentForSave(activeDoc.content, activeDoc.name, activeDoc.language, view);
 
         if (activeDoc.path && window.xivig?.saveFile) {
           const res = await window.xivig.saveFile(activeDoc.path, contentToSave);
@@ -596,11 +595,8 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (!activeDoc || !window.xivig?.saveFileDialog) return;
-        const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
         const view = getActiveEditorView();
-        const contentToSave = autoIndentOnSave
-          ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
-          : (view ? view.state.doc.toString() : activeDoc.content);
+        const contentToSave = prepareContentForSave(activeDoc.content, activeDoc.name, activeDoc.language, view);
 
         const res = await window.xivig.saveFileDialog(activeDoc.name, contentToSave);
         if (!res.canceled && res.filePath) {
@@ -629,6 +625,9 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();
         useUIStore.getState().openLoremIpsumModal();
+      } else if (isCtrlOrMeta && e.altKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        useUIStore.getState().openDiffModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         if (activeDoc) {
@@ -778,6 +777,7 @@ export const App: React.FC = () => {
       <BracketsColorPickerModal />
       <LoremIpsumModal />
       <AboutModal />
+      <DiffModal />
       <IndexingStatusModal />
       <RemoveLicenseModal />
       <UpdateCheckModal />

@@ -21,9 +21,12 @@ interface UIState {
   isRemoveLicenseOpen: boolean;
   isUpdateCheckOpen: boolean;
   isDistractionFree: boolean;
+  isDiffModalOpen: boolean;
   quickOpenInitialMode: string;
   dirtyCloseDocId: string | null;
 
+  openDiffModal: () => void;
+  closeDiffModal: () => void;
   openDirtyCloseModal: (docId: string) => void;
   closeDirtyCloseModal: () => void;
 
@@ -98,9 +101,12 @@ export const useUIStore = create<UIState>((set, get) => ({
   isRemoveLicenseOpen: false,
   isUpdateCheckOpen: false,
   isDistractionFree: false,
+  isDiffModalOpen: false,
   quickOpenInitialMode: '',
   dirtyCloseDocId: null,
 
+  openDiffModal: () => set({ isDiffModalOpen: true }),
+  closeDiffModal: () => set({ isDiffModalOpen: false }),
   openDirtyCloseModal: (docId: string) => set({ dirtyCloseDocId: docId }),
   closeDirtyCloseModal: () => set({ dirtyCloseDocId: null }),
   isBottomPanelOpen: false,

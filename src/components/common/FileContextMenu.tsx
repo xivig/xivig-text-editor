@@ -470,6 +470,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     if (doc) useEditorStore.getState().togglePinTab(doc.id);
   };
 
+  const handleToggleReadOnly = () => {
+    onClose();
+    const doc = getTargetDoc();
+    if (doc) useEditorStore.getState().toggleReadOnly(doc.id);
+  };
+
   const onHover = (e: React.MouseEvent<HTMLDivElement>) => {
     e.currentTarget.style.backgroundColor = '#2c303c';
   };
@@ -581,6 +587,9 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         <>
           <div onClick={handleTogglePinTab} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>{getTargetDoc()?.isPinned ? 'Unpin Tab' : 'Pin Tab'}</span>
+          </div>
+          <div onClick={handleToggleReadOnly} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+            <span>{getTargetDoc()?.isReadOnly ? 'Make Editable' : 'Make Read-Only'}</span>
           </div>
 
           <div style={menuDividerStyle} />

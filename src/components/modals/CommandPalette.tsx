@@ -25,7 +25,9 @@ import {
   transformToCamelCaseCommand,
   transformToSnakeCaseCommand,
   transformToKebabCaseCommand,
+  transposeWordsCommand,
 } from '../editor/sublimeKeymap';
+import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket } from '@codemirror/commands';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import {
   extractHtmlLinks,
@@ -212,6 +214,33 @@ export const CommandPalette: React.FC = () => {
       action: () => reopenClosedTab(),
     },
     {
+      id: 'file:toggle-readonly',
+      category: 'File',
+      title: 'Toggle Read-Only Mode',
+      action: () => {
+        if (activeDoc) {
+          useEditorStore.getState().toggleReadOnly(activeDoc.id);
+        }
+      },
+    },
+    {
+      id: 'file:toggle-pin',
+      category: 'File',
+      title: 'Toggle Pin Tab',
+      action: () => {
+        if (activeDoc) {
+          useEditorStore.getState().togglePinTab(activeDoc.id);
+        }
+      },
+    },
+    {
+      id: 'file:diff-compare',
+      category: 'File',
+      title: 'Compare Active File (Diff)...',
+      shortcut: 'Ctrl+Alt+D',
+      action: () => useUIStore.getState().openDiffModal(),
+    },
+    {
       id: 'nav:quick-open',
       category: 'Navigation',
       title: 'Go to File...',
@@ -373,6 +402,45 @@ export const CommandPalette: React.FC = () => {
       category: 'View',
       title: 'Toggle Minimap',
       action: toggleMinimap,
+    },
+    {
+      id: 'view:toggle-distraction-free',
+      category: 'View',
+      title: 'Toggle Distraction-Free / Zen Mode',
+      shortcut: 'Shift+F11',
+      action: () => useUIStore.getState().toggleDistractionFree(),
+    },
+    {
+      id: 'view:toggle-fullscreen',
+      category: 'View',
+      title: 'Toggle Full Screen',
+      shortcut: 'F11',
+      action: () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      },
+    },
+    {
+      id: 'view:toggle-whitespace',
+      category: 'View',
+      title: 'Toggle Whitespace Characters',
+      action: () => {
+        const current = useSettingsStore.getState().settings.renderWhitespace;
+        const next = current === 'all' ? 'selection' : 'all';
+        useSettingsStore.getState().updateSettings({ renderWhitespace: next });
+      },
+    },
+    {
+      id: 'view:toggle-indent-guides',
+      category: 'View',
+      title: 'Toggle Indentation Guides',
+      action: () => {
+        const current = useSettingsStore.getState().settings.rainbowIndentGuides;
+        useSettingsStore.getState().updateSettings({ rainbowIndentGuides: !current });
+      },
     },
     {
       id: 'view:layout-single',
@@ -669,6 +737,56 @@ export const CommandPalette: React.FC = () => {
       action: () => {
         const view = getActiveEditorView();
         if (view) transformToKebabCaseCommand(view);
+      },
+    },
+    {
+      id: 'edit:transpose-chars',
+      category: 'Edit',
+      title: 'Transpose Characters',
+      shortcut: 'Ctrl+T',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transposeChars(view);
+      },
+    },
+    {
+      id: 'edit:transpose-words',
+      category: 'Edit',
+      title: 'Transpose Words',
+      shortcut: 'Ctrl+Alt+T',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) transposeWordsCommand(view);
+      },
+    },
+    {
+      id: 'selection:expand-syntax',
+      category: 'Selection',
+      title: 'Expand Selection to Parent Syntax',
+      shortcut: 'Ctrl+Shift+Space',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) selectParentSyntax(view);
+      },
+    },
+    {
+      id: 'selection:jump-matching-bracket',
+      category: 'Selection',
+      title: 'Jump to Matching Bracket',
+      shortcut: 'Ctrl+M',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) cursorMatchingBracket(view);
+      },
+    },
+    {
+      id: 'selection:select-matching-bracket',
+      category: 'Selection',
+      title: 'Select to Matching Bracket',
+      shortcut: 'Ctrl+Shift+M',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) selectMatchingBracket(view);
       },
     },
     {

@@ -8,6 +8,7 @@ import { useLiveServerStore } from '../../stores/liveServerStore';
 import { getActiveEditorView } from '../editor/editorViewRegistry';
 import { expandEmmetCommand, detectEmmetSyntax } from '../editor/emmet';
 import { beautifyActiveEditor, autoIndentAndFormatEditor } from '../../utils/beautify';
+import { prepareContentForSave } from '../../utils/saveUtils';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
   sortLines,
@@ -22,7 +23,9 @@ import {
   transformToCamelCaseCommand,
   transformToSnakeCaseCommand,
   transformToKebabCaseCommand,
+  transposeWordsCommand,
 } from '../editor/sublimeKeymap';
+import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket } from '@codemirror/commands';
 
 interface MenuItem {
   label: React.ReactNode;
@@ -101,12 +104,8 @@ export const Menubar: React.FC = () => {
 
   const handleSaveFile = async () => {
     if (!activeDoc) return;
-
-    const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
     const view = getActiveEditorView();
-    const contentToSave = autoIndentOnSave
-      ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
-      : (view ? view.state.doc.toString() : activeDoc.content);
+    const contentToSave = prepareContentForSave(activeDoc.content, activeDoc.name, activeDoc.language, view);
 
     if (activeDoc.path && window.xivig?.saveFile) {
       const res = await window.xivig.saveFile(activeDoc.path, contentToSave);
@@ -123,11 +122,8 @@ export const Menubar: React.FC = () => {
 
   const handleSaveAs = async () => {
     if (!activeDoc || !window.xivig?.saveFileDialog) return;
-    const autoIndentOnSave = useSettingsStore.getState().settings.autoIndentOnSave !== false;
     const view = getActiveEditorView();
-    const contentToSave = autoIndentOnSave
-      ? autoIndentAndFormatEditor(view, activeDoc.name, activeDoc.language)
-      : (view ? view.state.doc.toString() : activeDoc.content);
+    const contentToSave = prepareContentForSave(activeDoc.content, activeDoc.name, activeDoc.language, view);
 
     const res = await window.xivig.saveFileDialog(activeDoc.name, contentToSave);
     if (!res.canceled && res.filePath) {
@@ -210,6 +206,19 @@ export const Menubar: React.FC = () => {
         label: 'Reopen Closed Tab',
         shortcut: 'Ctrl+Shift+T',
         action: () => reopenClosedTab(),
+      },
+      {
+        label: 'Compare File (Diff)...',
+        shortcut: 'Ctrl+Alt+D',
+        action: () => useUIStore.getState().openDiffModal(),
+      },
+      {
+        label: activeDoc?.isReadOnly ? 'Make Editable' : 'Toggle Read-Only Mode',
+        action: () => activeDoc && useEditorStore.getState().toggleReadOnly(activeDoc.id),
+      },
+      {
+        label: activeDoc?.isPinned ? 'Unpin Tab' : 'Pin Tab',
+        action: () => activeDoc && useEditorStore.getState().togglePinTab(activeDoc.id),
       },
       { divider: true, label: '' },
       {
@@ -382,11 +391,52 @@ export const Menubar: React.FC = () => {
           if (view) transformToKebabCaseCommand(view);
         },
       },
+      { divider: true, label: '' },
+      {
+        label: 'Transpose Characters',
+        shortcut: 'Ctrl+T',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transposeChars(view);
+        },
+      },
+      {
+        label: 'Transpose Words',
+        shortcut: 'Ctrl+Alt+T',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) transposeWordsCommand(view);
+        },
+      },
     ],
     Selection: [
       { label: 'Select All', shortcut: 'Ctrl+A' },
       { label: 'Select Next Occurrence', shortcut: 'Ctrl+D' },
       { label: 'Select Line', shortcut: 'Ctrl+L' },
+      {
+        label: 'Expand Selection to Parent Syntax',
+        shortcut: 'Ctrl+Shift+Space',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) selectParentSyntax(view);
+        },
+      },
+      {
+        label: 'Jump to Matching Bracket',
+        shortcut: 'Ctrl+M',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) cursorMatchingBracket(view);
+        },
+      },
+      {
+        label: 'Select to Matching Bracket',
+        shortcut: 'Ctrl+Shift+M',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) selectMatchingBracket(view);
+        },
+      },
       { divider: true, label: '' },
       { label: 'Duplicate Line Down', shortcut: 'Shift+Alt+Down' },
       { label: 'Move Line Down', shortcut: 'Alt+Down' },
@@ -425,6 +475,9 @@ export const Menubar: React.FC = () => {
       { label: 'Toggle Problems Panel', action: () => toggleBottomPanel('problems') },
       { label: 'Toggle Output Panel', action: () => toggleBottomPanel('output') },
       { label: 'Toggle Minimap', action: toggleMinimap },
+      { label: 'Toggle Distraction-Free / Zen Mode', shortcut: 'Shift+F11', action: () => useUIStore.getState().toggleDistractionFree() },
+      { label: 'Toggle Whitespace Characters', action: () => { const cur = useSettingsStore.getState().settings.renderWhitespace; useSettingsStore.getState().updateSettings({ renderWhitespace: cur === 'all' ? 'selection' : 'all' }); } },
+      { label: 'Toggle Indentation Guides', action: () => { const cur = useSettingsStore.getState().settings.rainbowIndentGuides; useSettingsStore.getState().updateSettings({ rainbowIndentGuides: !cur }); } },
       { label: 'Toggle Font Ligatures', action: () => useSettingsStore.getState().toggleFontLigatures() },
       { label: 'Extensions', shortcut: 'Ctrl+Shift+X', action: () => setActiveSidebarView('extensions') },
       { divider: true, label: '' },
@@ -436,7 +489,17 @@ export const Menubar: React.FC = () => {
       { label: 'Zoom Out', shortcut: 'Ctrl+-', action: () => useSettingsStore.getState().zoomOut() },
       { label: 'Reset Zoom', shortcut: 'Ctrl+0', action: () => useSettingsStore.getState().resetZoom() },
       { divider: true, label: '' },
-      { label: 'Toggle Full Screen', shortcut: 'F11' },
+      {
+        label: 'Toggle Full Screen',
+        shortcut: 'F11',
+        action: () => {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        },
+      },
     ],
     Tools: [
       {

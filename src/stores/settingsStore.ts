@@ -30,6 +30,7 @@ export interface UserSettings {
   terminalFontSize?: number;
   trimTrailingWhitespace?: boolean;
   insertFinalNewline?: boolean;
+  renderWhitespace?: 'none' | 'boundary' | 'selection' | 'trailing' | 'all';
 }
 
 interface SettingsState {
@@ -71,6 +72,7 @@ export const defaultSettings: UserSettings = {
   terminalFontSize: 13,
   trimTrailingWhitespace: false,
   insertFinalNewline: true,
+  renderWhitespace: 'selection',
 };
 
 function applySettingsToDOM(settings: UserSettings) {

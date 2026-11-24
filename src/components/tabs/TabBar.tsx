@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen, Play, Pin } from 'lucide-react';
+import { X, Plus, Circle, Columns, Rows, Square, Eye, BookOpen, Play, Pin, Lock } from 'lucide-react';
 import { useEditorStore, SplitLayout } from '../../stores/editorStore';
 import { useBuildStore } from '../../stores/buildStore';
 import { FileIcon } from '../common/FileIcon';
@@ -71,10 +71,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
           markDocumentSaved(doc.id, doc.path);
         }
       } else if (window.xivig?.saveFileDialog) {
-        const res = await window.xivig.saveFileDialog({
-          defaultName: doc.name,
-          content: doc.content,
-        });
+        const res = await window.xivig.saveFileDialog(doc.name, doc.content);
         if (!res.canceled && res.filePath) {
           markDocumentSaved(doc.id, res.filePath);
         }
@@ -184,16 +181,29 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
               }}
             >
               {doc.isPinned && (
-                <Pin
-                  size={11}
-                  style={{
-                    marginRight: '4px',
-                    color: 'var(--xivig-accent)',
-                    transform: 'rotate(45deg)',
-                    flexShrink: 0,
-                  }}
-                  title="Pinned tab (Click unpin in context menu)"
-                />
+                <span title="Pinned tab (Click unpin in context menu)" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <Pin
+                    size={11}
+                    style={{
+                      marginRight: '4px',
+                      color: 'var(--xivig-accent)',
+                      transform: 'rotate(45deg)',
+                      flexShrink: 0,
+                    }}
+                  />
+                </span>
+              )}
+              {doc.isReadOnly && (
+                <span title="Read-only tab" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <Lock
+                    size={11}
+                    style={{
+                      marginRight: '4px',
+                      color: '#f59e0b',
+                      flexShrink: 0,
+                    }}
+                  />
+                </span>
               )}
               <FileIcon
                 filename={doc.name}

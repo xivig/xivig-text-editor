@@ -27,6 +27,8 @@ interface EditorState {
   reopenClosedTab: () => void;
   reorderTabs: (sourceId: string, targetId: string) => void;
   togglePinTab: (id?: string) => void;
+  toggleReadOnly: (id?: string) => void;
+  setReadOnly: (id: string, isReadOnly: boolean) => void;
   nextTab: () => void;
   previousTab: () => void;
   switchToTab: (index: number) => void;
@@ -85,11 +87,33 @@ let saveDebounceTimer: NodeJS.Timeout | null = null;
 
 function triggerAutoSave() {
   if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(() => {
-    if (!window.xivig?.saveSession) return;
+
+  saveDebounceTimer = setTimeout(async () => {
+    let settings: any = null;
+    try {
+      const settingsMod = await import('./settingsStore');
+      settings = settingsMod.useSettingsStore.getState().settings;
+    } catch {}
 
     const editorState = useEditorStore.getState();
     const fileState = useFileStore.getState();
+
+    // Auto-save dirty files to disk if autoSave is enabled
+    const api = typeof window !== 'undefined' ? window.xivig : undefined;
+    if (settings?.autoSave && api?.saveFile) {
+      editorState.documents.forEach(async (doc) => {
+        if (doc.isDirty && doc.path && !doc.isReadOnly) {
+          try {
+            const res = await api.saveFile(doc.path, doc.content);
+            if (res?.success) {
+              useEditorStore.getState().markDocumentSaved(doc.id, doc.path);
+            }
+          } catch (e) {}
+        }
+      });
+    }
+
+    if (!api?.saveSession) return;
 
     const sessionPayload = {
       activeDocId: editorState.activeDocumentId,
@@ -103,13 +127,15 @@ function triggerAutoSave() {
         content: doc.content,
         language: doc.language,
         isDirty: doc.isDirty,
+        isPinned: doc.isPinned,
+        isReadOnly: doc.isReadOnly,
         cursorLine: doc.cursor.line,
         cursorCol: doc.cursor.col,
         orderIndex: idx,
       })),
     };
 
-    window.xivig.saveSession(sessionPayload);
+    api.saveSession(sessionPayload);
   }, 1000);
 }
 
@@ -408,6 +434,35 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const newDocs = [...documents];
     const [dragged] = newDocs.splice(sourceIndex, 1);
     newDocs.splice(targetIndex, 0, dragged);
+
+    set({ documents: newDocs });
+    triggerAutoSave();
+  },
+
+  toggleReadOnly: (id?: string) => {
+    const { documents, activeDocumentId } = get();
+    const targetId = id || activeDocumentId;
+    if (!targetId) return;
+
+    const newDocs = documents.map((d) => {
+      if (d.id === targetId) {
+        return { ...d, isReadOnly: !d.isReadOnly };
+      }
+      return d;
+    });
+
+    set({ documents: newDocs });
+    triggerAutoSave();
+  },
+
+  setReadOnly: (id: string, isReadOnly: boolean) => {
+    const { documents } = get();
+    const newDocs = documents.map((d) => {
+      if (d.id === id) {
+        return { ...d, isReadOnly };
+      }
+      return d;
+    });
 
     set({ documents: newDocs });
     triggerAutoSave();

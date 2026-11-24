@@ -9,6 +9,8 @@ import {
   rectangularSelection,
   crosshairCursor,
   highlightActiveLine,
+  highlightWhitespace,
+  highlightTrailingWhitespace,
   keymap,
 } from '@codemirror/view';
 import { EditorState, Compartment } from '@codemirror/state';
@@ -75,6 +77,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const lineNumbersEnabled = useSettingsStore((state) => state.settings.lineNumbers);
   const wordWrapEnabled = useSettingsStore((state) => state.settings.wordWrap);
   const tabSize = useSettingsStore((state) => state.settings.tabSize);
+  const renderWhitespace = useSettingsStore((state) => state.settings.renderWhitespace || 'selection');
 
   const themeCompartmentRef = useRef<Compartment>(new Compartment());
   const lineNumbersCompartmentRef = useRef<Compartment>(new Compartment());
@@ -82,6 +85,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const tabSizeCompartmentRef = useRef<Compartment>(new Compartment());
   const languageCompartmentRef = useRef<Compartment>(new Compartment());
   const extensionCompartmentRef = useRef<Compartment>(new Compartment());
+  const readOnlyCompartmentRef = useRef<Compartment>(new Compartment());
+  const whitespaceCompartmentRef = useRef<Compartment>(new Compartment());
 
   const activeDoc = useEditorStore((state) =>
     pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
@@ -124,9 +129,36 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
 
     const langExtension = getLanguageExtension(activeDoc.language, activeDoc.name);
 
+    let initialSelection: { anchor: number } | undefined = undefined;
+    if (activeDoc.cursor && (activeDoc.cursor.line > 1 || activeDoc.cursor.col > 1)) {
+      try {
+        const lines = activeDoc.content.split('\n');
+        const targetLine = Math.min(activeDoc.cursor.line, lines.length);
+        let pos = 0;
+        for (let i = 0; i < targetLine - 1; i++) {
+          pos += lines[i].length + 1;
+        }
+        const colOffset = Math.max(0, Math.min(activeDoc.cursor.col - 1, (lines[targetLine - 1] || '').length));
+        pos += colOffset;
+        if (pos <= activeDoc.content.length) {
+          initialSelection = { anchor: pos };
+        }
+      } catch (e) {}
+    }
+
+    const whitespaceExt =
+      renderWhitespace === 'all' || renderWhitespace === 'boundary'
+        ? highlightWhitespace()
+        : renderWhitespace === 'trailing'
+        ? highlightTrailingWhitespace()
+        : [];
+
     const startState = EditorState.create({
       doc: activeDoc.content,
+      selection: initialSelection,
       extensions: [
+        readOnlyCompartmentRef.current.of(EditorState.readOnly.of(Boolean(activeDoc.isReadOnly))),
+        whitespaceCompartmentRef.current.of(whitespaceExt),
         themeCompartmentRef.current.of(getEditorTheme(theme)),
         lineNumbersCompartmentRef.current.of(
           lineNumbersEnabled ? [lineNumbers(), highlightActiveLineGutter()] : []
@@ -230,6 +262,11 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
     });
 
     viewRef.current = view;
+    if (initialSelection) {
+      try {
+        view.dispatch({ scrollIntoView: true });
+      } catch (e) {}
+    }
     setActiveEditorView(view, pane);
     extensionManager.triggerActivationEvent('onEditorCreated');
 
@@ -260,6 +297,32 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       });
     }
   }, [theme]);
+
+  // Dynamically reconfigure read-only mode
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: readOnlyCompartmentRef.current.reconfigure(
+          EditorState.readOnly.of(Boolean(activeDoc?.isReadOnly))
+        ),
+      });
+    }
+  }, [activeDoc?.isReadOnly]);
+
+  // Dynamically reconfigure whitespace highlighting
+  useEffect(() => {
+    if (viewRef.current) {
+      const whitespaceExt =
+        renderWhitespace === 'all' || renderWhitespace === 'boundary'
+          ? highlightWhitespace()
+          : renderWhitespace === 'trailing'
+          ? highlightTrailingWhitespace()
+          : [];
+      viewRef.current.dispatch({
+        effects: whitespaceCompartmentRef.current.reconfigure(whitespaceExt),
+      });
+    }
+  }, [renderWhitespace]);
 
   // Dynamically reconfigure line numbers
   useEffect(() => {

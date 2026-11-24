@@ -51,6 +51,7 @@ import {
   toKebabCase,
   trimTrailingWhitespace,
   adjustNumberString,
+  transposeWords,
 } from '../../utils/textTransformations';
 
 // Saved mark position for Ctrl+K Ctrl+Space (Sublime mark buffer)
@@ -530,6 +531,25 @@ export const incrementNumberCommand = adjustNumberUnderCursor(1);
 export const decrementNumberCommand = adjustNumberUnderCursor(-1);
 
 /**
+ * Transpose words command: swaps word before cursor with word after cursor
+ */
+export const transposeWordsCommand: StateCommand = ({ state, dispatch }) => {
+  const text = state.doc.toString();
+  const mainSel = state.selection.main;
+  const res = transposeWords(text, mainSel.head);
+  if (!res) return false;
+
+  dispatch(
+    state.update({
+      changes: { from: 0, to: text.length, insert: res.text },
+      selection: EditorSelection.cursor(res.newPos),
+      userEvent: 'input',
+    })
+  );
+  return true;
+};
+
+/**
  * Generic selection string transformer
  */
 export const transformSelection = (transform: (text: string) => string): StateCommand => ({ state, dispatch }) => {
@@ -597,6 +617,7 @@ export const sublimeKeybindings: readonly KeyBinding[] = [
   { key: 'Mod-j', run: joinLines, preventDefault: true },
   { key: 'Mod-Shift-j', run: joinLines, preventDefault: true },
   { key: 'Mod-t', run: transposeChars, preventDefault: true },
+  { key: 'Mod-Alt-t', run: transposeWordsCommand, preventDefault: true },
   { key: 'Mod-Backspace', run: deleteGroupBackward, preventDefault: true },
   { key: 'Mod-Delete', run: deleteGroupForward, preventDefault: true },
   { key: 'Mod-Shift-Delete', run: deleteToLineEnd, preventDefault: true },

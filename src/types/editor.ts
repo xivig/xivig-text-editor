@@ -6,6 +6,7 @@ export interface EditorDocument {
   language: string;
   isDirty: boolean;
   isPinned?: boolean;
+  isReadOnly?: boolean;
   cursor: {
     line: number;
     col: number;

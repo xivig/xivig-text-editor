@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GitBranch, AlertCircle, AlertTriangle, Radio, Check, RotateCw, RefreshCw } from 'lucide-react';
+import { GitBranch, AlertCircle, AlertTriangle, Radio, Check, RotateCw, RefreshCw, Lock } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -15,6 +15,7 @@ export const StatusBar: React.FC = () => {
     state.documents.find((d) => d.id === state.activeDocumentId)
   );
   const updateDocumentContent = useEditorStore((state) => state.updateDocumentContent);
+  const toggleReadOnly = useEditorStore((state) => state.toggleReadOnly);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
   const gitBranch = useFileStore((state) => state.gitBranch);
@@ -169,6 +170,22 @@ export const StatusBar: React.FC = () => {
         <div style={itemStyle} title="Current line and column">
           <span>Ln {line}, Col {col}</span>
         </div>
+
+        {activeDoc?.isReadOnly && (
+          <div
+            onClick={() => toggleReadOnly(activeDoc.id)}
+            style={{
+              ...interactiveItemStyle,
+              color: '#f59e0b',
+              fontWeight: 500,
+              gap: '4px',
+            }}
+            title="File is in Read-Only Mode. Click to unlock and allow editing."
+          >
+            <Lock size={12} />
+            <span>Read-Only</span>
+          </div>
+        )}
 
         {/* Indentation selector */}
         <div ref={indentContainerRef} style={{ position: 'relative' }}>
