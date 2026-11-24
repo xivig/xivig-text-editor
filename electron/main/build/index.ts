@@ -4,8 +4,14 @@ import fs from 'node:fs';
 import { BrowserWindow } from 'electron';
 import { assertPathAuthorized } from '../security';
 
+export interface ActiveProcessEntry {
+  process: ChildProcess;
+  startTime: number;
+  cancelled?: boolean;
+}
+
 // Per-window tracking to avoid global singleton collision
-const activeProcessesByWindow = new Map<number, { process: ChildProcess; startTime: number }>();
+export const activeProcessesByWindow = new Map<number, ActiveProcessEntry>();
 
 export interface BuildCompletedEvent {
   exitCode: number;
@@ -179,8 +185,8 @@ export function runBuildProcess(
 
   const winId = win.id;
 
-  // Stop any currently running build task in THIS window
-  stopBuildProcess(win);
+  // Stop any currently running build task in THIS window without emitting duplicate cancellation event
+  stopBuildProcess(win, false);
 
   const { program: rawProgram, args: initialArgs } = resolveStructuredCommand(options);
   const cwd = options.cwd || process.cwd();
@@ -272,9 +278,11 @@ export function runBuildProcess(
       });
     }
 
-    activeProcessesByWindow.set(winId, { process: proc, startTime });
+    const entry: ActiveProcessEntry = { process: proc, startTime, cancelled: false };
+    activeProcessesByWindow.set(winId, entry);
 
     proc.stdout?.on('data', (chunk: Buffer) => {
+      if (entry.cancelled) return;
       if (!win.isDestroyed()) {
         win.webContents.send('build:data', {
           type: 'stdout',
@@ -284,6 +292,7 @@ export function runBuildProcess(
     });
 
     proc.stderr?.on('data', (chunk: Buffer) => {
+      if (entry.cancelled) return;
       if (!win.isDestroyed()) {
         win.webContents.send('build:data', {
           type: 'stderr',
@@ -293,6 +302,11 @@ export function runBuildProcess(
     });
 
     proc.on('error', (err: any) => {
+      if (entry.cancelled) return;
+      const current = activeProcessesByWindow.get(winId);
+      if (current && current.process !== proc) return;
+      activeProcessesByWindow.delete(winId);
+
       if (!win.isDestroyed()) {
         let helpfulTip = '';
         if (err.code === 'ENOENT') {
@@ -320,15 +334,15 @@ export function runBuildProcess(
           durationMs: Date.now() - startTime,
         } as BuildCompletedEvent);
       }
-
-      // Safe cleanup: only delete if map entry still refers to THIS process
-      const current = activeProcessesByWindow.get(winId);
-      if (current?.process === proc) {
-        activeProcessesByWindow.delete(winId);
-      }
     });
 
-    proc.on('close', (code: number | null) => {
+    proc.on('close', (code: number | null, signal: string | null) => {
+      // If process was cancelled or replaced by a new build process, suppress stale completion event
+      if (entry.cancelled) return;
+      const current = activeProcessesByWindow.get(winId);
+      if (current && current.process !== proc) return;
+      activeProcessesByWindow.delete(winId);
+
       // If primary command succeeded and a secondary command was provided (e.g. compile & run)
       if (code === 0 && options.secondaryCommand) {
         const secResolved = resolveStructuredCommand(options.secondaryCommand);
@@ -369,9 +383,11 @@ export function runBuildProcess(
           });
         }
 
-        activeProcessesByWindow.set(winId, { process: secProc, startTime });
+        const secEntry: ActiveProcessEntry = { process: secProc, startTime, cancelled: false };
+        activeProcessesByWindow.set(winId, secEntry);
 
         secProc.stdout?.on('data', (chunk: Buffer) => {
+          if (secEntry.cancelled) return;
           if (!win.isDestroyed()) {
             win.webContents.send('build:data', {
               type: 'stdout',
@@ -381,6 +397,7 @@ export function runBuildProcess(
         });
 
         secProc.stderr?.on('data', (chunk: Buffer) => {
+          if (secEntry.cancelled) return;
           if (!win.isDestroyed()) {
             win.webContents.send('build:data', {
               type: 'stderr',
@@ -390,6 +407,11 @@ export function runBuildProcess(
         });
 
         secProc.on('error', (secErr: any) => {
+          if (secEntry.cancelled) return;
+          const cur = activeProcessesByWindow.get(winId);
+          if (cur && cur.process !== secProc) return;
+          activeProcessesByWindow.delete(winId);
+
           if (!win.isDestroyed()) {
             win.webContents.send('build:data', {
               type: 'stderr',
@@ -400,23 +422,21 @@ export function runBuildProcess(
               durationMs: Date.now() - startTime,
             } as BuildCompletedEvent);
           }
-          const current = activeProcessesByWindow.get(winId);
-          if (current?.process === secProc) {
-            activeProcessesByWindow.delete(winId);
-          }
         });
 
-        secProc.on('close', (secCode: number | null) => {
+        secProc.on('close', (secCode: number | null, secSignal: string | null) => {
+          if (secEntry.cancelled) return;
+          const cur = activeProcessesByWindow.get(winId);
+          if (cur && cur.process !== secProc) return;
+          activeProcessesByWindow.delete(winId);
+
           const durationMs = Date.now() - startTime;
+          const finalExitCode = secCode !== null ? secCode : (secSignal ? 130 : -1);
           if (!win.isDestroyed()) {
             win.webContents.send('build:done', {
-              exitCode: secCode ?? 0,
+              exitCode: finalExitCode,
               durationMs,
             } as BuildCompletedEvent);
-          }
-          const current = activeProcessesByWindow.get(winId);
-          if (current?.process === secProc) {
-            activeProcessesByWindow.delete(winId);
           }
         });
         return;
@@ -424,17 +444,12 @@ export function runBuildProcess(
 
       // Normal single command completion
       const durationMs = Date.now() - startTime;
+      const finalExitCode = code !== null ? code : (signal ? 130 : -1);
       if (!win.isDestroyed()) {
         win.webContents.send('build:done', {
-          exitCode: code ?? 0,
+          exitCode: finalExitCode,
           durationMs,
         } as BuildCompletedEvent);
-      }
-
-      // Safe cleanup: only delete if map entry still refers to THIS process
-      const current = activeProcessesByWindow.get(winId);
-      if (current?.process === proc) {
-        activeProcessesByWindow.delete(winId);
       }
     });
 
@@ -450,12 +465,14 @@ export function runBuildProcess(
   }
 }
 
-export function stopBuildProcess(win: BrowserWindow | null): boolean {
+export function stopBuildProcess(win: BrowserWindow | null, notifyCancelled = true): boolean {
   if (!win) return false;
   const entry = activeProcessesByWindow.get(win.id);
   if (!entry) return false;
 
-  const { process: proc } = entry;
+  const { process: proc, startTime } = entry;
+  entry.cancelled = true;
+
   try {
     if (process.platform === 'win32' && proc.pid) {
       // Clean process tree termination on Windows
@@ -467,11 +484,24 @@ export function stopBuildProcess(win: BrowserWindow | null): boolean {
     // Ignore error
   }
   activeProcessesByWindow.delete(win.id);
+
+  if (notifyCancelled && !win.isDestroyed()) {
+    win.webContents.send('build:data', {
+      type: 'stderr',
+      text: '\r\n[Build stopped by user]\r\n',
+    });
+    win.webContents.send('build:done', {
+      exitCode: -1,
+      durationMs: Date.now() - startTime,
+    } as BuildCompletedEvent);
+  }
+
   return true;
 }
 
 export function stopAllBuildProcesses(): void {
   for (const [winId, entry] of activeProcessesByWindow) {
+    entry.cancelled = true;
     try {
       if (process.platform === 'win32' && entry.process.pid) {
         spawn('taskkill', ['/pid', String(entry.process.pid), '/T', '/F'], { shell: false });

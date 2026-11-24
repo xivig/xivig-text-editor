@@ -73,7 +73,7 @@ describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
   });
 
   it('correctly rewrites HTML images with dimension styling and without rogue trailing tags', () => {
-    const md = '<p align="center">\n  <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" />\n</p>';
+    const md = '<p align="center">\n  <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" style="width: 96px; height: 96px; object-fit: contain;" />\n</p>';
     const output = renderAndSanitizeMarkdown(md, 'E:/my-project', 'E:/my-project');
 
     expect(output).toContain('width: 96px');

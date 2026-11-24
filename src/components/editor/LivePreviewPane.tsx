@@ -166,7 +166,7 @@ export const LivePreviewPane: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-[#181818] border-l border-[#2e2e2e] select-none text-gray-300">
       {/* Top Controls Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#202020] border-b border-[#2e2e2e] text-xs gap-2 select-none">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#202020] border-b border-[#2e2e2e] text-xs gap-2 select-none overflow-x-auto flex-nowrap">
         {/* Left: Device Presets */}
         <div className="flex items-center space-x-1 flex-shrink-0">
           <button
@@ -210,7 +210,7 @@ export const LivePreviewPane: React.FC = () => {
         {/* Center: Live Server / URL Status */}
         <div className="flex items-center space-x-2 flex-shrink-0">
           {isRunning ? (
-            <div className="flex items-center space-x-1.5 bg-[#1a2d1d] border border-[#2d5a32] px-2 py-0.5 rounded text-[11px] text-[#4ec9b0]">
+            <div className="flex items-center space-x-1.5 bg-[#1a2d1d] border border-[#2d5a32] px-2 py-0.5 rounded text-[11px] text-[#4ec9b0] whitespace-nowrap">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4ec9b0] animate-pulse" />
               <span className="font-mono font-medium">Port {port}</span>
               <span className="text-[#2d5a32]">|</span>
@@ -280,12 +280,14 @@ export const LivePreviewPane: React.FC = () => {
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 min-h-0 bg-[#141414] flex flex-col items-center justify-start p-2 relative overflow-hidden">
+      <div className="flex-1 min-h-0 w-full bg-[#141414] flex flex-col items-center justify-start p-2 relative overflow-hidden">
         <div
-          className="w-full h-full min-h-0 bg-white transition-all duration-200 shadow-2xl overflow-hidden flex flex-col rounded-sm"
+          className="w-full flex-1 min-h-0 bg-white transition-all duration-200 shadow-2xl overflow-hidden flex flex-col rounded-sm"
           style={{
             maxWidth: getViewportWidth(),
+            width: '100%',
             height: '100%',
+            flex: '1 1 0%',
           }}
         >
           {useServerUrl && isRunning && serverPreviewUrl ? (
@@ -294,7 +296,7 @@ export const LivePreviewPane: React.FC = () => {
               ref={iframeRef}
               src={serverPreviewUrl}
               className="w-full h-full min-h-full border-none block flex-1"
-              style={{ width: '100%', height: '100%', border: 'none' }}
+              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', border: 'none', display: 'block', flex: '1 1 0%' }}
               title="Xivig Live Server Preview"
               sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
             />
@@ -304,7 +306,7 @@ export const LivePreviewPane: React.FC = () => {
               ref={iframeRef}
               srcDoc={previewHtml}
               className="w-full h-full min-h-full border-none block flex-1"
-              style={{ width: '100%', height: '100%', border: 'none' }}
+              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', border: 'none', display: 'block', flex: '1 1 0%' }}
               title="Xivig Direct Preview"
               sandbox="allow-scripts allow-forms allow-modals"
             />

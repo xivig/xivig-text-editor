@@ -92,26 +92,30 @@ export const MarkdownPreviewPane: React.FC = () => {
       // Determine the line number currently at the top of CodeMirror's viewport
       let currentLine = 1;
       const ratio = editorMax > 0 ? editorScroller.scrollTop / editorMax : 0;
+
+      // 1. Direct CodeMirror 6 viewport check
       try {
-        const docTop = typeof (targetView as any).documentTop === 'number' ? (targetView as any).documentTop : 0;
-        const topBlock = targetView.lineBlockAtHeight(editorScroller.scrollTop - docTop);
-        if (topBlock && typeof topBlock.from === 'number') {
-          currentLine = targetView.state.doc.lineAt(topBlock.from).number;
-        } else {
-          currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
+        const viewportFrom = (targetView as any).viewport?.from;
+        if (typeof viewportFrom === 'number') {
+          currentLine = targetView.state.doc.lineAt(viewportFrom).number;
         }
-      } catch {
-        try {
-          const contentRect = targetView.contentDOM.getBoundingClientRect();
-          const pos = targetView.posAtCoords({ x: contentRect.left + 20, y: contentRect.top + 10 });
-          if (pos !== null) {
-            currentLine = targetView.state.doc.lineAt(pos).number;
-          } else {
-            currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
+      } catch {}
+
+      // 2. Query visible coordinate from scrollerDOM
+      try {
+        const scrollerRect = editorScroller.getBoundingClientRect();
+        const pos = targetView.posAtCoords({ x: scrollerRect.left + 50, y: scrollerRect.top + 20 });
+        if (pos !== null) {
+          const detectedLine = targetView.state.doc.lineAt(pos).number;
+          if (detectedLine >= 1) {
+            currentLine = detectedLine;
           }
-        } catch {
-          currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
         }
+      } catch {}
+
+      // 3. If line detection returned near top but editor is significantly scrolled, use proportional fallback
+      if (currentLine <= 1 && ratio > 0.03) {
+        currentLine = Math.max(1, Math.round(1 + ratio * (targetView.state.doc.lines - 1)));
       }
 
       // Query elements tagged with data-line in the preview DOM
@@ -211,21 +215,11 @@ export const MarkdownPreviewPane: React.FC = () => {
           const progress = Math.max(0, Math.min(1, (currentPreviewScroll - prevTop) / Math.max(1, nextTop - prevTop)));
           const targetLine = Math.round(prevLine + progress * (nextLine - prevLine));
           const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, targetLine));
-          try {
-            const lineBlock = targetView.lineBlockAt(targetView.state.doc.line(safeLine).from);
-            targetScrollTop = lineBlock.top;
-          } catch {
-            targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
-          }
+          targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
         } else if (prevEl) {
           const prevLine = parseInt(prevEl.getAttribute('data-line') || '1', 10);
           const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, prevLine));
-          try {
-            const lineBlock = targetView.lineBlockAt(targetView.state.doc.line(safeLine).from);
-            targetScrollTop = lineBlock.top;
-          } catch {
-            targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
-          }
+          targetScrollTop = ((safeLine - 1) / Math.max(1, targetView.state.doc.lines - 1)) * editorMax;
         } else if (nextEl) {
           const nextLine = parseInt(nextEl.getAttribute('data-line') || '1', 10);
           const safeLine = Math.max(1, Math.min(targetView.state.doc.lines, nextLine));
@@ -399,21 +393,35 @@ export const MarkdownPreviewPane: React.FC = () => {
         <style>{`
           .markdown-preview img {
             max-width: 100%;
-            max-height: 480px;
             height: auto;
             object-fit: contain;
             display: inline-block;
+            vertical-align: middle;
             border-radius: 4px;
           }
-          .markdown-preview p[align="center"] {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+          .markdown-preview img:not([width]):not([style*="width"]) {
+            max-height: 380px;
           }
-          .markdown-preview p[align="center"] img {
+          .markdown-preview img[src*="shields.io"],
+          .markdown-preview img[src*="badge"] {
+            height: 20px;
+            max-height: 20px;
+            vertical-align: middle;
+            display: inline-block;
+            margin: 2px 3px;
+            border: none;
+          }
+          .markdown-preview p[align="center"],
+          .markdown-preview div[align="center"] {
+            text-align: center;
+            display: block;
             margin-left: auto;
             margin-right: auto;
+          }
+          .markdown-preview p[align="center"] img,
+          .markdown-preview div[align="center"] img {
+            display: inline-block;
+            margin: 4px auto;
           }
         `}</style>
         <div

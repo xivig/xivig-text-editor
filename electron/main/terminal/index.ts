@@ -39,7 +39,7 @@ export interface ShellInfo {
 }
 
 // Per-window and per-instance map: winId -> (terminalId -> TerminalInstance)
-const terminalsByWindow = new Map<number, Map<string, TerminalInstance>>();
+export const terminalsByWindow = new Map<number, Map<string, TerminalInstance>>();
 
 /**
  * Returns available shells on the current operating system
@@ -259,11 +259,12 @@ export function initTerminalSession(
  */
 export function resizeTerminal(winId: number, cols: number, rows: number, terminalId = 'default'): boolean {
   const winTerminals = terminalsByWindow.get(winId);
-  const instance = winTerminals?.get(terminalId) || winTerminals?.get('default') || winTerminals?.values().next().value;
+  if (!winTerminals) return false;
+  const instance = winTerminals.get(terminalId);
   if (!instance) return false;
 
-  const safeCols = Math.max(1, cols);
-  const safeRows = Math.max(1, rows);
+  const safeCols = Math.max(10, cols);
+  const safeRows = Math.max(5, rows);
 
   if (instance.isPty && typeof instance.proc.resize === 'function') {
     try {

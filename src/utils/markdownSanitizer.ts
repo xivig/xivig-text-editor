@@ -102,21 +102,42 @@ function resolveHtmlImages(html: string, basePath?: string, workspaceRoot?: stri
   return html.replace(/<img\b([^>]*\bsrc=["'])([^"']+)(["'][^>]*)>/gi, (match, prefix, src, suffix) => {
     const resolved = resolveMarkdownImagePath(src, basePath, workspaceRoot);
     const cleanPrefix = prefix.replace(/^<img\b\s*/i, '');
-    const cleanSuffix = suffix.replace(/\/+$/, '').trimEnd();
+    let cleanSuffix = suffix.replace(/^\s*["']/, '" ').replace(/\s*\/?>?\s*$/, '').trimEnd();
 
-    // If explicit width or height attributes are set, enforce them with inline style to avoid unbounded scaling
-    const fullTagAttributes = `${cleanPrefix} ${cleanSuffix}`;
-    const widthMatch = fullTagAttributes.match(/\bwidth=["']?(\d+)(?:px)?["']?/i);
-    const heightMatch = fullTagAttributes.match(/\bheight=["']?(\d+)(?:px)?["']?/i);
+    // Check if style is already defined in cleanSuffix
+    const styleMatch = cleanSuffix.match(/\bstyle=["']([^"']*)["']/i);
+    const widthMatch = `${cleanPrefix} ${cleanSuffix}`.match(/\bwidth=["']?(\d+)(?:px)?["']?/i);
+    const heightMatch = `${cleanPrefix} ${cleanSuffix}`.match(/\bheight=["']?(\d+)(?:px)?["']?/i);
 
-    let styleAddition = '';
+    let finalStyle = styleMatch ? styleMatch[1].trim() : '';
     if (widthMatch) {
       const w = widthMatch[1];
       const h = heightMatch ? `${heightMatch[1]}px` : 'auto';
-      styleAddition = ` style="max-width: 100%; width: ${w}px; height: ${h}; object-fit: contain;"`;
+      if (!/width\s*:/i.test(finalStyle)) {
+        finalStyle = `width: ${w}px; max-width: 100%; ${finalStyle}`.trim();
+      }
+      if (!/height\s*:/i.test(finalStyle)) {
+        finalStyle = `height: ${h}; ${finalStyle}`.trim();
+      }
+      if (!/object-fit\s*:/i.test(finalStyle)) {
+        finalStyle = `${finalStyle} object-fit: contain;`.trim();
+      }
+    } else {
+      if (!/max-width\s*:/i.test(finalStyle)) {
+        finalStyle = `max-width: 100%; ${finalStyle}`.trim();
+      }
+      if (!/object-fit\s*:/i.test(finalStyle)) {
+        finalStyle = `${finalStyle} object-fit: contain;`.trim();
+      }
     }
 
-    return `<img ${cleanPrefix}${resolved}${cleanSuffix}${styleAddition} />`;
+    if (styleMatch) {
+      cleanSuffix = cleanSuffix.replace(/\bstyle=["'][^"']*["']/i, `style="${finalStyle}"`);
+    } else if (finalStyle) {
+      cleanSuffix = `${cleanSuffix} style="${finalStyle}"`;
+    }
+
+    return `<img ${cleanPrefix}${resolved}${cleanSuffix} />`;
   });
 }
 

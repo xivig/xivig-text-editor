@@ -85,7 +85,7 @@ export const ExtensionsView: React.FC = () => {
               color: activeTab === 'marketplace' ? 'var(--xivig-text)' : 'var(--xivig-text-dim)',
             }}
           >
-            Marketplace ({marketplace.length})
+            Curated Packages ({marketplace.length})
           </button>
           <button
             onClick={() => setActiveTab('installed')}
@@ -97,6 +97,23 @@ export const ExtensionsView: React.FC = () => {
           >
             Installed ({installedIds.length})
           </button>
+        </div>
+
+        {/* Prototype & Architecture Notice Banner */}
+        <div
+          style={{
+            margin: '8px 12px 2px 12px',
+            padding: '7px 10px',
+            borderRadius: '4px',
+            backgroundColor: 'rgba(38, 79, 120, 0.25)',
+            border: '1px solid rgba(86, 156, 214, 0.35)',
+            fontSize: '11px',
+            color: 'var(--xivig-text-muted)',
+            lineHeight: '1.4',
+          }}
+        >
+          <span style={{ color: '#569cd6', fontWeight: 600 }}>Curated Built-in Showcase: </span>
+          Packaged themes and extensions run natively in Xivig settings. Third-party sandboxed extension engine architecture is documented in <code style={{ color: '#ce9178', fontSize: '10.5px' }}>docs/EXTENSION_SYSTEM_DESIGN.md</code>.
         </div>
 
         {/* Category Filter Pills */}
@@ -281,6 +298,24 @@ export const ExtensionsView: React.FC = () => {
 
             {/* Modal Body */}
             <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(78, 201, 176, 0.15)',
+                  border: '1px solid rgba(78, 201, 176, 0.35)',
+                  color: '#4ec9b0',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                }}
+              >
+                <span>Curated Core Package (Built-in)</span>
+              </div>
+
               <p style={{ fontSize: '12.5px', color: 'var(--xivig-text-muted)', marginBottom: '14px' }}>
                 {selectedExtension.description}
               </p>

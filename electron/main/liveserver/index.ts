@@ -53,7 +53,7 @@ const SENSITIVE_FILE_PATTERNS = [
   /(^|[/\\])\.gitignore$/i,
   /(^|[/\\])id_rsa/i,
   /(^|[/\\])id_ed25519/i,
-  /\.(pem|key|p12|pfx|kdbx|sql)$/i,
+  /\.(pem|key|p12|pfx|kdbx|sql|sqlite|db|bak)$/i,
   /(^|[/\\])node_modules([/\\]|$)/i,
 ];
 
@@ -81,6 +81,49 @@ function getReloadScript(sessionToken: string): string {
 <!-- Injected by Xivig Live Server -->
 <script>
 (function() {
+  // Safe alert, confirm, prompt shims to prevent blocking modals in Electron iframe previews
+  try {
+    const _sendConsole = (level, args) => {
+      try {
+        window.parent.postMessage({
+          type: 'XIVIG_CONSOLE',
+          level: level,
+          args: Array.from(args).map(function(a) {
+            if (typeof a === 'object') {
+              try { return JSON.stringify(a); } catch(_) { return String(a); }
+            }
+            return String(a);
+          })
+        }, '*');
+      } catch (_) {}
+    };
+
+    window.alert = function(msg) {
+      console.info('[alert]', msg);
+      _sendConsole('info', ['[alert] ' + msg]);
+    };
+    window.confirm = function(msg) {
+      console.info('[confirm]', msg);
+      _sendConsole('info', ['[confirm] ' + msg]);
+      return true;
+    };
+    window.prompt = function(msg, def) {
+      console.info('[prompt]', msg);
+      _sendConsole('info', ['[prompt] ' + msg]);
+      return def !== undefined ? def : null;
+    };
+
+    const _log = console.log, _warn = console.warn, _error = console.error, _info = console.info;
+    console.log = function() { _sendConsole('log', arguments); _log.apply(console, arguments); };
+    console.warn = function() { _sendConsole('warn', arguments); _warn.apply(console, arguments); };
+    console.error = function() { _sendConsole('error', arguments); _error.apply(console, arguments); };
+    console.info = function() { _sendConsole('info', arguments); _info.apply(console, arguments); };
+    window.onerror = function(msg, src, line, col) {
+      _sendConsole('error', [msg + ' (' + line + ':' + col + ')']);
+    };
+  } catch (e) {}
+
+  // Live Reload SSE client
   try {
     const src = new EventSource('/__xivig_live_reload?token=${encodeURIComponent(sessionToken)}');
     src.onmessage = function(e) {
@@ -111,7 +154,7 @@ function escapeHtml(str: string): string {
   });
 }
 
-const serversByWindow = new Map<number, LiveServerInstance>();
+export const serversByWindow = new Map<number, LiveServerInstance>();
 
 export function getLiveServerStatus(winId?: number): LiveServerStatus {
   if (winId !== undefined) {
@@ -393,12 +436,12 @@ export async function startLiveServer(
           try {
             let html = fs.readFileSync(safePath, 'utf-8');
             const reloadSnippet = getReloadScript(sessionToken);
-            if (html.includes('</body>')) {
-              html = html.replace('</body>', `${reloadSnippet}</body>`);
-            } else if (html.includes('</html>')) {
-              html = html.replace('</html>', `${reloadSnippet}</html>`);
+            if (/<head\b[^>]*>/i.test(html)) {
+              html = html.replace(/<head\b[^>]*>/i, (m) => `${m}\n${reloadSnippet}`);
+            } else if (/<html\b[^>]*>/i.test(html)) {
+              html = html.replace(/<html\b[^>]*>/i, (m) => `${m}\n<head>${reloadSnippet}</head>`);
             } else {
-              html += reloadSnippet;
+              html = `${reloadSnippet}\n${html}`;
             }
 
             res.writeHead(200, {
