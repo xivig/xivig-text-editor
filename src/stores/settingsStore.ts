@@ -14,31 +14,52 @@ export interface UserSettings {
   fontLigatures: boolean;
   showWelcomeOnStartup: boolean;
   autoIndentOnSave: boolean;
+  insertSpaces?: boolean;
+  autoSaveDelay?: number;
+  defaultFormatter?: string;
+  cursorBlinking?: 'blink' | 'smooth' | 'solid';
+  bracketMatching?: boolean;
+  rainbowBrackets?: boolean;
+  rainbowIndentGuides?: boolean;
+  terminalFontSize?: number;
+  trimTrailingWhitespace?: boolean;
+  insertFinalNewline?: boolean;
 }
 
 interface SettingsState {
   settings: UserSettings;
   updateSettings: (partial: Partial<UserSettings>) => void;
   loadSettings: () => Promise<void>;
+  resetToDefault: (key?: keyof UserSettings) => void;
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
   toggleFontLigatures: () => void;
 }
 
-const defaultSettings: UserSettings = {
+export const defaultSettings: UserSettings = {
   fontSize: 14,
   fontFamily: "'Fira Code', 'Cascadia Code', 'JetBrains Mono', Consolas, Menlo, monospace",
   lineHeight: 1.6,
   tabSize: 2,
+  insertSpaces: true,
   wordWrap: false,
   lineNumbers: true,
   minimap: true,
   theme: 'dracula',
   autoSave: true,
+  autoSaveDelay: 1000,
   fontLigatures: true,
   showWelcomeOnStartup: true,
   autoIndentOnSave: true,
+  defaultFormatter: 'js-beautify',
+  cursorBlinking: 'smooth',
+  bracketMatching: true,
+  rainbowBrackets: true,
+  rainbowIndentGuides: false,
+  terminalFontSize: 13,
+  trimTrailingWhitespace: false,
+  insertFinalNewline: true,
 };
 
 function applySettingsToDOM(settings: UserSettings) {
@@ -67,6 +88,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('user_settings', JSON.stringify(updated));
+    }
+  },
+
+  resetToDefault: (key) => {
+    if (key) {
+      get().updateSettings({ [key]: defaultSettings[key] });
+    } else {
+      get().updateSettings(defaultSettings);
     }
   },
 
