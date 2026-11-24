@@ -315,12 +315,12 @@ export const StatusBar: React.FC = () => {
 
 const statusBarStyle: React.CSSProperties = {
   height: 'var(--xivig-statusbar-height)',
-  backgroundColor: 'var(--xivig-statusbar)',
-  borderTop: '1px solid var(--xivig-border-subtle)',
+  backgroundColor: '#111318',
+  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '0 10px',
+  padding: '0 12px',
   fontSize: 'var(--xivig-font-size-sm)',
   color: 'var(--xivig-text-muted)',
   userSelect: 'none',
@@ -330,34 +330,37 @@ const statusBarStyle: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
+  gap: '10px',
 };
 
 const itemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
+  padding: '2px 5px',
+  borderRadius: '4px',
 };
 
 const interactiveItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
-  padding: '2px 4px',
-  borderRadius: '3px',
-  transition: 'background-color 0.15s ease',
+  padding: '2px 6px',
+  borderRadius: '4px',
+  transition: 'all 0.12s ease',
 };
 
 const popoverStyle: React.CSSProperties = {
   position: 'absolute',
   bottom: 'calc(100% + 6px)',
   left: 0,
-  backgroundColor: 'var(--xivig-surface)',
-  border: '1px solid var(--xivig-border)',
-  borderRadius: '6px',
-  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+  backgroundColor: '#191b24',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '8px',
+  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+  backdropFilter: 'blur(16px)',
   padding: '4px',
   zIndex: 1000,
-  minWidth: '140px',
+  minWidth: '150px',
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
@@ -367,19 +370,20 @@ const popoverHeaderStyle: React.CSSProperties = {
   fontSize: '10px',
   fontWeight: 600,
   textTransform: 'uppercase',
-  letterSpacing: '0.5px',
+  letterSpacing: '0.6px',
   color: 'var(--xivig-text-dim)',
-  padding: '4px 8px 2px',
+  padding: '5px 8px 3px',
 };
 
 const popoverItemStyle = (isSelected: boolean): React.CSSProperties => ({
   padding: '6px 8px',
   fontSize: '11px',
-  color: isSelected ? 'var(--xivig-accent)' : 'var(--xivig-text)',
-  backgroundColor: isSelected ? 'rgba(78, 201, 176, 0.12)' : 'transparent',
-  borderRadius: '4px',
+  color: isSelected ? 'var(--xivig-accent)' : '#e2e8f0',
+  backgroundColor: isSelected ? 'rgba(108, 140, 255, 0.15)' : 'transparent',
+  borderRadius: '5px',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
+  transition: 'all 0.1s ease',
 });

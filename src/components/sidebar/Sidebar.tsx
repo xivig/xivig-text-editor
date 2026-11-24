@@ -1090,30 +1090,36 @@ const sidebarContainerStyle: React.CSSProperties = {
 };
 
 const sidebarHeaderStyle: React.CSSProperties = {
-  height: '34px',
+  height: '38px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '0 12px',
+  padding: '0 14px',
   borderBottom: '1px solid var(--xivig-border-subtle)',
+  backgroundColor: 'var(--xivig-activity-bar)',
 };
 
 const sidebarTitleStyle: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 700,
-  letterSpacing: '0.8px',
-  color: 'var(--xivig-text-muted)',
+  letterSpacing: '0.9px',
+  color: '#e2e8f0',
 };
 
 const headerActionsStyle: React.CSSProperties = {
   display: 'flex',
-  gap: '6px',
+  gap: '4px',
 };
 
 const actionBtnStyle: React.CSSProperties = {
   color: 'var(--xivig-text-muted)',
-  padding: '2px',
-  borderRadius: '3px',
+  padding: '3px 4px',
+  borderRadius: '4px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.12s ease',
+  cursor: 'pointer',
 };
 
 const promptContainerStyle: React.CSSProperties = {
@@ -1158,12 +1164,14 @@ const projectNameStyle: React.CSSProperties = {
 const treeItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  height: '24px',
+  height: '25px',
   cursor: 'pointer',
   fontSize: '12.5px',
   color: 'var(--xivig-text)',
   transition: 'background-color 0.1s ease',
   position: 'relative',
+  borderRadius: '5px',
+  margin: '1px 6px',
 };
 
 const deleteItemBtnStyle: React.CSSProperties = {

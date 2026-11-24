@@ -751,12 +751,12 @@ export const Menubar: React.FC = () => {
                       }}
                       style={dropdownItemStyle}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#383b42';
+                        e.currentTarget.style.backgroundColor = 'rgba(108, 140, 255, 0.18)';
                         e.currentTarget.style.color = '#ffffff';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#c9ccd3';
+                        e.currentTarget.style.color = '#e2e8f0';
                       }}
                     >
                       <span>{item.label}</span>
@@ -780,18 +780,19 @@ const menubarContainerStyle: React.CSSProperties = {
   backgroundColor: 'var(--xivig-activity-bar)',
   display: 'flex',
   alignItems: 'center',
-  paddingLeft: '8px',
+  paddingLeft: '10px',
   borderBottom: '1px solid var(--xivig-border-subtle)',
   position: 'relative',
   zIndex: 100,
 };
 
 const menuTriggerStyle: React.CSSProperties = {
-  padding: '4px 8px',
-  borderRadius: '3px',
+  padding: '3px 8px',
+  borderRadius: '4px',
   fontSize: '12px',
   fontWeight: 400,
-  transition: 'background-color 0.1s ease',
+  transition: 'all 0.12s ease',
+  cursor: 'pointer',
 };
 
 const dropdownStyle: React.CSSProperties = {
@@ -801,44 +802,49 @@ const dropdownStyle: React.CSSProperties = {
   minWidth: '260px',
   width: 'max-content',
   maxWidth: '450px',
-  backgroundColor: '#212224',
-  border: '1px solid #383a40',
-  borderRadius: '4px',
+  backgroundColor: '#191b24',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '8px',
   padding: '4px 0',
-  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+  boxShadow: '0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+  backdropFilter: 'blur(16px)',
   zIndex: 1000,
   whiteSpace: 'nowrap',
 };
 
 const dropdownItemStyle: React.CSSProperties = {
-  width: '100%',
+  width: 'calc(100% - 8px)',
+  margin: '1px 4px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '6px 14px',
+  padding: '5px 10px',
+  borderRadius: '5px',
   fontSize: '12px',
   textAlign: 'left',
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  color: '#c9ccd3',
+  color: '#e2e8f0',
   fontFamily: 'inherit',
   whiteSpace: 'nowrap',
-  gap: '28px',
+  gap: '24px',
   boxSizing: 'border-box',
+  transition: 'all 0.1s ease',
 };
 
 const shortcutStyle: React.CSSProperties = {
-  fontSize: '11px',
+  fontSize: '10.5px',
   color: 'var(--xivig-text-dim)',
   marginLeft: 'auto',
-  paddingLeft: '20px',
+  paddingLeft: '18px',
   flexShrink: 0,
   whiteSpace: 'nowrap',
+  fontFamily: 'inherit',
 };
 
 const dividerStyle: React.CSSProperties = {
   height: '1px',
-  backgroundColor: '#35373d',
+  backgroundColor: 'rgba(255, 255, 255, 0.07)',
   margin: '4px 0',
 };

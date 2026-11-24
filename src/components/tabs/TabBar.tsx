@@ -394,12 +394,13 @@ const tabItemStyle: React.CSSProperties = {
   gap: '8px',
   padding: '0 12px',
   height: '100%',
-  borderRight: '1px solid var(--xivig-border-subtle)',
+  borderRight: '1px solid rgba(255, 255, 255, 0.05)',
   fontSize: '12.5px',
   cursor: 'pointer',
   minWidth: '110px',
   maxWidth: '220px',
-  transition: 'background-color 0.1s ease',
+  transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+  position: 'relative',
 };
 
 const tabNameStyle: React.CSSProperties = {
@@ -407,6 +408,7 @@ const tabNameStyle: React.CSSProperties = {
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   flex: 1,
+  fontWeight: 500,
 };
 
 const tabIndicatorContainerStyle: React.CSSProperties = {
@@ -421,10 +423,11 @@ const closeTabBtnStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: '3px',
+  borderRadius: '50%',
   padding: '2px',
   color: 'inherit',
   opacity: 0.6,
+  transition: 'all 0.12s ease',
 };
 
 const dirtyIndicatorBtnStyle: React.CSSProperties = {
@@ -435,25 +438,34 @@ const dirtyIndicatorBtnStyle: React.CSSProperties = {
 };
 
 const addTabBtnStyle: React.CSSProperties = {
-  padding: '6px 10px',
+  padding: '4px 8px',
+  margin: '6px 4px',
+  borderRadius: '5px',
   color: 'var(--xivig-text-dim)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.12s ease',
 };
 
 const layoutControlsStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: '4px',
-  paddingLeft: '8px',
+  gap: '2px',
+  padding: '2px 4px',
+  backgroundColor: 'rgba(255, 255, 255, 0.035)',
+  border: '1px solid rgba(255, 255, 255, 0.065)',
+  borderRadius: '7px',
+  marginRight: '6px',
 };
 
 const splitBtnStyle: React.CSSProperties = {
   padding: '4px 6px',
-  borderRadius: '3px',
+  borderRadius: '4px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'color 0.1s, background-color 0.1s',
+  cursor: 'pointer',
 };

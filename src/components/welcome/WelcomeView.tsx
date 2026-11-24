@@ -145,6 +145,23 @@ export const WelcomeView: React.FC = () => {
 
   return (
     <div style={welcomeContainerStyle}>
+      <style>{`
+        .xivig-welcome-action {
+          transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .xivig-welcome-action:hover {
+          background-color: rgba(255, 255, 255, 0.05) !important;
+          color: #ffffff !important;
+          transform: translateX(3px);
+        }
+        .xivig-welcome-card {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .xivig-welcome-card:hover {
+          border-color: rgba(108, 140, 255, 0.25) !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+        }
+      `}</style>
       <div style={welcomeScrollInnerStyle}>
         {/* Header Hero Section */}
         <div style={heroHeaderStyle}>
@@ -202,38 +219,38 @@ export const WelcomeView: React.FC = () => {
             {/* Left Column: Quick Start & Recent */}
             <div style={columnStyle}>
               {/* Start Card */}
-              <div style={cardStyle}>
+              <div className="xivig-welcome-card" style={cardStyle}>
                 <h2 style={cardHeadingStyle}>
                   <Sparkles size={15} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
                   Start
                 </h2>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <button onClick={() => createNewDocument()} style={actionItemBtnStyle}>
+                  <button onClick={() => createNewDocument()} className="xivig-welcome-action" style={actionItemBtnStyle}>
                     <Plus size={16} color="var(--xivig-accent)" style={{ marginRight: '10px' }} />
                     <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>New File</span>
                     <kbd style={kbdStyle}>Ctrl+N</kbd>
                   </button>
 
-                  <button onClick={handleOpenFile} style={actionItemBtnStyle}>
+                  <button onClick={handleOpenFile} className="xivig-welcome-action" style={actionItemBtnStyle}>
                     <FileText size={15} color="#56b6c2" style={{ marginRight: '10px' }} />
                     <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>Open File...</span>
                     <kbd style={kbdStyle}>Ctrl+O</kbd>
                   </button>
 
-                  <button onClick={handleOpenFolder} style={actionItemBtnStyle}>
+                  <button onClick={handleOpenFolder} className="xivig-welcome-action" style={actionItemBtnStyle}>
                     <FolderOpen size={15} color="#e6ad45" style={{ marginRight: '10px' }} />
                     <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>Open Folder / Workspace...</span>
                     <kbd style={kbdStyle}>Ctrl+Shift+O</kbd>
                   </button>
 
-                  <button onClick={() => openCommandPalette()} style={actionItemBtnStyle}>
+                  <button onClick={() => openCommandPalette()} className="xivig-welcome-action" style={actionItemBtnStyle}>
                     <Code2 size={15} color="#c678dd" style={{ marginRight: '10px' }} />
                     <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>Command Palette</span>
                     <kbd style={kbdStyle}>Ctrl+Shift+P</kbd>
                   </button>
 
-                  <button onClick={() => openQuickOpen()} style={actionItemBtnStyle}>
+                  <button onClick={() => openQuickOpen()} className="xivig-welcome-action" style={actionItemBtnStyle}>
                     <Zap size={15} color="#35b779" style={{ marginRight: '10px' }} />
                     <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>Quick Open File</span>
                     <kbd style={kbdStyle}>Ctrl+P</kbd>
@@ -242,7 +259,7 @@ export const WelcomeView: React.FC = () => {
               </div>
 
               {/* Recent Workspaces / Projects Card */}
-              <div style={cardStyle}>
+              <div className="xivig-welcome-card" style={cardStyle}>
                 <h2 style={cardHeadingStyle}>
                   <Clock size={15} color="var(--xivig-accent)" style={{ marginRight: '8px' }} />
                   Recent Workspaces
