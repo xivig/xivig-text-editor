@@ -55,4 +55,30 @@ describe('Official Dracula Theme Implementation', () => {
     const settings = useSettingsStore.getState().settings;
     expect(settings.theme).toBe('dracula');
   });
+
+  it('provides dedicated CodeMirror 6 editor themes and syntax highlighting for all 10 themes', () => {
+    const allThemeIds = [
+      'xivig-dark',
+      'monokai',
+      'dracula',
+      'one-dark',
+      'solarized-light',
+      'nord',
+      'tokyo-night',
+      'cyberpunk',
+      'github-dark',
+      'synthwave',
+    ] as const;
+
+    for (const id of allThemeIds) {
+      expect(themes[id]).toBeDefined();
+      const exts = getEditorTheme(id);
+      expect(exts).toBeDefined();
+      expect(Array.isArray(exts)).toBe(true);
+      expect((exts as any[]).length).toBe(2); // [EditorView.theme, syntaxHighlighting]
+
+      applyThemeToCssVariables(id);
+      expect(document.documentElement.getAttribute('data-theme')).toBe(id);
+    }
+  });
 });

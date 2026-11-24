@@ -387,6 +387,391 @@ const solarizedLightHighlight = HighlightStyle.define([
 ]);
 
 // -------------------------------------------------------------
+// 6. Nord Theme
+// -------------------------------------------------------------
+const nordView = EditorView.theme(
+  {
+    '&': {
+      color: '#eceff4',
+      backgroundColor: '#2e3440',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#88c0d0',
+      fontFamily: 'var(--xivig-font-mono)',
+      padding: '12px 0',
+      color: '#eceff4',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#88c0d0',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(67, 76, 94, 0.75) !important',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#2e3440',
+      color: '#4c566a',
+      borderRight: '1px solid #3b4252',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(67, 76, 94, 0.3)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(67, 76, 94, 0.4)',
+      color: '#d8dee9',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#3b4252',
+      border: 'none',
+      color: '#4c566a',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #3b4252',
+      backgroundColor: '#242933',
+      color: '#eceff4',
+      borderRadius: '4px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#434c5e',
+        color: '#88c0d0',
+        fontWeight: 'bold',
+      },
+    },
+  },
+  { dark: true }
+);
+
+const nordHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#81a1c1', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#81a1c1' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#88c0d0' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#a3be8c' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#b48ead' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#8fbcbb', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#d8dee9' },
+  { tag: [t.propertyName, t.attributeName], color: '#88c0d0' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#616e88', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#ebcb8b' },
+  { tag: t.strong, fontWeight: 'bold' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#88c0d0', textDecoration: 'underline' },
+  { tag: t.heading, fontWeight: 'bold', color: '#81a1c1' },
+  { tag: t.invalid, color: '#bf616a' },
+]);
+
+// -------------------------------------------------------------
+// 7. Tokyo Night
+// -------------------------------------------------------------
+const tokyoNightView = EditorView.theme(
+  {
+    '&': {
+      color: '#c0caf5',
+      backgroundColor: '#1a1b26',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#c0caf5',
+      fontFamily: 'var(--xivig-font-mono)',
+      padding: '12px 0',
+      color: '#c0caf5',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#7aa2f7',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(40, 52, 87, 0.75) !important',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#1a1b26',
+      color: '#565f89',
+      borderRight: '1px solid #292e42',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(41, 46, 66, 0.35)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(41, 46, 66, 0.45)',
+      color: '#c0caf5',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#292e42',
+      border: 'none',
+      color: '#565f89',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #292e42',
+      backgroundColor: '#16161e',
+      color: '#c0caf5',
+      borderRadius: '4px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#283457',
+        color: '#7aa2f7',
+        fontWeight: 'bold',
+      },
+    },
+  },
+  { dark: true }
+);
+
+const tokyoNightHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#bb9af7', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#89ddff' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#7aa2f7' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#9ece6a' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#ff9e64' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#2ac3de', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#c0caf5' },
+  { tag: [t.propertyName, t.attributeName], color: '#7aa2f7' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#565f89', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#b4f9f8' },
+  { tag: t.strong, fontWeight: 'bold' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#7aa2f7', textDecoration: 'underline' },
+  { tag: t.heading, fontWeight: 'bold', color: '#bb9af7' },
+  { tag: t.invalid, color: '#f7768e' },
+]);
+
+// -------------------------------------------------------------
+// 8. Cyberpunk 2077
+// -------------------------------------------------------------
+const cyberpunkView = EditorView.theme(
+  {
+    '&': {
+      color: '#e5e7eb',
+      backgroundColor: '#0d0f18',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#fee801',
+      fontFamily: 'var(--xivig-font-mono)',
+      padding: '12px 0',
+      color: '#e5e7eb',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#fee801',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(254, 232, 1, 0.28) !important',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#0a0c14',
+      color: '#ff003c',
+      borderRight: '1px solid #2a3356',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(28, 34, 60, 0.35)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(28, 34, 60, 0.5)',
+      color: '#fee801',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#1c223c',
+      border: 'none',
+      color: '#00f0ff',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #fee801',
+      backgroundColor: '#121526',
+      color: '#e5e7eb',
+      borderRadius: '4px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#fee801',
+        color: '#0d0f18',
+        fontWeight: 'bold',
+      },
+    },
+  },
+  { dark: true }
+);
+
+const cyberpunkHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#00f0ff', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#ff003c' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#fee801' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#05d9e8' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#ff0055' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#ff71ce', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#e5e7eb' },
+  { tag: [t.propertyName, t.attributeName], color: '#fee801' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#6b7280', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#00ff9f' },
+  { tag: t.strong, fontWeight: 'bold' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#00f0ff', textDecoration: 'underline' },
+  { tag: t.heading, fontWeight: 'bold', color: '#fee801' },
+  { tag: t.invalid, color: '#ff003c' },
+]);
+
+// -------------------------------------------------------------
+// 9. GitHub Dark
+// -------------------------------------------------------------
+const githubDarkView = EditorView.theme(
+  {
+    '&': {
+      color: '#c9d1d9',
+      backgroundColor: '#0d1117',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#58a6ff',
+      fontFamily: 'var(--xivig-font-mono)',
+      padding: '12px 0',
+      color: '#c9d1d9',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#58a6ff',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(56, 139, 253, 0.28) !important',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#0d1117',
+      color: '#6e7681',
+      borderRight: '1px solid #21262d',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(110, 118, 129, 0.12)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(110, 118, 129, 0.18)',
+      color: '#c9d1d9',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#21262d',
+      border: 'none',
+      color: '#8b949e',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #30363d',
+      backgroundColor: '#161b22',
+      color: '#c9d1d9',
+      borderRadius: '4px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#1f6feb',
+        color: '#ffffff',
+        fontWeight: 'bold',
+      },
+    },
+  },
+  { dark: true }
+);
+
+const githubDarkHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#ff7b72', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#ff7b72' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#d2a8ff' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#a5d6ff' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#79c0ff' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#ffa657', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#c9d1d9' },
+  { tag: [t.propertyName, t.attributeName], color: '#7ee787' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#8b949e', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#7ee787' },
+  { tag: t.strong, fontWeight: 'bold' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#58a6ff', textDecoration: 'underline' },
+  { tag: t.heading, fontWeight: 'bold', color: '#58a6ff' },
+  { tag: t.invalid, color: '#f85149' },
+]);
+
+// -------------------------------------------------------------
+// 10. SynthWave '84
+// -------------------------------------------------------------
+const synthwaveView = EditorView.theme(
+  {
+    '&': {
+      color: '#f8f8f2',
+      backgroundColor: '#262335',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#fede5d',
+      fontFamily: 'var(--xivig-font-mono)',
+      padding: '12px 0',
+      color: '#f8f8f2',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#fede5d',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(255, 126, 219, 0.28) !important',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#262335',
+      color: '#847b9b',
+      borderRight: '1px solid #463f63',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(52, 47, 73, 0.35)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(52, 47, 73, 0.5)',
+      color: '#fede5d',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#342f49',
+      border: 'none',
+      color: '#ff7edb',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #ff7edb',
+      backgroundColor: '#201d2d',
+      color: '#f8f8f2',
+      borderRadius: '4px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#f92aad',
+        color: '#ffffff',
+        fontWeight: 'bold',
+      },
+    },
+  },
+  { dark: true }
+);
+
+const synthwaveHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: '#f92aad', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#fede5d' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName], color: '#36f9f6' },
+  { tag: [t.string, t.special(t.string), t.character, t.inserted], color: '#ff8b39' },
+  { tag: [t.number, t.atom, t.bool, t.constant(t.name), t.color], color: '#f92aad' },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: '#fe4450', fontStyle: 'italic' },
+  { tag: [t.variableName, t.name, t.definition(t.name)], color: '#f8f8f2' },
+  { tag: [t.propertyName, t.attributeName], color: '#ff7edb' },
+  { tag: [t.meta, t.comment, t.lineComment, t.blockComment, t.docComment], color: '#847b9b', fontStyle: 'italic' },
+  { tag: [t.escape, t.regexp], color: '#36f9f6' },
+  { tag: t.strong, fontWeight: 'bold' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#36f9f6', textDecoration: 'underline' },
+  { tag: t.heading, fontWeight: 'bold', color: '#fede5d' },
+  { tag: t.invalid, color: '#fe4450' },
+]);
+
+// -------------------------------------------------------------
 // Theme Mapper
 // -------------------------------------------------------------
 export function getEditorTheme(themeId: ThemeId): Extension {
@@ -399,6 +784,16 @@ export function getEditorTheme(themeId: ThemeId): Extension {
       return [oneDarkView, syntaxHighlighting(oneDarkHighlight)];
     case 'solarized-light':
       return [solarizedLightView, syntaxHighlighting(solarizedLightHighlight)];
+    case 'nord':
+      return [nordView, syntaxHighlighting(nordHighlight)];
+    case 'tokyo-night':
+      return [tokyoNightView, syntaxHighlighting(tokyoNightHighlight)];
+    case 'cyberpunk':
+      return [cyberpunkView, syntaxHighlighting(cyberpunkHighlight)];
+    case 'github-dark':
+      return [githubDarkView, syntaxHighlighting(githubDarkHighlight)];
+    case 'synthwave':
+      return [synthwaveView, syntaxHighlighting(synthwaveHighlight)];
     case 'xivig-dark':
     default:
       return [xivigDarkView, syntaxHighlighting(xivigDarkHighlight)];
