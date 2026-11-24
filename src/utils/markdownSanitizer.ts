@@ -199,18 +199,23 @@ export function renderAndSanitizeMarkdown(markdownContent: string, basePath?: st
       if (i < lines.length && lines[i].startsWith('```')) {
         i++;
       }
-      const rawCode = codeLines.join('\n');
-      const escapedCode = rawCode
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+      const escapedCodeLines = codeLines.map((codeLine, index) => {
+        const escapedLine = codeLine
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        // Each source line becomes a preview anchor. This makes scrolling
+        // through long fenced code blocks line-accurate instead of estimating
+        // the position from the start of the entire block.
+        return `<span data-line="${lineNum + index + 1}" class="block">${escapedLine || '&nbsp;'}</span>`;
+      });
       blocks.push(`
         <div data-line="${lineNum}" class="my-4 rounded-md overflow-hidden border border-[#3e3e42] bg-[#1a1a1a]">
           <div class="px-3 py-1 bg-[#252526] text-gray-400 text-xs font-mono border-b border-[#3e3e42] flex justify-between select-none">
             <span>${lang}</span>
             <span>code</span>
           </div>
-          <pre class="p-3 text-xs font-mono text-[#d4d4d4] overflow-x-auto whitespace-pre leading-relaxed"><code>${escapedCode}</code></pre>
+          <pre class="p-3 text-xs font-mono text-[#d4d4d4] overflow-x-auto whitespace-pre leading-relaxed"><code>${escapedCodeLines.join('\n')}</code></pre>
         </div>
       `);
       continue;
@@ -268,11 +273,11 @@ export function renderAndSanitizeMarkdown(markdownContent: string, basePath?: st
           if (idx === 1 && /^[|\s-:]+$/.test(row)) return;
           const cells = row.split('|').slice(1, -1).map((c) => formatInlineMarkdown(c.trim(), basePath, workspaceRoot));
           if (idx === 0) {
-            html += '<thead class="bg-[#252526] text-gray-200"><tr>';
+            html += `<thead class="bg-[#252526] text-gray-200"><tr data-line="${tableStartLine + idx}">`;
             cells.forEach((c) => { html += `<th class="px-3 py-2 border border-[#3e3e42] font-semibold">${c}</th>`; });
             html += '</tr></thead><tbody>';
           } else {
-            html += `<tr class="${idx % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#181818]'} hover:bg-[#282828]">`;
+            html += `<tr data-line="${tableStartLine + idx}" class="${idx % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#181818]'} hover:bg-[#282828]">`;
             cells.forEach((c) => { html += `<td class="px-3 py-2 border border-[#3e3e42] text-gray-300">${c}</td>`; });
             html += '</tr>';
           }
@@ -337,7 +342,13 @@ export function renderAndSanitizeMarkdown(markdownContent: string, basePath?: st
       i++;
     }
     const paraText = formatInlineMarkdown(paraLines.join('\n'), basePath, workspaceRoot);
-    blocks.push(`<p data-line="${paraStartLine}" class="my-2 leading-relaxed text-gray-300 text-sm">${paraText.replace(/\n/g, '<br />')}</p>`);
+    const paraHtml = paraText
+      .split('\n')
+      .map((part, index) =>
+        `${index > 0 ? `<br data-line="${paraStartLine + index}" />` : ''}${part}`
+      )
+      .join('');
+    blocks.push(`<p data-line="${paraStartLine}" class="my-2 leading-relaxed text-gray-300 text-sm">${paraHtml}</p>`);
   }
 
   const rawHtml = blocks.join('\n');

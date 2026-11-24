@@ -63,6 +63,26 @@ describe('Markdown Sanitization with DOMPurify (P1 Finding)', () => {
     expect(output).toContain('<div data-line="7"');
   });
 
+  it('adds line anchors inside fenced code blocks and multiline paragraphs', () => {
+    const markdown = [
+      'First paragraph line',
+      'Second paragraph line',
+      '',
+      '```ts',
+      'const first = 1;',
+      '',
+      'const second = 2;',
+      '```',
+    ].join('\n');
+
+    const output = renderAndSanitizeMarkdown(markdown);
+
+    expect(output).toContain('<br data-line="2"');
+    expect(output).toContain('<span data-line="5"');
+    expect(output).toContain('<span data-line="6"');
+    expect(output).toContain('<span data-line="7"');
+  });
+
   it('preserves image dimensions width and height attributes in DOMPurify', () => {
     const htmlWithImg = '<p align="center"><img src="public/logo.png" width="96" height="96" alt="Logo" /></p>';
     const sanitized = sanitizeMarkdownHtml(htmlWithImg);
