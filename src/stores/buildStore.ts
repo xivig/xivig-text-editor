@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useUIStore } from './uiStore';
 import { useEditorStore } from './editorStore';
 import { useFileStore } from './fileStore';
+import { formatOutputTimestamp } from '../utils/ansi';
 
 export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'swift' | 'kotlin' | 'bat' | 'workspace' | 'general';
 
@@ -48,6 +49,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
   // Listen to IPC build data and status events if window.xivig is available
   if (typeof window !== 'undefined' && window.xivig) {
     window.xivig.onBuildStart?.((data) => {
+      const formattedTs = formatOutputTimestamp(data.timestamp);
       set({
         isRunning: true,
         exitCode: null,
@@ -56,32 +58,35 @@ export const useBuildStore = create<BuildState>((set, get) => {
         outputLines: [
           ...get().outputLines,
           {
-            id: `sys-${Date.now()}`,
+            id: `sys-${Date.now()}-1`,
             type: 'system',
             text: `[Running] ${data.command} ${data.args.join(' ')}`.trim(),
-            timestamp: data.timestamp,
+            timestamp: formattedTs,
           },
           {
-            id: `cwd-${Date.now()}`,
+            id: `cwd-${Date.now()}-2`,
             type: 'system',
             text: `[Working Directory] ${data.cwd}`,
-            timestamp: data.timestamp,
+            timestamp: formattedTs,
           },
         ],
       });
     });
 
     window.xivig.onBuildData?.((data) => {
+      const raw = (data.text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = raw.endsWith('\n') ? raw.slice(0, -1).split('\n') : raw.split('\n');
+      const now = formatOutputTimestamp(new Date());
+
+      const newLines: OutputLine[] = lines.map((lineText) => ({
+        id: `data-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        type: data.type === 'stderr' ? 'stderr' : 'stdout',
+        text: lineText,
+        timestamp: now,
+      }));
+
       set((state) => ({
-        outputLines: [
-          ...state.outputLines,
-          {
-            id: `data-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            type: data.type === 'stderr' ? 'stderr' : 'stdout',
-            text: data.text,
-            timestamp: new Date().toLocaleTimeString(),
-          },
-        ],
+        outputLines: [...state.outputLines, ...newLines],
       }));
     });
 
@@ -99,7 +104,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
             id: `done-${Date.now()}`,
             type: isSuccess ? 'success' : 'error',
             text: `[Finished in ${durSec}s with exit code ${data.exitCode}]`,
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: formatOutputTimestamp(new Date()),
           },
         ],
       }));
@@ -113,8 +118,14 @@ export const useBuildStore = create<BuildState>((set, get) => {
       {
         id: 'init-1',
         type: 'system',
-        text: 'Xivig Build System & Task Runner Initialized.\r\nPress Ctrl+B to run build, Ctrl+Shift+B to select build target.',
-        timestamp: new Date().toLocaleTimeString(),
+        text: 'Xivig Build System & Task Runner Initialized.',
+        timestamp: formatOutputTimestamp(new Date()),
+      },
+      {
+        id: 'init-2',
+        type: 'system',
+        text: 'Press Ctrl+B to run build, Ctrl+Shift+B to select build target.',
+        timestamp: formatOutputTimestamp(new Date()),
       },
     ],
     exitCode: null,

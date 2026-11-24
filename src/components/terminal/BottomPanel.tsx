@@ -25,6 +25,7 @@ import { useEditorStore } from '../../stores/editorStore';
 import { useDiagnosticsStore, DiagnosticItem } from '../../stores/diagnosticsStore';
 import { useBuildStore } from '../../stores/buildStore';
 import { FileIcon } from '../common/FileIcon';
+import { renderAnsi, formatOutputTimestamp } from '../../utils/ansi';
 
 export const BottomPanel: React.FC = () => {
   const isOpen = useUIStore((state) => state.isBottomPanelOpen);
@@ -52,7 +53,7 @@ export const BottomPanel: React.FC = () => {
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const outputEndRef = useRef<HTMLDivElement>(null);
+  const outputTerminalRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [collapsedFiles, setCollapsedFiles] = useState<Record<string, boolean>>({});
   const [problemFilter, setProblemFilter] = useState<'all' | 'errors' | 'warnings'>('all');
@@ -83,10 +84,10 @@ export const BottomPanel: React.FC = () => {
     return detectDefaultTarget();
   }, [activeTarget, activeDoc, detectDefaultTarget]);
 
-  // Auto-scroll output to bottom
+  // Auto-scroll output to bottom without horizontal displacement or parent shifting
   useEffect(() => {
-    if (activeTab === 'output') {
-      outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (activeTab === 'output' && outputTerminalRef.current) {
+      outputTerminalRef.current.scrollTop = outputTerminalRef.current.scrollHeight;
     }
   }, [outputLines, activeTab]);
 
@@ -544,6 +545,14 @@ export const BottomPanel: React.FC = () => {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
+                  onClick={() => clearOutput()}
+                  style={btnActionStyle}
+                  title="Clear Output Log"
+                >
+                  <Trash2 size={12} style={{ marginRight: '4px' }} />
+                  Clear
+                </button>
+                <button
                   onClick={() => openBuildSystemModal()}
                   style={btnActionStyle}
                   title="Select / Configure Target (Ctrl+Shift+B)"
@@ -572,34 +581,63 @@ export const BottomPanel: React.FC = () => {
             </div>
 
             {/* Console Log Lines */}
-            <div style={outputTerminalAreaStyle}>
-              {outputLines.map((line) => {
-                let color = 'var(--xivig-text)';
-                if (line.type === 'system') color = '#56b6c2';
-                else if (line.type === 'stderr' || line.type === 'error') color = '#ef6464';
-                else if (line.type === 'success') color = '#35b779';
+            <div ref={outputTerminalRef} style={outputTerminalAreaStyle}>
+              {outputLines.length === 0 ? (
+                <div style={emptyPanelContentStyle}>
+                  <p style={{ color: 'var(--xivig-text-dim)', fontSize: '12px' }}>
+                    Output log is empty. Press Run (Ctrl+B) to execute a task.
+                  </p>
+                </div>
+              ) : (
+                outputLines.map((line) => {
+                  let color = 'var(--xivig-text)';
+                  if (line.type === 'system') color = '#56b6c2';
+                  else if (line.type === 'stderr' || line.type === 'error') color = '#ef6464';
+                  else if (line.type === 'success') color = '#35b779';
 
-                return (
-                  <div key={line.id} style={{ display: 'flex', gap: '8px', lineHeight: 1.45 }}>
-                    <span style={{ color: 'var(--xivig-text-dim)', fontSize: '11px', userSelect: 'none', flexShrink: 0 }}>
-                      {line.timestamp}
-                    </span>
-                    <pre
+                  return (
+                    <div
+                      key={line.id}
                       style={{
-                        margin: 0,
-                        color,
-                        fontFamily: 'var(--xivig-font-mono)',
-                        fontSize: '12px',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        lineHeight: 1.5,
+                        minWidth: 0,
                       }}
                     >
-                      {line.text}
-                    </pre>
-                  </div>
-                );
-              })}
-              <div ref={outputEndRef} />
+                      <span
+                        style={{
+                          color: 'var(--xivig-text-dim)',
+                          fontSize: '11px',
+                          fontFamily: 'var(--xivig-font-mono)',
+                          userSelect: 'none',
+                          flexShrink: 0,
+                          width: '82px',
+                          minWidth: '82px',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        {formatOutputTimestamp(line.timestamp)}
+                      </span>
+                      <pre
+                        style={{
+                          margin: 0,
+                          flex: 1,
+                          color,
+                          fontFamily: 'var(--xivig-font-mono)',
+                          fontSize: '12px',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                          minWidth: 0,
+                        }}
+                      >
+                        {renderAnsi(line.text, color)}
+                      </pre>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}
@@ -719,6 +757,7 @@ const problemRowStyle: React.CSSProperties = {
 
 const outputContainerStyle: React.CSSProperties = {
   flex: 1,
+  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
@@ -732,6 +771,7 @@ const outputSubHeaderStyle: React.CSSProperties = {
   padding: '5px 12px',
   borderBottom: '1px solid var(--xivig-border-subtle)',
   backgroundColor: 'var(--xivig-statusbar)',
+  flexShrink: 0,
 };
 
 const btnActionStyle: React.CSSProperties = {
@@ -749,7 +789,9 @@ const btnActionStyle: React.CSSProperties = {
 
 const outputTerminalAreaStyle: React.CSSProperties = {
   flex: 1,
+  minHeight: 0,
   overflowY: 'auto',
+  overflowX: 'hidden',
   padding: '8px 12px',
   display: 'flex',
   flexDirection: 'column',
