@@ -52,6 +52,7 @@ import { expandEmmetCommand, createEmmetCompletionSource, detectEmmetSyntax } fr
 import { htmlLinkedFilesTooltip } from './htmlLinkedFiles';
 import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
+import { createPathCompletionSource } from '../../extensions/builtin/productivity';
 import {
   createLspSyncExtension,
   createLspCompletionSource,
@@ -221,6 +222,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         autocompletion({
           override: [
             createLspCompletionSource(activeDoc.path || '', docLanguage),
+            createPathCompletionSource(),
             createEmmetCompletionSource(() => detectEmmetSyntax(activeDoc.name || activeDoc.language)),
             createLanguageCompletionSource(() => activeDoc.name || activeDoc.language),
             getCustomSnippetSource(activeDoc.language || activeDoc.name),

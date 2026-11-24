@@ -204,18 +204,165 @@ Productivity booster for Go developers with quick snippet expansions and test ge
   // --- PRODUCTIVITY & FORMATTERS ---
   {
     id: 'xivig-tool-prettier',
-    name: 'Prettier Formatter',
+    name: 'Prettier - Code Formatter',
     publisher: 'Prettier',
-    version: '3.2.0',
+    version: '3.3.0',
     category: 'Formatters',
     description: 'Opinionated code formatter for JavaScript, TypeScript, CSS, HTML, Markdown, and JSON.',
     iconBg: '#ea5e5e',
     iconSymbol: '✨',
-    downloads: '640k',
+    downloads: '14.2M',
     rating: 5.0,
-    tags: ['formatter', 'prettier', 'javascript', 'css'],
-    readme: `# Prettier Formatter
-Formats code cleanly and consistently according to standard community style rules.`,
+    tags: ['formatter', 'prettier', 'javascript', 'typescript', 'css', 'html', 'json'],
+    readme: `# Prettier - Code Formatter for Xivig
+Opinionated code formatter that enforces consistent style across all projects.
+- Formats JavaScript, TypeScript, JSX, TSX, HTML, CSS, SCSS, LESS, JSON, and Markdown.
+- Configurable print width, tabs vs spaces, semicolons, single quotes, and trailing commas.`,
+  },
+  {
+    id: 'xivig-tool-eslint',
+    name: 'ESLint',
+    publisher: 'Dirk Baeumer',
+    version: '2.4.4',
+    category: 'Productivity',
+    description: 'Integrates ESLint JavaScript/TypeScript static analysis with real-time diagnostic squiggles and quick fixes.',
+    iconBg: '#4b32c3',
+    iconSymbol: '🛡️',
+    downloads: '12.8M',
+    rating: 4.9,
+    tags: ['linter', 'eslint', 'javascript', 'typescript', 'code-quality'],
+    readme: `# ESLint for Xivig
+Integrates ESLint rules into the CodeMirror editor. Flags unused variables, debugger statements, non-strict equalities, and extra semicolons with instant auto-fix actions.`,
+  },
+  {
+    id: 'xivig-tool-editorconfig',
+    name: 'EditorConfig',
+    publisher: 'EditorConfig',
+    version: '1.2.0',
+    category: 'Productivity',
+    description: 'Maintains consistent coding styles across teams and editors by parsing .editorconfig files.',
+    iconBg: '#c97800',
+    iconSymbol: '⚙️',
+    downloads: '5.6M',
+    rating: 4.8,
+    tags: ['editorconfig', 'indent', 'whitespace', 'formatting'],
+    readme: `# EditorConfig for Xivig
+Automatically detects and enforces \`.editorconfig\` properties:
+- \`indent_style\`: space / tab
+- \`indent_size\`: 2 / 4 / 8
+- \`end_of_line\`: lf / crlf
+- \`trim_trailing_whitespace\`: true / false
+- \`insert_final_newline\`: true / false`,
+  },
+  {
+    id: 'xivig-tool-error-lens',
+    name: 'Error Lens',
+    publisher: 'Alexander',
+    version: '3.6.0',
+    category: 'Productivity',
+    description: 'Supercharge language diagnostics with inline error callout badges rendered right at the end of faulty lines.',
+    iconBg: '#ea5455',
+    iconSymbol: '🔍',
+    downloads: '4.2M',
+    rating: 5.0,
+    tags: ['diagnostics', 'error-lens', 'inline-errors', 'linter'],
+    readme: `# Error Lens for Xivig
+Displays diagnostic messages inline directly beside the line of code. Color-coded error red, warning amber, and info cyan callouts make debugging instantaneous.`,
+  },
+  {
+    id: 'xivig-tool-spellchecker',
+    name: 'Code Spell Checker',
+    publisher: 'Street Side Software',
+    version: '4.0.0',
+    category: 'Productivity',
+    description: 'A basic spelling checker that catches typos in camelCase, snake_case, strings, and comments.',
+    iconBg: '#15803d',
+    iconSymbol: '🔤',
+    downloads: '8.9M',
+    rating: 4.9,
+    tags: ['spell-check', 'typos', 'dictionary', 'comments'],
+    readme: `# Code Spell Checker for Xivig
+Detects spelling errors in source code across variables, functions, strings, and comments without getting in your way. Includes instant "Add to dictionary" actions.`,
+  },
+  {
+    id: 'xivig-tool-path-intellisense',
+    name: 'Path Intellisense',
+    publisher: 'Christian Kohler',
+    version: '2.9.0',
+    category: 'Productivity',
+    description: 'Visual Studio Code autocompletion plugin that auto-completes filenames and directories.',
+    iconBg: '#0284c7',
+    iconSymbol: '📁',
+    downloads: '7.1M',
+    rating: 4.8,
+    tags: ['path', 'autocomplete', 'imports', 'intellisense'],
+    readme: `# Path Intellisense for Xivig
+Auto-completes filenames and directory paths in import statements, require calls, and HTML src/href attributes.`,
+  },
+  {
+    id: 'xivig-tool-auto-rename-tag',
+    name: 'Auto Rename Tag',
+    publisher: 'Jun Han',
+    version: '1.4.0',
+    category: 'Productivity',
+    description: 'Auto rename paired HTML/XML tag simultaneously when changing opening or closing tag.',
+    iconBg: '#f97316',
+    iconSymbol: '🏷️',
+    downloads: '9.3M',
+    rating: 4.8,
+    tags: ['html', 'xml', 'tags', 'auto-rename'],
+    readme: `# Auto Rename Tag for Xivig
+When you rename an opening HTML/XML tag, the matching closing tag automatically and synchronously renames itself!`,
+  },
+  {
+    id: 'xivig-tool-auto-close-tag',
+    name: 'Auto Close Tag',
+    publisher: 'Jun Han',
+    version: '0.5.15',
+    category: 'Productivity',
+    description: 'Automatically add HTML/XML close tag, same as Visual Studio IDE or Sublime Text does.',
+    iconBg: '#10b981',
+    iconSymbol: '🔒',
+    downloads: '9.8M',
+    rating: 4.9,
+    tags: ['html', 'xml', 'tags', 'auto-close'],
+    readme: `# Auto Close Tag for Xivig
+Automatically inserts matching closing tags when you type \`>\` after opening tags in HTML, XML, and JSX files.`,
+  },
+  {
+    id: 'xivig-tool-better-comments',
+    name: 'Better Comments',
+    publisher: 'Aaron Bond',
+    version: '3.0.2',
+    category: 'Productivity',
+    description: 'Create more human-friendly comments in your code by categorizing annotations into alerts, queries, todos, and highlights.',
+    iconBg: '#8b5cf6',
+    iconSymbol: '💬',
+    downloads: '5.4M',
+    rating: 4.9,
+    tags: ['comments', 'better-comments', 'highlights', 'todo'],
+    readme: `# Better Comments for Xivig
+Categorize your comments with syntax-colored annotations:
+- \`// ! Alert message\` (Red alert)
+- \`// ? Query or question\` (Cyan query)
+- \`// * Highlighted point\` (Green highlight)
+- \`// TODO Pending item\` (Orange todo)
+- \`// // Deprecated / strikethrough\` (Muted strikethrough)`,
+  },
+  {
+    id: 'xivig-tool-todo-tree',
+    name: 'Todo Tree',
+    publisher: 'Gruntfuggly',
+    version: '0.22.0',
+    category: 'Productivity',
+    description: 'Quickly search your workspace for comment tags like TODO and FIXME, and see them in a tree view.',
+    iconBg: '#f59e0b',
+    iconSymbol: '🌲',
+    downloads: '4.8M',
+    rating: 4.9,
+    tags: ['todo', 'todo-tree', 'fixme', 'bug', 'tasks'],
+    readme: `# Todo Tree for Xivig
+Scans your document and workspace for \`TODO\`, \`FIXME\`, \`BUG\`, \`HACK\`, and \`NOTE\` tags with one-click line jumps.`,
   },
   {
     id: 'xivig-tool-todo',
