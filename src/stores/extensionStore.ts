@@ -312,6 +312,86 @@ Rapidly scaffold modern, responsive web layouts and components using authentic B
 - Popular icons: \`fa-house\`, \`fa-user\`, \`fa-search\`, \`fa-gear\`, \`fa-envelope\`, \`fa-bell\`, \`fa-check\`, \`fa-xmark\`, \`fa-trash\`, \`fa-bars\`, \`fa-heart\`, \`fa-star\`, \`fa-github\`, \`fa-twitter\`, etc.
 `,
   },
+  {
+    id: 'xivig-tool-laravel',
+    name: 'Laravel All in One',
+    publisher: 'Amir Alizadeh',
+    version: '1.5.0',
+    category: 'Productivity',
+    description: 'Complete Laravel and Blade suite: directives, routing, Eloquent relations, migrations, form requests, and artisan helpers.',
+    iconBg: '#f55247',
+    iconSymbol: '🔴',
+    downloads: '1.1M',
+    rating: 4.9,
+    tags: ['laravel', 'blade', 'php', 'eloquent', 'mvc', 'snippets'],
+    readme: `# Laravel All in One for Xivig Editor
+
+Supercharge your modern Laravel 11/10 workflow with rapid Blade directives, Eloquent relations, routing, and migration blueprints.
+
+## 🚀 Key Snippet Triggers
+
+### Blade Directives
+- \`@extends\`: \`@extends('layouts.app')\`
+- \`@section\`: Named section block with \`@endsection\`
+- \`@yield\`: Yield placeholder in master layouts
+- \`@include\`: Include partial views with variables
+- \`@if\` / \`@ifelse\` / \`@elseif\`: Conditionals
+- \`@foreach\` / \`@forelse\`: Loops with empty state
+- \`@csrf\` & \`@method\`: Form security and method spoofing (PUT, DELETE)
+- \`@error\`: Field validation error alert
+- \`@vite\` & \`@livewire\`: Asset bundler and component tags
+- \`@props\`: Component property declaration
+
+### Laravel Backend
+- \`route-get\` / \`route-post\` / \`route-resource\`: Route definitions
+- \`eloquent-has-many\` / \`eloquent-belongs-to\`: Model relationships
+- \`migration-create\` / \`migration-table\`: Database schema blueprints
+- \`col-foreign-id\` / \`col-string\`: Schema column definitions
+- \`response-json\`: JSON responses
+- \`dd\` / \`dump\`: Instant debugging helpers
+`,
+  },
+  {
+    id: 'xivig-tool-php',
+    name: 'PHP Intelligence & PhpStorm Snippets',
+    publisher: 'JetBrains / Intelephense',
+    version: '2.0.0',
+    category: 'Languages',
+    description: 'Authentic PhpStorm live templates (pubf, prof, fore, eco), PHP 8.x core function completions, signatures, and hover documentation.',
+    iconBg: '#777bb4',
+    iconSymbol: '🐘',
+    downloads: '2.4M',
+    rating: 5.0,
+    tags: ['php', 'phpstorm', 'intelephense', 'templates', 'intelligence', 'hover'],
+    readme: `# PHP Intelligence & PhpStorm Snippets for Xivig
+
+Brings the beloved muscle-memory of PhpStorm live templates and comprehensive PHP 8.x language intelligence into Xivig.
+
+## ⚡ PhpStorm Live Templates
+- \`pubf\`: \`public function name(): void\`
+- \`prof\`: \`protected function name(): void\`
+- \`prif\`: \`private function name(): void\`
+- \`pubsf\`: \`public static function name(): void\`
+- \`con\`: \`public function __construct()\`
+- \`cl\`: \`class ClassName\`
+- \`intf\`: \`interface InterfaceName\`
+- \`trait\`: \`trait TraitName\`
+- \`enum\`: \`enum EnumName: string\`
+- \`fore\`: \`foreach ($iterable as $item)\`
+- \`forek\`: \`foreach ($iterable as $key => $value)\`
+- \`eco\` / \`ech\`: \`echo\` variable or string literal
+- \`try\`: \`try { ... } catch (\\Throwable $e) { ... }\`
+- \`thr\`: \`throw new Exception('message');\`
+- \`getter\` & \`setter\`: Fluent getters and setters
+- \`match\`: PHP 8 match expression
+- \`strict\`: \`declare(strict_types=1);\`
+
+## 🧠 PHP Intelligence & Hover Docs
+- Built-in signatures and return type hints for 40+ standard array, string, JSON, and regex functions.
+- Autocompletion for PHP superglobals (\`$_GET\`, \`$_POST\`, \`$_SERVER\`, \`$_SESSION\`).
+- Instant hover documentation and parameter hints when typing function arguments.
+`,
+  },
 ];
 
 interface ExtensionState {
@@ -329,8 +409,8 @@ interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>((set, get) => ({
   marketplace: MARKETPLACE_EXTENSIONS,
-  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5'],
-  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5'],
+  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php'],
+  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php'],
   selectedExtension: null,
 
   selectExtension: (pkg) => set({ selectedExtension: pkg }),

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://xivig.dev/schemas/extension-v1.json",
+  "id": "xivig-tool-laravel",
+  "name": "Laravel All in One",
+  "displayName": "Laravel All in One",
+  "publisher": "xivig",
+  "version": "1.0.0",
+  "description": "Comprehensive Laravel 11/10 and Blade snippet suite: directives, routing, Eloquent relations, migrations, controllers, and helpers.",
+  "categories": [
+    "Productivity",
+    "Languages"
+  ],
+  "engines": {
+    "xivig": ">=1.3.0"
+  },
+  "activationEvents": [
+    "onEditorCreated",
+    "onLanguage:php",
+    "onLanguage:blade",
+    "onLanguage:html"
+  ],
+  "permissions": [],
+  "contributes": {
+    "settings": [
+      {
+        "id": "laravel.enabled",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Laravel and Blade snippets autocompletion"
+      },
+      {
+        "id": "laravel.enableBlade",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Blade template directives (@if, @foreach, @extends, @vite, @livewire)"
+      },
+      {
+        "id": "laravel.enableRouting",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Laravel routing snippets (Route::get, Route::resource, Route::group)"
+      },
+      {
+        "id": "laravel.enableEloquent",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Eloquent model, relationships, and query snippets (hasMany, belongsTo)"
+      },
+      {
+        "id": "laravel.enableMigrations",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Schema and migration column blueprints (Schema::create, $table->id)"
+      }
+    ]
+  }
+}

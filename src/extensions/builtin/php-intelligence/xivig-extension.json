@@ -1,0 +1,50 @@
+{
+  "$schema": "https://xivig.dev/schemas/extension-v1.json",
+  "id": "xivig-tool-php",
+  "name": "PHP Intelligence & PhpStorm Snippets",
+  "displayName": "PHP Intelligence & PhpStorm Snippets",
+  "publisher": "xivig",
+  "version": "1.0.0",
+  "description": "Comprehensive PHP 8.x intelligence with PhpStorm live templates (pubf, fore, eco), core function completions, signatures, and hover documentation.",
+  "categories": [
+    "Productivity",
+    "Languages"
+  ],
+  "engines": {
+    "xivig": ">=1.3.0"
+  },
+  "activationEvents": [
+    "onEditorCreated",
+    "onLanguage:php",
+    "onLanguage:blade"
+  ],
+  "permissions": [],
+  "contributes": {
+    "settings": [
+      {
+        "id": "php.enabled",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable PHP intelligence, completions, and snippets"
+      },
+      {
+        "id": "php.enablePhpStormTemplates",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable authentic PhpStorm live templates (pubf, prof, prif, fore, eco, cl)"
+      },
+      {
+        "id": "php.enableCoreCompletions",
+        "type": "boolean",
+        "default": true,
+        "description": "Enable core PHP 8.x functions, classes, superglobals, and constants"
+      },
+      {
+        "id": "php.enableHoverDocs",
+        "type": "boolean",
+        "default": true,
+        "description": "Show rich documentation and parameter hints when hovering over PHP functions"
+      }
+    ]
+  }
+}

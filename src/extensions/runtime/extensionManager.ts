@@ -269,6 +269,22 @@ export class ExtensionManager {
         bootstrap.updateSettings({ [field]: value });
       }
     }
+    // If setting belongs to laravel, update module settings directly
+    if (key.startsWith('laravel.')) {
+      const field = key.replace('laravel.', '');
+      const laravel = BUILTIN_EXTENSIONS['xivig-tool-laravel'] as any;
+      if (laravel && typeof laravel.updateSettings === 'function') {
+        laravel.updateSettings({ [field]: value });
+      }
+    }
+    // If setting belongs to php intelligence, update module settings directly
+    if (key.startsWith('php.')) {
+      const field = key.replace('php.', '');
+      const phpExt = BUILTIN_EXTENSIONS['xivig-tool-php'] as any;
+      if (phpExt && typeof phpExt.updateSettings === 'function') {
+        phpExt.updateSettings({ [field]: value });
+      }
+    }
     this.notifyListeners();
   }
 

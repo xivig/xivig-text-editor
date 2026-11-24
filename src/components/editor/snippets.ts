@@ -244,7 +244,7 @@ export function getCustomSnippetSource(languageName: string) {
   const lang = languageName.toLowerCase();
 
   return (context: CompletionContext): CompletionResult | null => {
-    const word = context.matchBefore(/[\w$-]*/);
+    const word = context.matchBefore(/[@\w$-]*/);
     if (!word || (word.from === word.to && !context.explicit)) return null;
 
     let options: Completion[] = [];
@@ -282,7 +282,7 @@ export function getCustomSnippetSource(languageName: string) {
     return {
       from: word.from,
       options,
-      validFor: /^[\w$-]*$/,
+      validFor: /^[@\w$-]*$/,
     };
   };
 }

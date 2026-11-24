@@ -25,6 +25,8 @@ export interface UserSettings {
   bootstrap5Enabled?: boolean;
   bootstrap5Components?: boolean;
   bootstrap5FontAwesome?: boolean;
+  laravelEnabled?: boolean;
+  phpIntelligenceEnabled?: boolean;
   terminalFontSize?: number;
   trimTrailingWhitespace?: boolean;
   insertFinalNewline?: boolean;
@@ -64,6 +66,8 @@ export const defaultSettings: UserSettings = {
   bootstrap5Enabled: true,
   bootstrap5Components: true,
   bootstrap5FontAwesome: true,
+  laravelEnabled: true,
+  phpIntelligenceEnabled: true,
   terminalFontSize: 13,
   trimTrailingWhitespace: false,
   insertFinalNewline: true,
@@ -108,6 +112,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
     if (partial.bootstrap5FontAwesome !== undefined) {
       extensionManager.setSetting('bootstrap5.enableFontAwesome', partial.bootstrap5FontAwesome);
+    }
+    if (partial.laravelEnabled !== undefined) {
+      extensionManager.setSetting('laravel.enabled', partial.laravelEnabled);
+    }
+    if (partial.phpIntelligenceEnabled !== undefined) {
+      extensionManager.setSetting('php.enabled', partial.phpIntelligenceEnabled);
     }
 
     if (typeof window !== 'undefined' && window.xivig?.setSetting) {
