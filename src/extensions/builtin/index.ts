@@ -144,6 +144,13 @@ import {
   ayuThemeExtensionModule,
   nightOwlExtensionModule,
 } from './themes/index';
+import {
+  testExplorerUiExtensionModule,
+  jestRunnerExtensionModule,
+  playwrightExtensionModule,
+  cypressExtensionModule,
+  coverageGuttersExtensionModule,
+} from './testing/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -398,6 +405,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-ayu': ayuThemeExtensionModule,
   'xivig.night-owl': nightOwlExtensionModule,
   'xivig-tool-night-owl': nightOwlExtensionModule,
+
+  // Testing Suite
+  'xivig.test-explorer-ui': testExplorerUiExtensionModule,
+  'xivig-tool-test-explorer-ui': testExplorerUiExtensionModule,
+  'xivig.jest-runner': jestRunnerExtensionModule,
+  'xivig-tool-jest-runner': jestRunnerExtensionModule,
+  'xivig.playwright': playwrightExtensionModule,
+  'xivig-tool-playwright': playwrightExtensionModule,
+  'xivig.cypress': cypressExtensionModule,
+  'xivig-tool-cypress': cypressExtensionModule,
+  'xivig.coverage-gutters': coverageGuttersExtensionModule,
+  'xivig-tool-coverage-gutters': coverageGuttersExtensionModule,
 };
 
 export {
@@ -509,8 +528,14 @@ export {
   githubThemeExtensionModule,
   ayuThemeExtensionModule,
   nightOwlExtensionModule,
+  testExplorerUiExtensionModule,
+  jestRunnerExtensionModule,
+  playwrightExtensionModule,
+  cypressExtensionModule,
+  coverageGuttersExtensionModule,
 };
 
 export * from './markdown/index';
 export * from './remote/index';
 export * from './themes/index';
+export * from './testing/index';

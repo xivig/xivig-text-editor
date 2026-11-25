@@ -2247,6 +2247,96 @@ Tuned for nighttime coding:
 - High contrast accessible tokens designed by Sarah Drasner
 - Calming deep blue backdrop with glowing highlights.`,
   },
+  {
+    id: 'xivig-tool-test-explorer-ui',
+    name: 'Test Explorer UI',
+    publisher: 'Holger Benl',
+    version: '2.21.1',
+    category: 'Productivity',
+    description: 'Unified test explorer UI pane for running, debugging, and viewing tests in Xivig.',
+    iconBg: '#1e293b',
+    iconSymbol: '🧪',
+    downloads: '11.5M',
+    rating: 4.8,
+    tags: ['test', 'testing', 'explorer', 'runner', 'suites'],
+    readme: `# Test Explorer UI for Xivig
+Unified test management interface:
+- Tree view of all test suites, describes, and individual tests
+- Real-time pass/fail status updates and duration badges
+- Run or debug tests with single-click actions.`,
+  },
+  {
+    id: 'xivig-tool-jest-runner',
+    name: 'Jest Runner',
+    publisher: 'firsttris',
+    version: '0.4.70',
+    category: 'Productivity',
+    description: 'Run and debug individual Jest test suites or single test blocks directly from the editor.',
+    iconBg: '#99425b',
+    iconSymbol: '🃏',
+    downloads: '8.9M',
+    rating: 4.8,
+    tags: ['jest', 'testing', 'runner', 'coverage', 'debug'],
+    readme: `# Jest Runner for Xivig
+Fast and targeted Jest test execution:
+- Builds isolated, argument-safe Jest commands
+- Regex pattern filters for targeting single test cases
+- Instant stdout parser for summary metrics.`,
+  },
+  {
+    id: 'xivig-tool-playwright',
+    name: 'Playwright Test for Xivig',
+    publisher: 'Microsoft',
+    version: '1.1.50',
+    category: 'Productivity',
+    description: 'Run and debug end-to-end tests with Playwright, view traces, and inspect fixtures.',
+    iconBg: '#2e7d32',
+    iconSymbol: '🎭',
+    downloads: '7.8M',
+    rating: 4.9,
+    tags: ['playwright', 'e2e', 'testing', 'browser', 'automation'],
+    readme: `# Playwright Test for Xivig
+End-to-end testing with Playwright:
+- Parses Playwright test files and detected fixtures (page, request)
+- Configurable browser targets (Chromium, Firefox, WebKit)
+- Headed, debug, and trace recording modes.`,
+  },
+  {
+    id: 'xivig-tool-cypress',
+    name: 'Cypress Support',
+    publisher: 'Shelex',
+    version: '2.5.0',
+    category: 'Productivity',
+    description: 'Cypress test runner integration, cy command inspector, and spec parser.',
+    iconBg: '#17202c',
+    iconSymbol: '🌲',
+    downloads: '5.6M',
+    rating: 4.8,
+    tags: ['cypress', 'e2e', 'component-testing', 'specs'],
+    readme: `# Cypress Support for Xivig
+Cypress testing companion:
+- Inspects chained cy commands inside test blocks
+- Generates headless and browser-specific run commands
+- Component and E2E testing workflows.`,
+  },
+  {
+    id: 'xivig-tool-coverage-gutters',
+    name: 'Coverage Gutters',
+    publisher: 'ryanluker',
+    version: '2.11.1',
+    category: 'Productivity',
+    description: 'Display test coverage status in editor gutters from LCOV reports.',
+    iconBg: '#15803d',
+    iconSymbol: '📊',
+    downloads: '4.9M',
+    rating: 4.8,
+    tags: ['coverage', 'lcov', 'gutters', 'quality', 'testing'],
+    readme: `# Coverage Gutters for Xivig
+Inline visual test coverage:
+- Parses industry-standard LCOV coverage files
+- Marks covered (green) and uncovered (red) lines
+- Computes overall file coverage percentages.`,
+  },
 ];
 
 interface ExtensionState {
