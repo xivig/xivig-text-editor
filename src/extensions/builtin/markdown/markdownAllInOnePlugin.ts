@@ -106,7 +106,7 @@ export function formatMarkdownTable(tableMarkdown: string): string {
 
   // Parse alignments from delimiter row (row index 1)
   const delimiterCells = rows[1] || [];
-  const alignments: ('left' | 'center' | 'right')[] = [];
+  const alignments: ('left' | 'left-colon' | 'center' | 'right')[] = [];
   for (let c = 0; c < colCount; c++) {
     const cell = delimiterCells[c] || '---';
     const starts = cell.startsWith(':');
@@ -115,6 +115,8 @@ export function formatMarkdownTable(tableMarkdown: string): string {
       alignments.push('center');
     } else if (ends) {
       alignments.push('right');
+    } else if (starts) {
+      alignments.push('left-colon');
     } else {
       alignments.push('left');
     }
@@ -132,6 +134,8 @@ export function formatMarkdownTable(tableMarkdown: string): string {
           return ':' + '-'.repeat(Math.max(1, w - 2)) + ':';
         } else if (align === 'right') {
           return '-'.repeat(Math.max(2, w - 1)) + ':';
+        } else if (align === 'left-colon') {
+          return ':' + '-'.repeat(Math.max(2, w - 1));
         } else {
           return '-'.repeat(w);
         }

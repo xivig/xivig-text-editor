@@ -1982,7 +1982,7 @@ Scientific and technical markdown documentation:
     name: 'markdownlint',
     publisher: 'David Anson',
     version: '0.54.0',
-    category: 'Linters',
+    category: 'Formatters',
     description: 'Markdown linting and style checking for standards compliance and consistent documentation.',
     iconBg: '#b91c1c',
     iconSymbol: '🛡️',
