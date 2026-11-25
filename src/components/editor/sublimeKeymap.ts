@@ -640,6 +640,11 @@ export const sublimeKeybindings: readonly KeyBinding[] = [
 
   // --- Line & Text Editing ---
   { key: 'Mod-Shift-d', run: duplicateLineOrSelection, preventDefault: true },
+  { key: 'Mod-Shift-D', run: duplicateLineOrSelection, preventDefault: true },
+  { key: 'Ctrl-Shift-d', run: duplicateLineOrSelection, preventDefault: true },
+  { key: 'Ctrl-Shift-D', run: duplicateLineOrSelection, preventDefault: true },
+  { key: 'Shift-Alt-ArrowDown', run: duplicateLineOrSelection, preventDefault: true },
+  { key: 'Shift-Alt-Down', run: duplicateLineOrSelection, preventDefault: true },
   { key: 'Alt-ArrowUp', run: moveLineUp, preventDefault: true },
   { key: 'Alt-ArrowDown', run: moveLineDown, preventDefault: true },
   { key: 'Mod-Shift-ArrowUp', run: moveLineUp, preventDefault: true },

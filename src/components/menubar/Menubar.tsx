@@ -20,6 +20,7 @@ import { prepareContentForSave } from '../../utils/saveUtils';
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
   sortLines,
+  duplicateLineOrSelection,
   removeDuplicateLinesCommand,
   reverseLinesCommand,
   trimTrailingWhitespaceCommand,
@@ -43,7 +44,7 @@ import {
   renameSymbol,
 } from '../editor/codeIntelligence';
 import { navigationHistory } from '../../utils/navigationHistory';
-import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket } from '@codemirror/commands';
+import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket, moveLineDown, moveLineUp } from '@codemirror/commands';
 
 export interface MenuItem {
   label: React.ReactNode;
@@ -569,9 +570,39 @@ export const Menubar: React.FC = () => {
         },
       },
       { divider: true, label: '' },
-      { label: 'Duplicate Line Down', shortcut: 'Shift+Alt+Down' },
-      { label: 'Move Line Down', shortcut: 'Alt+Down' },
-      { label: 'Move Line Up', shortcut: 'Alt+Up' },
+      {
+        label: 'Duplicate Line Down',
+        shortcut: 'Ctrl+Shift+D',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) {
+            duplicateLineOrSelection(view);
+            view.focus();
+          }
+        },
+      },
+      {
+        label: 'Move Line Down',
+        shortcut: 'Alt+Down',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) {
+            moveLineDown(view);
+            view.focus();
+          }
+        },
+      },
+      {
+        label: 'Move Line Up',
+        shortcut: 'Alt+Up',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view) {
+            moveLineUp(view);
+            view.focus();
+          }
+        },
+      },
       { divider: true, label: '' },
       {
         label: 'Toggle Line Comment',
