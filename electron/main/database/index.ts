@@ -297,6 +297,12 @@ export function getRecentWorkspaces(limit = 10): RecentItem[] {
   return inMemoryStore.workspaces.slice(0, limit);
 }
 
+export function clearRecentHistory(): void {
+  inMemoryStore.recentFiles = [];
+  inMemoryStore.workspaces = [];
+  schedulePersist();
+}
+
 export function setSetting(key: string, value: string): boolean {
   if (
     typeof key !== 'string' ||

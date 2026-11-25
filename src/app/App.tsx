@@ -132,7 +132,8 @@ export const App: React.FC = () => {
   const chordTimeoutRef = React.useRef<any>(null);
 
   const [isFormattingModalOpen, setIsFormattingModalOpen] = useState(false);
-  const [isProjectSwitcherOpen, setIsProjectSwitcherOpen] = useState(false);
+  const isProjectSwitcherOpen = useUIStore((state) => state.isProjectSwitcherOpen);
+  const closeProjectSwitcherModal = useUIStore((state) => state.closeProjectSwitcherModal);
 
   // Restore Session and Settings on Mount
   useEffect(() => {
@@ -744,7 +745,7 @@ export const App: React.FC = () => {
         useUIStore.getState().openDiffModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        setIsProjectSwitcherOpen(true);
+        useUIStore.getState().openProjectSwitcherModal();
       } else if (isCtrlOrMeta && e.shiftKey && (e.key.toLowerCase() === 'b' || e.key.toLowerCase() === 't')) {
         e.preventDefault();
         useTaskStore.getState().openModal();
@@ -948,7 +949,7 @@ export const App: React.FC = () => {
       <UpdateCheckModal />
       <LanguageServersModal />
       <FormattingSettingsModal isOpen={isFormattingModalOpen} onClose={() => setIsFormattingModalOpen(false)} />
-      <ProjectSwitcherModal isOpen={isProjectSwitcherOpen} onClose={() => setIsProjectSwitcherOpen(false)} />
+      <ProjectSwitcherModal isOpen={isProjectSwitcherOpen} onClose={closeProjectSwitcherModal} />
       <TasksModal />
       <DebugToolbar />
       <ThemeEditorModal isOpen={isThemeEditorOpen} onClose={closeThemeEditor} />

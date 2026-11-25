@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -44,15 +45,17 @@ import {
 import { navigationHistory } from '../../utils/navigationHistory';
 import { transposeChars, selectParentSyntax, cursorMatchingBracket, selectMatchingBracket } from '@codemirror/commands';
 
-interface MenuItem {
+export interface MenuItem {
   label: React.ReactNode;
   shortcut?: string;
   action?: () => void;
   divider?: boolean;
+  children?: MenuItem[];
 }
 
 export const Menubar: React.FC = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [activeSubmenuIdx, setActiveSubmenuIdx] = useState<number | null>(null);
   const menubarRef = useRef<HTMLDivElement>(null);
 
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -71,6 +74,13 @@ export const Menubar: React.FC = () => {
   const setActiveSidebarView = useFileStore((state) => state.setActiveSidebarView);
   const recentFiles = useFileStore((state) => state.recentFiles);
   const recentWorkspaces = useFileStore((state) => state.recentWorkspaces);
+  const openWorkspaceFromFile = useFileStore((state) => state.openWorkspaceFromFile);
+  const addWorkspaceFolder = useFileStore((state) => state.addWorkspaceFolder);
+  const saveWorkspaceAs = useFileStore((state) => state.saveWorkspaceAs);
+  const duplicateWorkspace = useFileStore((state) => state.duplicateWorkspace);
+  const clearRecentHistory = useFileStore((state) => state.clearRecentHistory);
+  const currentFolderName = useFileStore((state) => state.currentFolderName);
+  const workspaceFolders = useFileStore((state) => state.workspaceFolders);
   const setSplitLayout = useEditorStore((state) => state.setSplitLayout);
 
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
@@ -171,15 +181,103 @@ export const Menubar: React.FC = () => {
     }
   };
 
-  const recentMenuItems: MenuItem[] = [
-    ...recentFiles.slice(0, 5).map((f) => ({
-      label: `📄 ${f.name}`,
-      action: () => handleOpenRecentFile(f.path, f.name),
-    })),
-    ...recentWorkspaces.slice(0, 3).map((w) => ({
-      label: `📁 ${w.name}`,
-      action: () => handleOpenRecentWorkspace(w.path),
-    })),
+  const handleOpenWorkspaceFromFile = async () => {
+    if (window.xivig?.openWorkspaceFileDialog) {
+      const res = await window.xivig.openWorkspaceFileDialog();
+      if (!res.canceled && res.filePath) {
+        await openWorkspaceFromFile(res.filePath, res.content);
+      }
+    } else if (window.xivig?.openFileDialog) {
+      const res = await window.xivig.openFileDialog();
+      if (!res.canceled && res.filePath) {
+        await openWorkspaceFromFile(res.filePath, res.content);
+      }
+    }
+  };
+
+  const handleAddFolderToWorkspace = async () => {
+    if (window.xivig?.openFolderDialog) {
+      const res = await window.xivig.openFolderDialog();
+      if (!res.canceled && res.folderPath) {
+        await addWorkspaceFolder(res.folderPath);
+      }
+    }
+  };
+
+  const handleSaveWorkspaceAs = async () => {
+    const defaultName = `${currentFolderName || 'workspace'}.code-workspace`;
+    if (window.xivig?.saveWorkspaceFileDialog) {
+      const res = await window.xivig.saveWorkspaceFileDialog(defaultName);
+      if (!res.canceled && res.filePath) {
+        await saveWorkspaceAs(res.filePath);
+      }
+    } else if (window.xivig?.saveFileDialog) {
+      const res = await window.xivig.saveFileDialog(defaultName);
+      if (!res.canceled && res.filePath) {
+        await saveWorkspaceAs(res.filePath);
+      }
+    }
+  };
+
+  const handleDuplicateWorkspace = () => {
+    duplicateWorkspace();
+    if (window.xivig?.openNewWindow) {
+      window.xivig.openNewWindow();
+    }
+  };
+
+  const recentSubmenuItems: MenuItem[] = [
+    ...(recentWorkspaces.length > 0
+      ? [
+          ...recentWorkspaces.slice(0, 10).map((w) => ({
+            label: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ opacity: 0.85 }}>{w.path.endsWith('.code-workspace') || w.path.endsWith('.xivig-workspace') || w.name.includes('(Workspace)') ? '📂' : '📁'}</span>
+                <span>{w.name}</span>
+              </span>
+            ),
+            action: () => {
+              if (w.path.endsWith('.code-workspace') || w.path.endsWith('.xivig-workspace') || w.name.includes('(Workspace)')) {
+                openWorkspaceFromFile(w.path);
+              } else {
+                handleOpenRecentWorkspace(w.path);
+              }
+            },
+          })),
+        ]
+      : []),
+    ...(recentFiles.length > 0
+      ? [
+          ...(recentWorkspaces.length > 0 ? [{ divider: true, label: '' }] : []),
+          ...recentFiles.slice(0, 10).map((f) => ({
+            label: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ opacity: 0.85 }}>📄</span>
+                <span>{f.name}</span>
+              </span>
+            ),
+            action: () => handleOpenRecentFile(f.path, f.name),
+          })),
+        ]
+      : []),
+    ...(recentWorkspaces.length === 0 && recentFiles.length === 0
+      ? [
+          {
+            label: <span style={{ color: 'var(--xivig-text-dim)', fontStyle: 'italic' }}>No Recent Items</span>,
+          },
+        ]
+      : [
+          { divider: true, label: '' },
+          {
+            label: 'Clear Recently Opened',
+            action: () => clearRecentHistory(),
+          },
+          {
+            label: 'More...',
+            shortcut: 'Ctrl+R',
+            action: () => useUIStore.getState().openProjectSwitcherModal(),
+          },
+        ]),
   ];
 
   const menus: Record<string, MenuItem[]> = {
@@ -187,7 +285,15 @@ export const Menubar: React.FC = () => {
       { label: 'New File', shortcut: 'Ctrl+N', action: () => createNewDocument() },
       { label: 'Open File...', shortcut: 'Ctrl+O', action: handleOpenFile },
       { label: 'Open Folder...', shortcut: 'Ctrl+K Ctrl+O', action: handleOpenFolder },
-      ...(recentMenuItems.length > 0 ? [{ divider: true, label: '' }, ...recentMenuItems] : []),
+      { label: 'Open Workspace from File...', action: handleOpenWorkspaceFromFile },
+      {
+        label: 'Open Recent',
+        children: recentSubmenuItems,
+      },
+      { divider: true, label: '' },
+      { label: 'Add Folder to Workspace...', action: handleAddFolderToWorkspace },
+      { label: 'Save Workspace As...', action: handleSaveWorkspaceAs },
+      { label: 'Duplicate Workspace', action: handleDuplicateWorkspace },
       { divider: true, label: '' },
       { label: 'Save', shortcut: 'Ctrl+S', action: handleSaveFile },
       { label: 'Save As...', shortcut: 'Ctrl+Shift+S', action: handleSaveAs },
@@ -263,6 +369,22 @@ export const Menubar: React.FC = () => {
       { label: 'Replace', shortcut: 'Ctrl+H', action: () => openSearchPanel('replace') },
       { divider: true, label: '' },
       {
+        label: 'Emmet: Expand Abbreviation',
+        shortcut: 'Tab / Ctrl+E',
+        action: () => {
+          const view = getActiveEditorView();
+          if (view && activeDoc) {
+            expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
+          }
+        },
+      },
+      {
+        label: 'Emmet: Wrap with Abbreviation...',
+        shortcut: 'Ctrl+Alt+W',
+        action: () => useUIStore.getState().openWrapWithAbbreviation(),
+      },
+      { divider: true, label: '' },
+      {
         label: 'Format Document',
         shortcut: 'Ctrl+Alt+B',
         action: () => {
@@ -295,6 +417,23 @@ export const Menubar: React.FC = () => {
         },
       },
       { divider: true, label: '' },
+      {
+        label: 'Color Picker',
+        shortcut: 'Ctrl+Alt+C',
+        action: () => {
+          const view = getActiveEditorView();
+          let colorStr = '#6c8cff';
+          let range: { from: number; to: number } | null = null;
+          if (view) {
+            const sel = view.state.selection.main;
+            if (!sel.empty) {
+              colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
+              range = { from: sel.from, to: sel.to };
+            }
+          }
+          useUIStore.getState().openColorPicker(colorStr, range || undefined);
+        },
+      },
       {
         label: 'Insert Lorem Ipsum...',
         shortcut: 'Ctrl+Alt+L',
@@ -603,39 +742,6 @@ export const Menubar: React.FC = () => {
       },
       { divider: true, label: '' },
       {
-        label: 'Emmet: Expand Abbreviation',
-        shortcut: 'Tab / Ctrl+E',
-        action: () => {
-          const view = getActiveEditorView();
-          if (view && activeDoc) {
-            expandEmmetCommand(view, detectEmmetSyntax(activeDoc.name || activeDoc.language));
-          }
-        },
-      },
-      {
-        label: 'Emmet: Wrap with Abbreviation...',
-        shortcut: 'Ctrl+Alt+W',
-        action: () => useUIStore.getState().openWrapWithAbbreviation(),
-      },
-      {
-        label: 'Color Picker',
-        shortcut: 'Ctrl+Alt+C',
-        action: () => {
-          const view = getActiveEditorView();
-          let colorStr = '#6c8cff';
-          let range: { from: number; to: number } | null = null;
-          if (view) {
-            const sel = view.state.selection.main;
-            if (!sel.empty) {
-              colorStr = view.state.sliceDoc(sel.from, sel.to).trim();
-              range = { from: sel.from, to: sel.to };
-            }
-          }
-          useUIStore.getState().openColorPicker(colorStr, range || undefined);
-        },
-      },
-      { divider: true, label: '' },
-      {
         label: 'Language Servers (LSP)...',
         action: () => useLspStore.getState().openModal(),
       },
@@ -683,8 +789,8 @@ export const Menubar: React.FC = () => {
         action: () => window.open('https://github.com/xivig/xivig-text-editor/issues/new/choose', '_blank'),
       },
       {
-        label: 'X',
-        action: () => window.open('https://x.com', '_blank'),
+        label: 'Twitter',
+        action: () => window.open('https://twitter.com', '_blank'),
       },
       { divider: true, label: '' },
       {
@@ -742,28 +848,96 @@ export const Menubar: React.FC = () => {
                   if (item.divider) {
                     return <div key={idx} style={dividerStyle} />;
                   }
+
+                  const hasChildren = Boolean(item.children && item.children.length > 0);
+                  const isSubmenuOpen = activeSubmenuIdx === idx;
+
                   return (
-                    <button
+                    <div
                       key={idx}
-                      onClick={() => {
-                        setOpenMenu(null);
-                        item.action?.();
-                      }}
-                      style={dropdownItemStyle}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(108, 140, 255, 0.18)';
-                        e.currentTarget.style.color = '#ffffff';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#e2e8f0';
+                      style={{ position: 'relative' }}
+                      onMouseEnter={() => {
+                        if (hasChildren) {
+                          setActiveSubmenuIdx(idx);
+                        } else {
+                          setActiveSubmenuIdx(null);
+                        }
                       }}
                     >
-                      <span>{item.label}</span>
-                      {item.shortcut && (
-                        <span style={shortcutStyle}>{item.shortcut}</span>
+                      <button
+                        onClick={() => {
+                          if (hasChildren) {
+                            setActiveSubmenuIdx(isSubmenuOpen ? null : idx);
+                          } else {
+                            setOpenMenu(null);
+                            setActiveSubmenuIdx(null);
+                            item.action?.();
+                          }
+                        }}
+                        style={{
+                          ...dropdownItemStyle,
+                          backgroundColor: isSubmenuOpen ? '#383b42' : 'transparent',
+                          color: isSubmenuOpen ? '#ffffff' : '#c9ccd3',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#383b42';
+                          e.currentTarget.style.color = '#ffffff';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSubmenuOpen) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#c9ccd3';
+                          }
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{item.label}</span>
+                        {hasChildren ? (
+                          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+                            <ChevronRight size={13} />
+                          </span>
+                        ) : item.shortcut ? (
+                          <span style={shortcutStyle}>{item.shortcut}</span>
+                        ) : null}
+                      </button>
+
+                      {/* Nested Flyout Submenu */}
+                      {hasChildren && isSubmenuOpen && (
+                        <div
+                          style={submenuDropdownStyle}
+                          onMouseLeave={() => setActiveSubmenuIdx(null)}
+                        >
+                          {item.children!.map((subItem, subIdx) => {
+                            if (subItem.divider) {
+                              return <div key={subIdx} style={dividerStyle} />;
+                            }
+                            return (
+                              <button
+                                key={subIdx}
+                                onClick={() => {
+                                  setOpenMenu(null);
+                                  setActiveSubmenuIdx(null);
+                                  subItem.action?.();
+                                }}
+                                style={dropdownItemStyle}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#383b42';
+                                  e.currentTarget.style.color = '#ffffff';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = '#c9ccd3';
+                                }}
+                              >
+                                <span>{subItem.label}</span>
+                                {subItem.shortcut && (
+                                  <span style={shortcutStyle}>{subItem.shortcut}</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -780,19 +954,18 @@ const menubarContainerStyle: React.CSSProperties = {
   backgroundColor: 'var(--xivig-activity-bar)',
   display: 'flex',
   alignItems: 'center',
-  paddingLeft: '10px',
+  paddingLeft: '8px',
   borderBottom: '1px solid var(--xivig-border-subtle)',
   position: 'relative',
   zIndex: 100,
 };
 
 const menuTriggerStyle: React.CSSProperties = {
-  padding: '3px 8px',
-  borderRadius: '4px',
+  padding: '4px 8px',
+  borderRadius: '3px',
   fontSize: '12px',
   fontWeight: 400,
-  transition: 'all 0.12s ease',
-  cursor: 'pointer',
+  transition: 'background-color 0.1s ease',
 };
 
 const dropdownStyle: React.CSSProperties = {
@@ -802,49 +975,60 @@ const dropdownStyle: React.CSSProperties = {
   minWidth: '260px',
   width: 'max-content',
   maxWidth: '450px',
-  backgroundColor: '#191b24',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '8px',
+  backgroundColor: '#212224',
+  border: '1px solid #383a40',
+  borderRadius: '4px',
   padding: '4px 0',
-  boxShadow: '0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-  backdropFilter: 'blur(16px)',
+  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
   zIndex: 1000,
   whiteSpace: 'nowrap',
 };
 
 const dropdownItemStyle: React.CSSProperties = {
-  width: 'calc(100% - 8px)',
-  margin: '1px 4px',
+  width: '100%',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '5px 10px',
-  borderRadius: '5px',
+  padding: '6px 14px',
   fontSize: '12px',
   textAlign: 'left',
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  color: '#e2e8f0',
+  color: '#c9ccd3',
   fontFamily: 'inherit',
   whiteSpace: 'nowrap',
-  gap: '24px',
+  gap: '28px',
   boxSizing: 'border-box',
-  transition: 'all 0.1s ease',
 };
 
 const shortcutStyle: React.CSSProperties = {
-  fontSize: '10.5px',
+  fontSize: '11px',
   color: 'var(--xivig-text-dim)',
   marginLeft: 'auto',
-  paddingLeft: '18px',
+  paddingLeft: '20px',
   flexShrink: 0,
   whiteSpace: 'nowrap',
-  fontFamily: 'inherit',
 };
 
 const dividerStyle: React.CSSProperties = {
   height: '1px',
-  backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  backgroundColor: '#35373d',
   margin: '4px 0',
+};
+
+const submenuDropdownStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '-4px',
+  left: 'calc(100% - 2px)',
+  minWidth: '240px',
+  width: 'max-content',
+  maxWidth: '420px',
+  backgroundColor: '#212224',
+  border: '1px solid #383a40',
+  borderRadius: '4px',
+  padding: '4px 0',
+  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7)',
+  zIndex: 1010,
+  whiteSpace: 'nowrap',
 };

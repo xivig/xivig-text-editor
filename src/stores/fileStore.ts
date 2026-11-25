@@ -20,14 +20,20 @@ interface FileState {
   recentWorkspaces: RecentItem[];
   workspaceFolders: Array<{ path: string; name: string }>;
   trustedWorkspaces: Record<string, boolean>;
+  currentWorkspaceFile: string | null;
+  isWorkspaceUntitled: boolean;
   fileClipboard: FileClipboardItem | null;
   searchFolderFilter: string | null;
   workspaceSearchQuery: string;
   fileFilterQuery: string;
 
   // Actions
-  addWorkspaceFolder: (folderPath: string) => Promise<void>;
+  openWorkspaceFromFile: (workspacePath: string, rawContent?: string) => Promise<{ success: boolean; error?: string; workspaceName?: string }>;
+  addWorkspaceFolder: (folderPath: string) => Promise<{ success: boolean; error?: string }>;
   removeWorkspaceFolder: (folderPath: string) => void;
+  saveWorkspaceAs: (savePath: string) => Promise<{ success: boolean; error?: string }>;
+  duplicateWorkspace: () => { success: boolean; message: string };
+  clearRecentHistory: () => Promise<void>;
   setWorkspaceTrust: (folderPath: string, trusted: boolean) => void;
   isWorkspaceTrusted: (folderPath?: string) => boolean;
   collapseAllFolders: () => void;
@@ -71,6 +77,8 @@ export const useFileStore = create<FileState>((set, get) => ({
   recentWorkspaces: [],
   workspaceFolders: [],
   trustedWorkspaces: {},
+  currentWorkspaceFile: null,
+  isWorkspaceUntitled: false,
   fileClipboard: null,
   searchFolderFilter: null,
   workspaceSearchQuery: '',
@@ -79,18 +87,223 @@ export const useFileStore = create<FileState>((set, get) => ({
   gitChanges: [],
   isGitRepo: false,
 
+  openWorkspaceFromFile: async (workspacePath: string, rawContent?: string) => {
+    try {
+      let content = rawContent;
+      if (content === undefined && window.xivig?.readFile) {
+        const res = await window.xivig.readFile(workspacePath);
+        if (!res.success || res.content === undefined) {
+          return { success: false, error: res.error || 'Failed to read workspace file' };
+        }
+        content = res.content;
+      }
+
+      if (!content) {
+        return { success: false, error: 'Empty workspace file' };
+      }
+
+      const parsed = JSON.parse(content);
+      const rawFolders: Array<{ path: string; name?: string }> = Array.isArray(parsed.folders)
+        ? parsed.folders
+        : Array.isArray(parsed)
+          ? parsed
+          : [];
+
+      if (rawFolders.length === 0) {
+        return { success: false, error: 'No folders found in workspace file' };
+      }
+
+      // Compute workspace directory for resolving relative paths
+      const workspaceDir = workspacePath.replace(/[/\\][^/\\]+$/, '');
+      const normalizePath = (raw: string): string => {
+        const isLeadingSlash = raw.startsWith('/');
+        const isWindowsDrive = /^[A-Za-z]:/.test(raw);
+        const drivePrefix = isWindowsDrive ? raw.slice(0, 2) : '';
+        const withoutDrive = isWindowsDrive ? raw.slice(2) : raw;
+
+        const parts = withoutDrive.replace(/\\/g, '/').split('/').filter(Boolean);
+        const stack: string[] = [];
+        for (const p of parts) {
+          if (p === '.') continue;
+          if (p === '..') {
+            if (stack.length > 0 && stack[stack.length - 1] !== '..') {
+              stack.pop();
+            } else {
+              stack.push('..');
+            }
+          } else {
+            stack.push(p);
+          }
+        }
+        const joined = stack.join('/');
+        if (isWindowsDrive) {
+          return `${drivePrefix}/${joined}`;
+        }
+        return isLeadingSlash ? `/${joined}` : joined;
+      };
+
+      const resolvedFolders = rawFolders.map((f) => {
+        const p = typeof f === 'string' ? f : f.path;
+        const isAbsolute = /^[/\\]|^[A-Za-z]:[/\\]/.test(p);
+        const combined = isAbsolute ? p : `${workspaceDir}/${p}`;
+        const resolved = normalizePath(combined);
+        const name = (typeof f === 'object' && f.name) || resolved.split(/[/\\]/).filter(Boolean).pop() || resolved;
+        return { path: resolved, name };
+      });
+
+      const primaryFolder = resolvedFolders[0];
+      const wsFileName = workspacePath.split(/[/\\]/).filter(Boolean).pop() || 'workspace';
+      const workspaceName = wsFileName.replace(/\.(code-workspace|xivig-workspace|json)$/i, '');
+
+      // Load primary folder file tree
+      if (window.xivig?.readDir) {
+        const dirRes = await window.xivig.readDir(primaryFolder.path);
+        if (dirRes.success && dirRes.items) {
+          get().setCurrentFolder(primaryFolder.path, dirRes.items);
+        } else {
+          get().setCurrentFolder(primaryFolder.path, []);
+        }
+      } else {
+        get().setCurrentFolder(primaryFolder.path, []);
+      }
+
+      set({
+        workspaceFolders: resolvedFolders,
+        currentWorkspaceFile: workspacePath,
+        isWorkspaceUntitled: false,
+        recentWorkspaces: [
+          {
+            id: `ws-${Buffer.from(workspacePath).toString('base64').slice(0, 24)}`,
+            name: `${workspaceName} (Workspace)`,
+            path: workspacePath,
+            lastOpened: new Date().toISOString(),
+          },
+          ...get().recentWorkspaces.filter((w) => w.path !== workspacePath),
+        ].slice(0, 15),
+      });
+
+      return { success: true, workspaceName };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Malformed workspace JSON' };
+    }
+  },
+
   addWorkspaceFolder: async (folderPath: string) => {
     const name = folderPath.split(/[/\\]/).filter(Boolean).pop() || folderPath;
-    const { workspaceFolders } = get();
-    if (!workspaceFolders.some((f) => f.path === folderPath)) {
-      set({ workspaceFolders: [...workspaceFolders, { path: folderPath, name }] });
+    const { workspaceFolders, currentFolderPath, currentFolderName } = get();
+
+    // If no folder currently open, set as main folder
+    if (!currentFolderPath) {
+      if (window.xivig?.readDir) {
+        const res = await window.xivig.readDir(folderPath);
+        if (res.success && res.items) {
+          get().setCurrentFolder(folderPath, res.items);
+        } else {
+          get().setCurrentFolder(folderPath, []);
+        }
+      } else {
+        get().setCurrentFolder(folderPath, []);
+      }
+      set({ workspaceFolders: [{ path: folderPath, name }] });
+      return { success: true };
     }
+
+    // Ensure the current folder is part of workspaceFolders
+    const newFolders = [...workspaceFolders];
+    if (currentFolderPath && !newFolders.some((f) => f.path === currentFolderPath)) {
+      newFolders.unshift({ path: currentFolderPath, name: currentFolderName || 'Root' });
+    }
+
+    if (!newFolders.some((f) => f.path === folderPath)) {
+      newFolders.push({ path: folderPath, name });
+    }
+
+    set({
+      workspaceFolders: newFolders,
+      isWorkspaceUntitled: get().currentWorkspaceFile === null,
+    });
+
+    return { success: true };
   },
 
   removeWorkspaceFolder: (folderPath: string) => {
     set((state) => ({
       workspaceFolders: state.workspaceFolders.filter((f) => f.path !== folderPath),
     }));
+  },
+
+  saveWorkspaceAs: async (savePath: string) => {
+    const { workspaceFolders, currentFolderPath, currentFolderName } = get();
+    const foldersToSave =
+      workspaceFolders.length > 0
+        ? workspaceFolders
+        : currentFolderPath
+          ? [{ path: currentFolderPath, name: currentFolderName || 'Root' }]
+          : [];
+
+    if (foldersToSave.length === 0) {
+      return { success: false, error: 'No folders to save in workspace' };
+    }
+
+    const wsContent = JSON.stringify(
+      {
+        folders: foldersToSave.map((f) => ({ path: f.path, name: f.name })),
+        settings: {},
+      },
+      null,
+      2
+    );
+
+    if (window.xivig?.saveFile) {
+      const res = await window.xivig.saveFile(savePath, wsContent);
+      if (!res.success) {
+        return { success: false, error: res.error || 'Failed to write workspace file' };
+      }
+    }
+
+    const wsName = savePath.split(/[/\\]/).filter(Boolean).pop() || 'workspace';
+    const workspaceName = wsName.replace(/\.(code-workspace|xivig-workspace|json)$/i, '');
+
+    set({
+      currentWorkspaceFile: savePath,
+      isWorkspaceUntitled: false,
+      recentWorkspaces: [
+        {
+          id: `ws-${Buffer.from(savePath).toString('base64').slice(0, 24)}`,
+          name: `${workspaceName} (Workspace)`,
+          path: savePath,
+          lastOpened: new Date().toISOString(),
+        },
+        ...get().recentWorkspaces.filter((w) => w.path !== savePath),
+      ].slice(0, 15),
+    });
+
+    return { success: true };
+  },
+
+  duplicateWorkspace: () => {
+    const { workspaceFolders, currentFolderPath, currentFolderName } = get();
+    const duplicatedFolders =
+      workspaceFolders.length > 0
+        ? [...workspaceFolders]
+        : currentFolderPath
+          ? [{ path: currentFolderPath, name: currentFolderName || 'Root' }]
+          : [];
+
+    set({
+      workspaceFolders: duplicatedFolders,
+      currentWorkspaceFile: null,
+      isWorkspaceUntitled: true,
+    });
+
+    return { success: true, message: 'Duplicated workspace (Untitled Workspace)' };
+  },
+
+  clearRecentHistory: async () => {
+    set({ recentFiles: [], recentWorkspaces: [] });
+    if (window.xivig?.clearRecentHistory) {
+      await window.xivig.clearRecentHistory();
+    }
   },
 
   setWorkspaceTrust: (folderPath: string, trusted: boolean) => {
