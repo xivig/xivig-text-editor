@@ -1071,6 +1071,165 @@ First-class CSS-in-JS intelligence:
 - Props and theme interpolation helpers (\`\${(props) => ...}\`)
 - CSS bracket and expression validation inside template strings`,
   },
+  // --- Category 7: Laravel / PHP Development ---
+  {
+    id: 'xivig-tool-intelephense',
+    name: 'PHP Intelephense',
+    publisher: 'Ben Mewburn',
+    version: '1.12.5',
+    category: 'Languages',
+    description: 'PHP code intelligence with detailed symbol indexing, diagnostics, and type inference.',
+    iconBg: '#474a8a',
+    iconSymbol: '🐘',
+    downloads: '14.2M',
+    rating: 4.9,
+    tags: ['php', 'intelephense', 'intellisense', 'diagnostics', 'types'],
+    readme: `# PHP Intelephense for Xivig
+High performance PHP code intelligence:
+- Detailed symbol indexing and fast jump to definition.
+- Real-time syntax and type diagnostics.
+- PHPDoc type inference and signature help.`,
+  },
+  {
+    id: 'xivig-tool-laravel-extension-pack',
+    name: 'Laravel Extension Pack',
+    publisher: 'Winnie Lin',
+    version: '1.4.0',
+    category: 'Productivity',
+    description: 'All essential Laravel developer tools bundled for rapid modern web engineering in Xivig.',
+    iconBg: '#ff2d20',
+    iconSymbol: '⚡',
+    downloads: '3.4M',
+    rating: 4.9,
+    tags: ['laravel', 'extension-pack', 'bundle', 'artisan', 'blade'],
+    readme: `# Laravel Extension Pack for Xivig
+The definitive Laravel developer bundle:
+- Integrates Intelephense, Blade Snippets, Artisan, Extra Intellisense, and Goto Controller.
+- Everything needed for production Laravel 11/12 and Livewire engineering.`,
+  },
+  {
+    id: 'xivig-tool-blade-snippets',
+    name: 'Laravel Blade Snippets',
+    publisher: 'Winnie Lin',
+    version: '1.4.1',
+    category: 'Languages',
+    description: 'Blade layout tags, conditional directives, sections, components, and Livewire helpers.',
+    iconBg: '#f05340',
+    iconSymbol: '🔪',
+    downloads: '6.7M',
+    rating: 4.9,
+    tags: ['blade', 'laravel', 'snippets', 'templates', 'livewire'],
+    readme: `# Laravel Blade Snippets for Xivig
+Full coverage for Blade templates:
+- Directives: \`@extends\`, \`@section\`, \`@yield\`, \`@component\`, \`@slot\`, \`@push\`, \`@stack\`
+- Auth & Gates: \`@auth\`, \`@guest\`, \`@can\`, \`@error\`
+- Modern asset helpers: \`@vite\`, \`@livewire\`, \`@csrf\`, \`@method\``,
+  },
+  {
+    id: 'xivig-tool-laravel-artisan',
+    name: 'Laravel Artisan',
+    publisher: 'Ryan Chandler',
+    version: '0.0.30',
+    category: 'Productivity',
+    description: 'Interactive execution runner and code scaffold palette for Laravel Artisan commands.',
+    iconBg: '#ff2d20',
+    iconSymbol: '🛠️',
+    downloads: '2.5M',
+    rating: 4.8,
+    tags: ['artisan', 'laravel', 'cli', 'make', 'migrate'],
+    readme: `# Laravel Artisan for Xivig
+Run Artisan commands directly without leaving your editor:
+- Scaffold: \`make:controller\`, \`make:model -mcr\`, \`make:migration\`, \`make:resource\`
+- Database: \`migrate\`, \`migrate:fresh --seed\`, \`db:seed\`
+- Cache & Queue: \`route:list\`, \`cache:clear\`, \`config:clear\`, \`queue:work\``,
+  },
+  {
+    id: 'xivig-tool-laravel-extra-intellisense',
+    name: 'Laravel Extra Intellisense',
+    publisher: 'amiralizadeh9480',
+    version: '0.6.4',
+    category: 'Languages',
+    description: 'Autocompletion for routes, views, configs, translations, and env variables.',
+    iconBg: '#e3342f',
+    iconSymbol: '💡',
+    downloads: '2.9M',
+    rating: 4.8,
+    tags: ['laravel', 'extra-intellisense', 'routes', 'views', 'config'],
+    readme: `# Laravel Extra Intellisense for Xivig
+Contextual completions for Laravel helpers:
+- \`route('...')\`: autocompletes named routes
+- \`view('...')\`: autocompletes Blade view templates
+- \`config('...')\`: autocompletes application configuration keys
+- \`env('...')\`: autocompletes environment variables`,
+  },
+  {
+    id: 'xivig-tool-laravel-goto-controller',
+    name: 'Laravel Goto Controller',
+    publisher: 'codingyu',
+    version: '0.0.12',
+    category: 'Productivity',
+    description: 'Navigate directly from route definitions to controller classes and methods.',
+    iconBg: '#3490dc',
+    iconSymbol: '🎯',
+    downloads: '1.9M',
+    rating: 4.8,
+    tags: ['goto-controller', 'laravel', 'routes', 'navigation'],
+    readme: `# Laravel Goto Controller for Xivig
+Jump from route declarations directly to controller code:
+- Supports both tuple array syntax \`[UserController::class, 'index']\` and string syntax \`'UserController@index'\`
+- Opens target controller file and jumps to the exact action method.`,
+  },
+  {
+    id: 'xivig-tool-php-namespace-resolver',
+    name: 'PHP Namespace Resolver',
+    publisher: 'Mehedi Hassan',
+    version: '1.1.9',
+    category: 'Productivity',
+    description: 'Automates PSR-4 namespace calculation, class imports, and use-statement insertion.',
+    iconBg: '#6c5ce7',
+    iconSymbol: '🏷️',
+    downloads: '2.1M',
+    rating: 4.8,
+    tags: ['php', 'namespace', 'psr-4', 'use-statements', 'import'],
+    readme: `# PHP Namespace Resolver for Xivig
+Effortless PSR-4 namespace and import resolution:
+- Automatically calculates namespace from project directory structure
+- Injects \`use ...;\` statements in alphabetical order, avoiding duplicates.`,
+  },
+  {
+    id: 'xivig-tool-php-docblocker',
+    name: 'PHP DocBlocker',
+    publisher: 'Neil Brayfield',
+    version: '3.0.0',
+    category: 'Productivity',
+    description: 'Generates structured PHPDoc comment blocks from method signatures with types.',
+    iconBg: '#2d3436',
+    iconSymbol: '📝',
+    downloads: '3.6M',
+    rating: 4.9,
+    tags: ['php', 'docblocker', 'phpdoc', 'types', 'comments'],
+    readme: `# PHP DocBlocker for Xivig
+Generates accurate PHPDoc comments instantly:
+- Automatically parses parameters, default values, and nullable types
+- Generates \`@param\` and \`@return\` tags adhering to PSR-19 standards.`,
+  },
+  {
+    id: 'xivig-tool-composer',
+    name: 'Composer',
+    publisher: 'Heiko Peters',
+    version: '0.5.4',
+    category: 'Productivity',
+    description: 'Run Composer commands, manage dependencies, and dump autoloads directly from Xivig.',
+    iconBg: '#885630',
+    iconSymbol: '🎻',
+    downloads: '1.7M',
+    rating: 4.7,
+    tags: ['composer', 'php', 'dependencies', 'packagist', 'autoload'],
+    readme: `# Composer for Xivig
+Complete Composer package manager integration:
+- Commands: require, install, update, remove, dump-autoload
+- Autocomplete for popular Packagist PHP libraries.`,
+  },
 ];
 
 interface ExtensionState {

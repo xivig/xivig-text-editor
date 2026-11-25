@@ -55,6 +55,17 @@ import {
   reactNativeToolsExtensionModule,
   styledComponentsExtensionModule,
 } from './react/index';
+import {
+  phpIntelephenseExtensionModule,
+  laravelExtensionPackModule,
+  laravelBladeSnippetsExtensionModule,
+  laravelArtisanExtensionModule,
+  laravelExtraIntellisenseExtensionModule,
+  laravelGotoControllerExtensionModule,
+  phpNamespaceResolverExtensionModule,
+  phpDocBlockerExtensionModule,
+  composerExtensionModule,
+} from './laravel-php/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -155,6 +166,26 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-react-native-tools': reactNativeToolsExtensionModule,
   'xivig.styled-components': styledComponentsExtensionModule,
   'xivig-tool-styled-components': styledComponentsExtensionModule,
+
+  // Laravel & PHP Development Suite
+  'xivig.intelephense': phpIntelephenseExtensionModule,
+  'xivig-tool-intelephense': phpIntelephenseExtensionModule,
+  'xivig.laravel-extension-pack': laravelExtensionPackModule,
+  'xivig-tool-laravel-extension-pack': laravelExtensionPackModule,
+  'xivig.blade-snippets': laravelBladeSnippetsExtensionModule,
+  'xivig-tool-blade-snippets': laravelBladeSnippetsExtensionModule,
+  'xivig.laravel-artisan': laravelArtisanExtensionModule,
+  'xivig-tool-laravel-artisan': laravelArtisanExtensionModule,
+  'xivig.laravel-extra-intellisense': laravelExtraIntellisenseExtensionModule,
+  'xivig-tool-laravel-extra-intellisense': laravelExtraIntellisenseExtensionModule,
+  'xivig.laravel-goto-controller': laravelGotoControllerExtensionModule,
+  'xivig-tool-laravel-goto-controller': laravelGotoControllerExtensionModule,
+  'xivig.php-namespace-resolver': phpNamespaceResolverExtensionModule,
+  'xivig-tool-php-namespace-resolver': phpNamespaceResolverExtensionModule,
+  'xivig.php-docblocker': phpDocBlockerExtensionModule,
+  'xivig-tool-php-docblocker': phpDocBlockerExtensionModule,
+  'xivig.composer': composerExtensionModule,
+  'xivig-tool-composer': composerExtensionModule,
 };
 
 export {
@@ -201,4 +232,13 @@ export {
   simpleReactSnippetsExtensionModule,
   reactNativeToolsExtensionModule,
   styledComponentsExtensionModule,
+  phpIntelephenseExtensionModule,
+  laravelExtensionPackModule,
+  laravelBladeSnippetsExtensionModule,
+  laravelArtisanExtensionModule,
+  laravelExtraIntellisenseExtensionModule,
+  laravelGotoControllerExtensionModule,
+  phpNamespaceResolverExtensionModule,
+  phpDocBlockerExtensionModule,
+  composerExtensionModule,
 };

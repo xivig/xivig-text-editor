@@ -67,6 +67,10 @@ import {
   createSimpleReactCompletionSource,
 } from '../../extensions/builtin/react';
 import {
+  createBladeDirectivesCompletionSource,
+  createLaravelExtraCompletionSource,
+} from '../../extensions/builtin/laravel-php';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -240,6 +244,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createJsSnippetsCompletionSource(),
             createEs7ReactReduxCompletionSource(),
             createSimpleReactCompletionSource(),
+            createBladeDirectivesCompletionSource(),
+            createLaravelExtraCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),
