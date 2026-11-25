@@ -49,6 +49,12 @@ import {
   jestExtensionModule,
   vitestExplorerExtensionModule,
 } from './javascript/index';
+import {
+  es7ReactReduxExtensionModule,
+  simpleReactSnippetsExtensionModule,
+  reactNativeToolsExtensionModule,
+  styledComponentsExtensionModule,
+} from './react/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -139,6 +145,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-jest': jestExtensionModule,
   'xivig.vitest-explorer': vitestExplorerExtensionModule,
   'xivig-tool-vitest-explorer': vitestExplorerExtensionModule,
+
+  // React Development Suite
+  'xivig.es7-react-redux-snippets': es7ReactReduxExtensionModule,
+  'xivig-tool-es7-react-redux': es7ReactReduxExtensionModule,
+  'xivig.simple-react-snippets': simpleReactSnippetsExtensionModule,
+  'xivig-tool-simple-react-snippets': simpleReactSnippetsExtensionModule,
+  'xivig.react-native-tools': reactNativeToolsExtensionModule,
+  'xivig-tool-react-native-tools': reactNativeToolsExtensionModule,
+  'xivig.styled-components': styledComponentsExtensionModule,
+  'xivig-tool-styled-components': styledComponentsExtensionModule,
 };
 
 export {
@@ -181,4 +197,8 @@ export {
   turboConsoleLogExtensionModule,
   jestExtensionModule,
   vitestExplorerExtensionModule,
+  es7ReactReduxExtensionModule,
+  simpleReactSnippetsExtensionModule,
+  reactNativeToolsExtensionModule,
+  styledComponentsExtensionModule,
 };

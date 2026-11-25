@@ -997,6 +997,80 @@ Native Vitest test tree explorer:
 - Configurable test patterns and single-test execution commands.
 - JSON test report parsing with pass/fail counts and execution duration metrics.`,
   },
+  // --- Category 6: React Development ---
+  {
+    id: 'xivig-tool-es7-react-redux',
+    name: 'ES7+ React/Redux/React-Native snippets',
+    publisher: 'rodrigovallades',
+    version: '4.4.3',
+    category: 'Languages',
+    description: 'Extensions for React, Redux and React Native in JS/TS with ES7+ syntax and hooks.',
+    iconBg: '#00d8ff',
+    iconSymbol: '⚛️',
+    downloads: '18.9M',
+    rating: 4.9,
+    tags: ['react', 'redux', 'react-native', 'snippets', 'hooks'],
+    readme: `# ES7+ React/Redux Snippets for Xivig
+Rapid scaffolding for modern React components, hooks, and Redux slices:
+- \`rafce\`: Arrow function component with named and default export
+- \`rfc\` / \`rfce\`: Functional components with export
+- \`useS\` / \`useE\` / \`useC\` / \`useM\` / \`useR\`: Core React hooks
+- \`rxslice\`: Redux Toolkit createSlice template`,
+  },
+  {
+    id: 'xivig-tool-simple-react-snippets',
+    name: 'Simple React Snippets',
+    publisher: 'Burke Holland',
+    version: '1.2.8',
+    category: 'Languages',
+    description: 'Essential React code snippets including quick imports, prop types, and component scaffolds.',
+    iconBg: '#61dafb',
+    iconSymbol: '⚛️',
+    downloads: '5.2M',
+    rating: 4.8,
+    tags: ['react', 'snippets', 'proptypes', 'imports'],
+    readme: `# Simple React Snippets for Xivig
+Minimal and fast React snippets by Burke Holland:
+- Quick imports: \`imr\`, \`imrs\`, \`imrse\`, \`imrd\`
+- PropTypes shortcuts: \`pts\`, \`ptn\`, \`ptb\`, \`ptf\`, \`pta\`, \`pto\`
+- Component with children: \`fcc\``,
+  },
+  {
+    id: 'xivig-tool-react-native-tools',
+    name: 'React Native Tools',
+    publisher: 'Microsoft',
+    version: '1.14.0',
+    category: 'Productivity',
+    description: 'Mobile development tools, component snippets, and Metro packager workflows for React Native.',
+    iconBg: '#20232a',
+    iconSymbol: '📱',
+    downloads: '3.1M',
+    rating: 4.7,
+    tags: ['react-native', 'mobile', 'ios', 'android', 'metro'],
+    readme: `# React Native Tools for Xivig
+Tools and snippets for mobile engineering:
+- Quick component scaffolding: \`rn-screen\`, \`rn-stylesheet\`, \`rn-flatlist\`, \`rn-touchable\`
+- CLI runner commands: run-android, run-ios, expo-start
+- Safe area, layout and platform dimension helpers`,
+  },
+  {
+    id: 'xivig-tool-styled-components',
+    name: 'vscode-styled-components',
+    publisher: 'styled-components',
+    version: '1.7.8',
+    category: 'Languages',
+    description: 'Syntax highlighting, CSS validation, and template literal intelligence for styled-components.',
+    iconBg: '#db7093',
+    iconSymbol: '💅',
+    downloads: '5.8M',
+    rating: 4.9,
+    tags: ['styled-components', 'css-in-js', 'css', 'styled', 'template-literals'],
+    readme: `# styled-components for Xivig
+First-class CSS-in-JS intelligence:
+- Tagged template literals for div, button, section, input, etc.
+- Props and theme interpolation helpers (\`\${(props) => ...}\`)
+- CSS bracket and expression validation inside template strings`,
+  },
 ];
 
 interface ExtensionState {

@@ -63,6 +63,10 @@ import {
   createNpmIntellisenseCompletionSource,
 } from '../../extensions/builtin/javascript';
 import {
+  createEs7ReactReduxCompletionSource,
+  createSimpleReactCompletionSource,
+} from '../../extensions/builtin/react';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -234,6 +238,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createPathCompletionSource(),
             createNpmIntellisenseCompletionSource(),
             createJsSnippetsCompletionSource(),
+            createEs7ReactReduxCompletionSource(),
+            createSimpleReactCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),
