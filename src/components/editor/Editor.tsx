@@ -71,6 +71,9 @@ import {
   createLaravelExtraCompletionSource,
 } from '../../extensions/builtin/laravel-php';
 import {
+  createMySqlCompletionSource,
+} from '../../extensions/builtin/database';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -246,6 +249,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createSimpleReactCompletionSource(),
             createBladeDirectivesCompletionSource(),
             createLaravelExtraCompletionSource(),
+            createMySqlCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

@@ -66,6 +66,14 @@ import {
   phpDocBlockerExtensionModule,
   composerExtensionModule,
 } from './laravel-php/index';
+import {
+  sqlToolsExtensionModule,
+  sqlToolsMysqlExtensionModule,
+  databaseClientExtensionModule,
+  mongoDbExtensionModule,
+  sqliteViewerExtensionModule,
+  redisExtensionModule,
+} from './database/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -186,6 +194,20 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-php-docblocker': phpDocBlockerExtensionModule,
   'xivig.composer': composerExtensionModule,
   'xivig-tool-composer': composerExtensionModule,
+
+  // Database Tools Suite
+  'xivig.sqltools': sqlToolsExtensionModule,
+  'xivig-tool-sqltools': sqlToolsExtensionModule,
+  'xivig.sqltools-mysql': sqlToolsMysqlExtensionModule,
+  'xivig-tool-sqltools-mysql': sqlToolsMysqlExtensionModule,
+  'xivig.database-client': databaseClientExtensionModule,
+  'xivig-tool-database-client': databaseClientExtensionModule,
+  'xivig.mongodb': mongoDbExtensionModule,
+  'xivig-tool-mongodb': mongoDbExtensionModule,
+  'xivig.sqlite-viewer': sqliteViewerExtensionModule,
+  'xivig-tool-sqlite-viewer': sqliteViewerExtensionModule,
+  'xivig.redis': redisExtensionModule,
+  'xivig-tool-redis': redisExtensionModule,
 };
 
 export {
@@ -241,4 +263,10 @@ export {
   phpNamespaceResolverExtensionModule,
   phpDocBlockerExtensionModule,
   composerExtensionModule,
+  sqlToolsExtensionModule,
+  sqlToolsMysqlExtensionModule,
+  databaseClientExtensionModule,
+  mongoDbExtensionModule,
+  sqliteViewerExtensionModule,
+  redisExtensionModule,
 };

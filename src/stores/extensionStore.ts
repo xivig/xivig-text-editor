@@ -1230,6 +1230,115 @@ Complete Composer package manager integration:
 - Commands: require, install, update, remove, dump-autoload
 - Autocomplete for popular Packagist PHP libraries.`,
   },
+  // --- Category 8: Database Tools ---
+  {
+    id: 'xivig-tool-sqltools',
+    name: 'SQLTools - Database tools',
+    publisher: 'Matheus Teixeira',
+    version: '0.28.4',
+    category: 'Productivity',
+    description: 'Database management tool supporting connection configs, queries, table schemas, and bookmarks.',
+    iconBg: '#222222',
+    iconSymbol: '🗄️',
+    downloads: '4.8M',
+    rating: 4.8,
+    tags: ['sql', 'database', 'sqltools', 'queries', 'tables'],
+    readme: `# SQLTools for Xivig
+Database management and query execution:
+- Multi-dialect connection manager (MySQL, PostgreSQL, SQLite, MariaDB, SQL Server)
+- Multi-statement SQL script splitter and clause formatter
+- Table and column schema inspector.`,
+  },
+  {
+    id: 'xivig-tool-sqltools-mysql',
+    name: 'SQLTools MySQL/MariaDB Driver',
+    publisher: 'Matheus Teixeira',
+    version: '0.7.0',
+    category: 'Languages',
+    description: 'MySQL and MariaDB dialect driver with auto-increment, engine configurations, and type completions.',
+    iconBg: '#00758f',
+    iconSymbol: '🐬',
+    downloads: '2.5M',
+    rating: 4.8,
+    tags: ['mysql', 'mariadb', 'sqltools', 'driver', 'sql'],
+    readme: `# SQLTools MySQL/MariaDB Driver for Xivig
+Dedicated MySQL & MariaDB intelligence:
+- Autocomplete for MySQL keywords, functions, and data types
+- Engine configuration (\`ENGINE=InnoDB\`) and character set defaults
+- Automated table inspection (\`DESCRIBE\`) query builder.`,
+  },
+  {
+    id: 'xivig-tool-database-client',
+    name: 'Database Client',
+    publisher: 'cweijan',
+    version: '7.5.0',
+    category: 'Productivity',
+    description: 'Multi-DBMS database client for MySQL, PostgreSQL, SQLite, MariaDB, and SQL Server with table visualizer.',
+    iconBg: '#0984e3',
+    iconSymbol: '📊',
+    downloads: '2.9M',
+    rating: 4.9,
+    tags: ['database-client', 'tables', 'schema', 'records', 'viewer'],
+    readme: `# Database Client for Xivig
+Interactive database records and schema explorer:
+- Paged records viewer with dialect-specific pagination queries
+- Markdown table schema generator with primary keys and nullable indicators
+- Support for MySQL, PostgreSQL, SQLite, MariaDB, and SQL Server.`,
+  },
+  {
+    id: 'xivig-tool-mongodb',
+    name: 'MongoDB for VS Code',
+    publisher: 'MongoDB',
+    version: '1.8.0',
+    category: 'Productivity',
+    description: 'Connect to MongoDB clusters, navigate databases and collections, and run BSON queries/aggregations.',
+    iconBg: '#13aa52',
+    iconSymbol: '🍃',
+    downloads: '3.7M',
+    rating: 4.8,
+    tags: ['mongodb', 'nosql', 'bson', 'aggregation', 'collections'],
+    readme: `# MongoDB for Xivig
+MongoDB cluster management and query builder:
+- Connection URI parser supporting standard and SRV (\`mongodb+srv://\`) endpoints
+- Mongosh query generator for \`find\`, \`insertOne\`, \`updateOne\`, and \`aggregate\`
+- BSON/JSON syntax and filter validation.`,
+  },
+  {
+    id: 'xivig-tool-sqlite-viewer',
+    name: 'SQLite Viewer',
+    publisher: 'Florian Klampfer',
+    version: '0.5.11',
+    category: 'Productivity',
+    description: 'Explore SQLite databases and view tables, schema DDL, and records directly in the editor.',
+    iconBg: '#003b57',
+    iconSymbol: '🪶',
+    downloads: '1.9M',
+    rating: 4.8,
+    tags: ['sqlite', 'database', 'sqlite-viewer', 'sqlite3', 'ddl'],
+    readme: `# SQLite Viewer for Xivig
+Direct SQLite database inspection:
+- Extracts user tables, views, and indices from \`sqlite_master\`
+- DDL schema parser extracting column names, types, primary keys, and defaults
+- Fast table data pagination query generator.`,
+  },
+  {
+    id: 'xivig-tool-redis',
+    name: 'Redis',
+    publisher: 'cweijan',
+    version: '2.0.0',
+    category: 'Productivity',
+    description: 'Explore Redis keys, view values (strings, hashes, lists, sets, zsets), and execute Redis commands.',
+    iconBg: '#d82c20',
+    iconSymbol: '🔴',
+    downloads: '1.5M',
+    rating: 4.8,
+    tags: ['redis', 'key-value', 'cache', 'hash', 'nosql'],
+    readme: `# Redis for Xivig
+Redis key-value store explorer:
+- Redis URI parser supporting auth, ports, and database indices
+- Command builder for strings, hashes, lists, sets, and zsets
+- In-memory data type inspector and key pattern scanner.`,
+  },
 ];
 
 interface ExtensionState {
