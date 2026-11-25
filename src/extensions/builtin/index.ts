@@ -88,6 +88,14 @@ import {
   terraformExtensionModule,
   azureToolsExtensionModule,
 } from './devops/index';
+import {
+  pythonExtensionModule,
+  pylanceExtensionModule,
+  jupyterExtensionModule,
+  blackFormatterExtensionModule,
+  isortExtensionModule,
+  ruffExtensionModule,
+} from './python/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -246,6 +254,20 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-terraform': terraformExtensionModule,
   'xivig.azure-tools': azureToolsExtensionModule,
   'xivig-tool-azure-tools': azureToolsExtensionModule,
+
+  // Python Development Suite
+  'xivig.python': pythonExtensionModule,
+  'xivig-tool-python': pythonExtensionModule,
+  'xivig.pylance': pylanceExtensionModule,
+  'xivig-tool-pylance': pylanceExtensionModule,
+  'xivig.jupyter': jupyterExtensionModule,
+  'xivig-tool-jupyter': jupyterExtensionModule,
+  'xivig.black-formatter': blackFormatterExtensionModule,
+  'xivig-tool-black-formatter': blackFormatterExtensionModule,
+  'xivig.isort': isortExtensionModule,
+  'xivig-tool-isort': isortExtensionModule,
+  'xivig.ruff': ruffExtensionModule,
+  'xivig-tool-ruff': ruffExtensionModule,
 };
 
 export {
@@ -317,4 +339,10 @@ export {
   yamlExtensionModule,
   terraformExtensionModule,
   azureToolsExtensionModule,
+  pythonExtensionModule,
+  pylanceExtensionModule,
+  jupyterExtensionModule,
+  blackFormatterExtensionModule,
+  isortExtensionModule,
+  ruffExtensionModule,
 };

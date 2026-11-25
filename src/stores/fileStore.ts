@@ -115,10 +115,38 @@ export const useFileStore = create<FileState>((set, get) => ({
 
       // Compute workspace directory for resolving relative paths
       const workspaceDir = workspacePath.replace(/[/\\][^/\\]+$/, '');
+      const normalizePath = (raw: string): string => {
+        const isLeadingSlash = raw.startsWith('/');
+        const isWindowsDrive = /^[A-Za-z]:/.test(raw);
+        const drivePrefix = isWindowsDrive ? raw.slice(0, 2) : '';
+        const withoutDrive = isWindowsDrive ? raw.slice(2) : raw;
+
+        const parts = withoutDrive.replace(/\\/g, '/').split('/').filter(Boolean);
+        const stack: string[] = [];
+        for (const p of parts) {
+          if (p === '.') continue;
+          if (p === '..') {
+            if (stack.length > 0 && stack[stack.length - 1] !== '..') {
+              stack.pop();
+            } else {
+              stack.push('..');
+            }
+          } else {
+            stack.push(p);
+          }
+        }
+        const joined = stack.join('/');
+        if (isWindowsDrive) {
+          return `${drivePrefix}/${joined}`;
+        }
+        return isLeadingSlash ? `/${joined}` : joined;
+      };
+
       const resolvedFolders = rawFolders.map((f) => {
         const p = typeof f === 'string' ? f : f.path;
         const isAbsolute = /^[/\\]|^[A-Za-z]:[/\\]/.test(p);
-        const resolved = isAbsolute ? p : `${workspaceDir}/${p}`.replace(/\\/g, '/');
+        const combined = isAbsolute ? p : `${workspaceDir}/${p}`;
+        const resolved = normalizePath(combined);
         const name = (typeof f === 'object' && f.name) || resolved.split(/[/\\]/).filter(Boolean).pop() || resolved;
         return { path: resolved, name };
       });

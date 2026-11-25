@@ -84,6 +84,9 @@ import {
   createYamlCompletionSource,
 } from '../../extensions/builtin/devops';
 import {
+  createPythonCompletionSource,
+} from '../../extensions/builtin/python';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -266,6 +269,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createK8sCompletionSource(),
             createTerraformCompletionSource(),
             createYamlCompletionSource(),
+            createPythonCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

@@ -1522,6 +1522,116 @@ Azure cloud infrastructure tools:
 - Resource inspector (type, name, apiVersion, location)
 - Deployment CLI command generator.`,
   },
+  // --- Category 11: Python Development ---
+  {
+    id: 'xivig-tool-python',
+    name: 'Python',
+    publisher: 'Microsoft',
+    version: '2024.18.0',
+    category: 'Languages',
+    description: 'Python language support with virtual environment discovery, pytest runner, and execution helpers.',
+    iconBg: '#3776ab',
+    iconSymbol: '🐍',
+    downloads: '124.5M',
+    rating: 4.8,
+    tags: ['python', 'venv', 'pytest', 'pip', 'conda', 'language-server'],
+    readme: `# Python for Xivig
+Rich Python engineering environment:
+- Automatic virtualenv and Conda environment detection (.venv, venv, env)
+- Cross-platform python executable command generation
+- Pytest test case discovery parser.`,
+  },
+  {
+    id: 'xivig-tool-pylance',
+    name: 'Pylance',
+    publisher: 'Microsoft',
+    version: '2024.10.1',
+    category: 'Languages',
+    description: 'High-performance Python language server with docstring hovers, symbol indexing, and auto-imports.',
+    iconBg: '#ffbc03',
+    iconSymbol: '⚡',
+    downloads: '95.2M',
+    rating: 4.9,
+    tags: ['pylance', 'python', 'typechecking', 'intellisense', 'autocomplete'],
+    readme: `# Pylance for Xivig
+Fast, feature-rich language support for Python:
+- Top-level symbol, function, class, and variable type annotation extractor
+- Docstring hover extraction (triple quotes)
+- Auto-import code generator for modules and standard typing constructs
+- CodeMirror autocompletion for Python keywords, builtins, and types.`,
+  },
+  {
+    id: 'xivig-tool-jupyter',
+    name: 'Jupyter',
+    publisher: 'Microsoft',
+    version: '2024.9.0',
+    category: 'Productivity',
+    description: 'Jupyter notebook (.ipynb) support with cell parsers, markdown extractors, and interactive script conversion.',
+    iconBg: '#f37726',
+    iconSymbol: '🪐',
+    downloads: '78.1M',
+    rating: 4.8,
+    tags: ['jupyter', 'notebooks', 'ipynb', 'data-science', 'python'],
+    readme: `# Jupyter for Xivig
+Interactive computing and notebook workflows:
+- .ipynb JSON document parser and exporter
+- Markdown cell documentation extractor
+- Interactive Python script converter with '# %%' cell markers.`,
+  },
+  {
+    id: 'xivig-tool-black-formatter',
+    name: 'Black Formatter',
+    publisher: 'Microsoft',
+    version: '2024.4.0',
+    category: 'Formatters',
+    description: 'The uncompromising Python code formatter enforcing PEP 8 standard indentation and quote normalization.',
+    iconBg: '#000000',
+    iconSymbol: '🖤',
+    downloads: '18.9M',
+    rating: 4.9,
+    tags: ['black', 'formatter', 'pep8', 'python', 'code-style'],
+    readme: `# Black Formatter for Xivig
+Deterministic Python code formatting:
+- Quote normalization preferring double quotes for simple strings
+- Binary operator spacing and comparison formatting
+- PEP 8 two-blank-line convention before top-level classes and functions.`,
+  },
+  {
+    id: 'xivig-tool-isort',
+    name: 'isort',
+    publisher: 'Microsoft',
+    version: '2024.1.0',
+    category: 'Formatters',
+    description: 'Python import sorter separating standard library, third-party, and local modules into PEP 8 sections.',
+    iconBg: '#1b4a68',
+    iconSymbol: '🔤',
+    downloads: '16.4M',
+    rating: 4.9,
+    tags: ['isort', 'imports', 'organize-imports', 'pep8', 'python'],
+    readme: `# isort for Xivig
+Automated Python import organizer:
+- 4-Tier sorting: Future, Standard Library, Third Party, and Local modules
+- Alphabetical ordering and duplicate prevention within sections.`,
+  },
+  {
+    id: 'xivig-tool-ruff',
+    name: 'Ruff',
+    publisher: 'Astral Software',
+    version: '2024.44.0',
+    category: 'Productivity',
+    description: 'An extremely fast Python linter detecting unused imports, bare excepts, and mutable default arguments.',
+    iconBg: '#d83a56',
+    iconSymbol: '⚡',
+    downloads: '12.1M',
+    rating: 4.9,
+    tags: ['ruff', 'linter', 'astral', 'python', 'code-quality'],
+    readme: `# Ruff for Xivig
+Lightning-fast Python linter:
+- Flags bare \`except:\` clauses (E722)
+- Catches dangerous mutable default arguments (\`def fn(a=[])\`) (B006)
+- Warns on \`cond == None\` (E711)
+- Identifies unused imported symbols (F401).`,
+  },
 ];
 
 interface ExtensionState {

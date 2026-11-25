@@ -58,6 +58,10 @@ interface UIState {
   openMarkdownTableEditor: () => void;
   closeMarkdownTableEditor: () => void;
 
+  isProjectSwitcherOpen: boolean;
+  openProjectSwitcherModal: () => void;
+  closeProjectSwitcherModal: () => void;
+
   openDiffModal: () => void;
   closeDiffModal: () => void;
   openRenameSymbolModal: (target: { oldName: string; line: number; col: number }) => void;
@@ -174,6 +178,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   isMarkdownTableEditorOpen: false,
   openMarkdownTableEditor: () => set({ isMarkdownTableEditorOpen: true }),
   closeMarkdownTableEditor: () => set({ isMarkdownTableEditorOpen: false }),
+
+  isProjectSwitcherOpen: false,
+  openProjectSwitcherModal: () => set({ isProjectSwitcherOpen: true }),
+  closeProjectSwitcherModal: () => set({ isProjectSwitcherOpen: false }),
 
   openDiffModal: () => set({ isDiffModalOpen: true }),
   closeDiffModal: () => set({ isDiffModalOpen: false }),
