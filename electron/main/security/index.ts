@@ -73,10 +73,19 @@ export function validateIpcSender(event: IpcMainInvokeEvent | IpcMainEvent): boo
       if (parsed.protocol === 'file:') {
         const filePath = fileURLToPath(frameUrl);
         const resolvedPath = path.resolve(filePath);
-        const canonicalFrame = existsSync(resolvedPath) ? realpathSync(resolvedPath) : resolvedPath;
+        let canonicalFrame = resolvedPath;
+        try {
+          if (existsSync(resolvedPath)) {
+            canonicalFrame = realpathSync(resolvedPath);
+          }
+        } catch {
+          canonicalFrame = resolvedPath;
+        }
 
         if (expectedRendererDistCanonical) {
-          const relative = path.relative(expectedRendererDistCanonical, canonicalFrame);
+          const normBase = path.normalize(expectedRendererDistCanonical).toLowerCase();
+          const normFrame = path.normalize(canonicalFrame).toLowerCase();
+          const relative = path.relative(normBase, normFrame);
           if (!relative.startsWith('..') && !path.isAbsolute(relative)) {
             return true;
           }

@@ -88,6 +88,51 @@ process.on('unhandledRejection', (reason) => {
   console.error('[Xivig Main] Unhandled Rejection:', reason);
 });
 
+// Windows GPU cache & single instance management:
+// 1. Enforce single instance lock so multiple processes don't lock GPU/disk cache
+const gotTheSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotTheSingleInstanceLock) {
+  console.log('[Xivig Main] Another instance is already running. Quitting duplicate instance.');
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', () => {
+  const win = getActiveWindow();
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
+// 2. Prevent Chromium shader disk cache access denied errors on Windows
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+
+// Helper to clean stale .tmp files in userData left from sudden restarts
+function cleanStaleTempFiles(): void {
+  try {
+    const userData = app.getPath('userData');
+    if (fsSync.existsSync(userData)) {
+      const entries = fsSync.readdirSync(userData);
+      for (const entry of entries) {
+        if (entry.includes('.tmp.') || entry.endsWith('.tmp')) {
+          try {
+            fsSync.unlinkSync(path.join(userData, entry));
+          } catch {}
+        }
+      }
+      const gpuCache = path.join(userData, 'GPUCache');
+      if (fsSync.existsSync(gpuCache)) {
+        try {
+          fsSync.rmSync(gpuCache, { recursive: true, force: true });
+        } catch {}
+      }
+    }
+  } catch {}
+}
+
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
@@ -150,8 +195,34 @@ async function createWindow() {
       }, 500);
     });
   } else {
-    currentWin.loadFile(indexHtml);
+    currentWin.loadFile(indexHtml).catch((err) => {
+      console.error('[Xivig Main] Initial loadFile failed, retrying in 500ms...', err);
+      setTimeout(() => {
+        if (!currentWin.isDestroyed()) {
+          currentWin.loadFile(indexHtml);
+        }
+      }, 500);
+    });
   }
+
+  // Crash and load error recovery
+  currentWin.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('[Xivig Main] Window failed to load:', validatedURL, 'Code:', errorCode, 'Desc:', errorDescription);
+    if (!currentWin.isDestroyed() && !url) {
+      setTimeout(() => {
+        if (!currentWin.isDestroyed()) {
+          currentWin.loadFile(indexHtml);
+        }
+      }, 500);
+    }
+  });
+
+  currentWin.webContents.on('render-process-gone', (event, details) => {
+    console.error('[Xivig Main] Renderer process gone:', details);
+    if (details.reason !== 'clean-exit' && !currentWin.isDestroyed()) {
+      currentWin.reload();
+    }
+  });
 
   // Security: Prevent unapproved child windows and open external URLs in system browser
   currentWin.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
@@ -178,8 +249,13 @@ async function createWindow() {
     } else {
       // In production, navigation is strictly limited to the packaged index.html URL
       try {
-        const expectedHref = pathToFileURL(indexHtml).href;
-        if (navigationUrl === expectedHref) {
+        const expectedHref = pathToFileURL(indexHtml).href.toLowerCase();
+        const normNav = navigationUrl.toLowerCase();
+        if (normNav === expectedHref || normNav.startsWith(expectedHref + '#') || normNav.startsWith(expectedHref + '?')) {
+          return;
+        }
+        const rendererHref = pathToFileURL(RENDERER_DIST).href.toLowerCase();
+        if (normNav.startsWith(rendererHref)) {
           return;
         }
       } catch {
@@ -240,16 +316,17 @@ async function createWindow() {
 
 // App lifecycle
 app.whenReady().then(() => {
+  cleanStaleTempFiles();
   setExpectedRendererDist(RENDERER_DIST);
   initDatabase();
 
   const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
   // Content-Security-Policy enforcement
-  // Production policy eliminates 'unsafe-inline' from script-src to prevent script injection.
+  // Allows self, file:, data:, and fonts
   const cspHeader = isDev
     ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: file: http://127.0.0.1:* http://localhost:* blob:; frame-src 'self' http://127.0.0.1:* http://localhost:* data:; media-src 'self' http://127.0.0.1:* http://localhost:* data: file:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* ws://localhost:* http://localhost:*;"
-    : "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: file: http://127.0.0.1:* http://localhost:* blob:; frame-src 'self' http://127.0.0.1:* http://localhost:* data:; media-src 'self' http://127.0.0.1:* http://localhost:* data: file:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*;";
+    : "default-src 'self' file: data:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' file:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com file:; font-src 'self' https://fonts.gstatic.com data: file:; img-src 'self' data: https: file: http://127.0.0.1:* http://localhost:* blob:; frame-src 'self' http://127.0.0.1:* http://localhost:* data: file:; media-src 'self' http://127.0.0.1:* http://localhost:* data: file:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* ws://localhost:* http://localhost:* file:;";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     // Do not inject the editor desktop application's CSP into the user's embedded Live Server preview
