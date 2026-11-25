@@ -87,6 +87,11 @@ import {
   createPythonCompletionSource,
 } from '../../extensions/builtin/python';
 import {
+  createJavaCompletionSource,
+  createSpringBootCompletionSource,
+  createMavenCompletionSource,
+} from '../../extensions/builtin/java';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -270,6 +275,9 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createTerraformCompletionSource(),
             createYamlCompletionSource(),
             createPythonCompletionSource(),
+            createJavaCompletionSource(),
+            createSpringBootCompletionSource(),
+            createMavenCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

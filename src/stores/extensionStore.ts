@@ -1632,6 +1632,79 @@ Lightning-fast Python linter:
 - Warns on \`cond == None\` (E711)
 - Identifies unused imported symbols (F401).`,
   },
+  // --- Category 12: Java Development ---
+  {
+    id: 'xivig-tool-vscode-java-pack',
+    name: 'Extension Pack for Java',
+    publisher: 'Microsoft',
+    version: '0.29.0',
+    category: 'Languages',
+    description: 'Popular extensions for Java development in Xivig including language support, debugging, and testing.',
+    iconBg: '#e76f00',
+    iconSymbol: '☕',
+    downloads: '38.4M',
+    rating: 4.8,
+    tags: ['java', 'jdk', 'oop', 'language-server', 'jvm'],
+    readme: `# Extension Pack for Java for Xivig
+The essential suite for Java engineering:
+- JDK installation detection and vendor resolution (Temurin, Corretto, Zulu, OpenJDK)
+- Source code symbol indexing for classes, records, interfaces, and methods
+- CodeMirror autocompletion for modern Java keywords and core types.`,
+  },
+  {
+    id: 'xivig-tool-vscode-spring-boot-pack',
+    name: 'Spring Boot Extension Pack',
+    publisher: 'VMware',
+    version: '0.1.7',
+    category: 'Productivity',
+    description: 'Spring Boot annotations, properties autocompletion, live process inspection, and boot runners.',
+    iconBg: '#6db33f',
+    iconSymbol: '🍃',
+    downloads: '9.2M',
+    rating: 4.8,
+    tags: ['spring', 'spring-boot', 'java', 'web', 'microservices'],
+    readme: `# Spring Boot Extension Pack for Xivig
+Enterprise microservices intelligence:
+- Autocompletion for \`@RestController\`, \`@GetMapping\`, \`@Service\`, etc.
+- \`application.properties\` parser and configuration completions
+- Maven and Gradle Spring Boot CLI runner command builders.`,
+  },
+  {
+    id: 'xivig-tool-vscode-maven',
+    name: 'Maven for Java',
+    publisher: 'Microsoft',
+    version: '0.44.0',
+    category: 'Productivity',
+    description: 'Manage Maven projects, execute build goals, generate effective POMs, and explore dependencies.',
+    iconBg: '#c71a36',
+    iconSymbol: '🪶',
+    downloads: '14.5M',
+    rating: 4.8,
+    tags: ['maven', 'pom.xml', 'build', 'dependencies', 'java'],
+    readme: `# Maven for Java for Xivig
+Maven build lifecycle management:
+- XML parser for \`pom.xml\` extracting artifacts, versions, and dependencies
+- CLI command generator with offline and profile flags
+- Autocompletion for standard Maven POM XML snippet tags.`,
+  },
+  {
+    id: 'xivig-tool-vscode-java-debug',
+    name: 'Debugger for Java',
+    publisher: 'Microsoft',
+    version: '0.58.0',
+    category: 'Productivity',
+    description: 'A lightweight Java debugger based on Java Debug Wire Protocol (JDWP) and launch configurations.',
+    iconBg: '#b07219',
+    iconSymbol: '🐞',
+    downloads: '32.1M',
+    rating: 4.8,
+    tags: ['java-debug', 'jdwp', 'debugger', 'breakpoints', 'dap'],
+    readme: `# Debugger for Java for Xivig
+JVM debugging integration:
+- JDWP transport argument builder for socket attachment
+- Standardized launch configuration generator
+- Source file breakpoint validator.`,
+  },
 ];
 
 interface ExtensionState {

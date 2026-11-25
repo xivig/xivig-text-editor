@@ -96,6 +96,12 @@ import {
   isortExtensionModule,
   ruffExtensionModule,
 } from './python/index';
+import {
+  extensionPackForJavaModule,
+  springBootExtensionPackModule,
+  mavenForJavaModule,
+  debuggerForJavaModule,
+} from './java/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -268,6 +274,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-isort': isortExtensionModule,
   'xivig.ruff': ruffExtensionModule,
   'xivig-tool-ruff': ruffExtensionModule,
+
+  // Java Development Suite
+  'xivig.vscode-java-pack': extensionPackForJavaModule,
+  'xivig-tool-vscode-java-pack': extensionPackForJavaModule,
+  'xivig.vscode-spring-boot-pack': springBootExtensionPackModule,
+  'xivig-tool-vscode-spring-boot-pack': springBootExtensionPackModule,
+  'xivig.vscode-maven': mavenForJavaModule,
+  'xivig-tool-vscode-maven': mavenForJavaModule,
+  'xivig.vscode-java-debug': debuggerForJavaModule,
+  'xivig-tool-vscode-java-debug': debuggerForJavaModule,
 };
 
 export {
@@ -345,4 +361,8 @@ export {
   blackFormatterExtensionModule,
   isortExtensionModule,
   ruffExtensionModule,
+  extensionPackForJavaModule,
+  springBootExtensionPackModule,
+  mavenForJavaModule,
+  debuggerForJavaModule,
 };
