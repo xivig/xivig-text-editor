@@ -1,36 +1,47 @@
 :root {
   /* Colors */
-  --xivig-bg: #17191f;
-  --xivig-surface: #1d2028;
-  --xivig-surface-hover: #262a35;
-  --xivig-sidebar: #191b22;
-  --xivig-activity-bar: #13151a;
-  --xivig-tab-active: #17191f;
-  --xivig-tab-inactive: #1b1e26;
-  --xivig-editor: #17191f;
-  --xivig-statusbar: #13151a;
+  --xivig-bg: #15171e;
+  --xivig-surface: #1a1d26;
+  --xivig-surface-hover: #232734;
+  --xivig-sidebar: #171922;
+  --xivig-activity-bar: #12141a;
+  --xivig-tab-active: #15171e;
+  --xivig-tab-inactive: #181b24;
+  --xivig-editor: #15171e;
+  --xivig-statusbar: #111318;
 
   --xivig-accent: #6c8cff;
   --xivig-accent-hover: #5879f5;
   --xivig-accent-active: rgba(108, 140, 255, 0.2);
   --xivig-accent-subtle: rgba(108, 140, 255, 0.1);
+  --xivig-accent-gradient: linear-gradient(135deg, #6c8cff 0%, #4f6de8 100%);
   --xivig-selection: rgba(108, 140, 255, 0.45);
   --xivig-selection-match: rgba(108, 140, 255, 0.22);
   --xivig-active-line: rgba(255, 255, 255, 0.04);
 
-  --xivig-text: #e5e7eb;
-  --xivig-text-muted: #9299a8;
-  --xivig-text-dim: #646b7a;
+  --xivig-text: #f0f2f5;
+  --xivig-text-muted: #9ba3b4;
+  --xivig-text-dim: #6b7280;
 
-  --xivig-border: #2c313d;
-  --xivig-border-subtle: #21252f;
+  --xivig-border: #282d3b;
+  --xivig-border-subtle: #1e222d;
 
   --xivig-success: #35b779;
   --xivig-warning: #e6ad45;
   --xivig-error: #ef6464;
 
+  /* Modern Glass & Elevation Tokens */
+  --xivig-glass-bg: rgba(255, 255, 255, 0.035);
+  --xivig-glass-bg-hover: rgba(255, 255, 255, 0.065);
+  --xivig-glass-border: rgba(255, 255, 255, 0.07);
+  --xivig-glass-border-hover: rgba(108, 140, 255, 0.35);
+  --xivig-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --xivig-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --xivig-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
+  --xivig-shadow-glow: 0 0 16px rgba(108, 140, 255, 0.3);
+
   /* Typography */
-  --xivig-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --xivig-font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --xivig-font-mono: "Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, Menlo, Monaco, monospace;
   --xivig-font-size-ui: 13px;
   --xivig-font-size-sm: 11px;
@@ -40,10 +51,10 @@
   --xivig-font-features: "liga" 1, "calt" 1;
 
   /* Dimensions */
-  --xivig-titlebar-height: 36px;
+  --xivig-titlebar-height: 38px;
   --xivig-menubar-height: 30px;
-  --xivig-activitybar-width: 48px;
-  --xivig-sidebar-width: 250px;
-  --xivig-tabbar-height: 36px;
-  --xivig-statusbar-height: 24px;
+  --xivig-activitybar-width: 50px;
+  --xivig-sidebar-width: 260px;
+  --xivig-tabbar-height: 38px;
+  --xivig-statusbar-height: 26px;
 }

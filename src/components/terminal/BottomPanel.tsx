@@ -695,26 +695,29 @@ const tabsGroupStyle: React.CSSProperties = {
 const tabBtnStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  padding: '0 12px',
-  fontSize: '12px',
+  padding: '0 14px',
+  fontSize: '11.5px',
+  fontWeight: 600,
   cursor: 'pointer',
-  transition: 'all 0.1s ease',
+  transition: 'all 0.15s ease',
 };
 
 const actionsGroupStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
+  paddingRight: '6px',
 };
 
 const iconBtnStyle: React.CSSProperties = {
-  padding: '4px',
-  borderRadius: '3px',
+  padding: '4px 6px',
+  borderRadius: '4px',
   color: 'var(--xivig-text-dim)',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  transition: 'all 0.12s ease',
 };
 
 const panelBodyStyle: React.CSSProperties = {

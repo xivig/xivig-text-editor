@@ -110,11 +110,11 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({ pane = 'primary' }
 };
 
 const containerStyle: React.CSSProperties = {
-  height: '24px',
-  minHeight: '24px',
+  height: '26px',
+  minHeight: '26px',
   display: 'flex',
   alignItems: 'center',
-  padding: '0 12px',
+  padding: '0 14px',
   backgroundColor: 'var(--xivig-editor)',
   borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   fontSize: '11px',
@@ -131,23 +131,24 @@ const crumbItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
-  padding: '2px 4px',
-  borderRadius: '3px',
+  padding: '2px 6px',
+  borderRadius: '4px',
   transition: 'color 0.15s, background-color 0.15s',
 };
 
 const activeFileCrumbStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  color: 'var(--xivig-text, #e0e0e0)',
+  color: '#ffffff',
   cursor: 'pointer',
-  padding: '2px 4px',
-  borderRadius: '3px',
+  padding: '2px 6px',
+  borderRadius: '4px',
+  fontWeight: 500,
 };
 
 const separatorStyle: React.CSSProperties = {
-  margin: '0 3px',
-  color: 'rgba(255, 255, 255, 0.25)',
+  margin: '0 4px',
+  color: 'rgba(255, 255, 255, 0.2)',
   flexShrink: 0,
 };
 
@@ -155,10 +156,10 @@ const symbolCrumbStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
-  padding: '2px 6px',
-  borderRadius: '3px',
-  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-  border: '1px solid rgba(255, 255, 255, 0.05)',
+  padding: '2px 8px',
+  borderRadius: '4px',
+  backgroundColor: 'rgba(108, 140, 255, 0.08)',
+  border: '1px solid rgba(108, 140, 255, 0.2)',
 };
 
 const symbolBadgeStyle: React.CSSProperties = {
