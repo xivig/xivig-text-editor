@@ -100,6 +100,10 @@ import {
   createTomlCompletionSource,
 } from '../../extensions/builtin/rust';
 import {
+  createKotlinCompletionSource,
+  createGradleCompletionSource,
+} from '../../extensions/builtin/android-kotlin';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -290,6 +294,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createCMakeCompletionSource(),
             createRustCompletionSource(),
             createTomlCompletionSource(),
+            createKotlinCompletionSource(),
+            createGradleCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

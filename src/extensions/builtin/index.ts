@@ -114,6 +114,13 @@ import {
   codeLldbExtensionModule,
   cratesExtensionModule,
 } from './rust/index';
+import {
+  kotlinExtensionModule,
+  androidI18nExtensionModule,
+  gradleAndroidExtensionModule,
+  adbExtensionModule,
+  xmlToolsExtensionModule,
+} from './android-kotlin/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -316,6 +323,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-codelldb': codeLldbExtensionModule,
   'xivig.crates': cratesExtensionModule,
   'xivig-tool-crates': cratesExtensionModule,
+
+  // Android / Kotlin Development Suite
+  'xivig.kotlin': kotlinExtensionModule,
+  'xivig-tool-kotlin': kotlinExtensionModule,
+  'xivig.android-i18n': androidI18nExtensionModule,
+  'xivig-tool-android-i18n': androidI18nExtensionModule,
+  'xivig.gradle-android': gradleAndroidExtensionModule,
+  'xivig-tool-gradle-android': gradleAndroidExtensionModule,
+  'xivig.adb-interface': adbExtensionModule,
+  'xivig-tool-adb-interface': adbExtensionModule,
+  'xivig.xml-tools': xmlToolsExtensionModule,
+  'xivig-tool-xml-tools': xmlToolsExtensionModule,
 };
 
 export {
@@ -405,4 +424,9 @@ export {
   evenBetterTomlExtensionModule,
   codeLldbExtensionModule,
   cratesExtensionModule,
+  kotlinExtensionModule,
+  androidI18nExtensionModule,
+  gradleAndroidExtensionModule,
+  adbExtensionModule,
+  xmlToolsExtensionModule,
 };

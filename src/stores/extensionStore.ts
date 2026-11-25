@@ -1851,6 +1851,94 @@ Stay up to date with the Rust crates ecosystem:
 - Parses active dependencies and versions directly from \`Cargo.toml\`
 - Detects newer semantic versions against crates.io registry.`,
   },
+  // --- Category 15: Android / Kotlin Development ---
+  {
+    id: 'xivig-tool-kotlin',
+    name: 'Kotlin',
+    publisher: 'JetBrains',
+    version: '0.2.33',
+    category: 'Languages',
+    description: 'Kotlin language support for Xivig with data classes, coroutines, and scope function completions.',
+    iconBg: '#7f52ff',
+    iconSymbol: '🇰',
+    downloads: '16.5M',
+    rating: 4.8,
+    tags: ['kotlin', 'android', 'coroutines', 'jvm', 'jetbrains'],
+    readme: `# Kotlin for Xivig
+Modern, expressive multiplatform language support:
+- AST symbol parser for functions, data classes, interfaces, objects, and properties
+- Autocompletion for Kotlin keywords, coroutines, and scope functions (\`let\`, \`apply\`, \`run\`).`,
+  },
+  {
+    id: 'xivig-tool-android-i18n',
+    name: 'Android i18n',
+    publisher: 'Dominic Vonk',
+    version: '1.2.0',
+    category: 'Productivity',
+    description: 'Manage and translate Android strings.xml resources across multiple locale directories.',
+    iconBg: '#3ddc84',
+    iconSymbol: '🌐',
+    downloads: '850K',
+    rating: 4.8,
+    tags: ['android', 'i18n', 'strings', 'localization', 'translation'],
+    readme: `# Android i18n for Xivig
+Android localization and resource management:
+- XML string parser extracting keys, values, and translatable flags
+- Automatic missing translation detector across locale directories
+- Generates formatted strings.xml resource files.`,
+  },
+  {
+    id: 'xivig-tool-gradle-android',
+    name: 'Gradle for Android/Java',
+    publisher: 'vsciot-vscode',
+    version: '3.16.2',
+    category: 'Productivity',
+    description: 'Parse build.gradle, extract Android SDK configurations, and run build tasks with Gradle wrapper.',
+    iconBg: '#02303a',
+    iconSymbol: '🐘',
+    downloads: '11.8M',
+    rating: 4.8,
+    tags: ['gradle', 'android', 'build', 'sdk', 'tasks'],
+    readme: `# Gradle for Android/Java for Xivig
+Build automation for Android and JVM projects:
+- Extracts compileSdk, minSdk, targetSdk, versionCode, and applicationId
+- Generates Gradle wrapper commands for debug and release assembly
+- Autocompletion for Gradle DSL blocks and configurations.`,
+  },
+  {
+    id: 'xivig-tool-adb-interface',
+    name: 'ADB Interface',
+    publisher: 'SimonSiefke',
+    version: '1.4.1',
+    category: 'Productivity',
+    description: 'Interact with Android Debug Bridge (ADB) devices, view connected emulators, and inspect logs.',
+    iconBg: '#3ddc84',
+    iconSymbol: '🤖',
+    downloads: '2.1M',
+    rating: 4.8,
+    tags: ['adb', 'android', 'emulator', 'devices', 'logcat'],
+    readme: `# ADB Interface for Xivig
+Android device and emulator controller:
+- Parses active devices from \`adb devices -l\` with model and product info
+- Builds targeted commands for logcat, APK installation, and shell execution.`,
+  },
+  {
+    id: 'xivig-tool-xml-tools',
+    name: 'XML Tools',
+    publisher: 'Josh Johnson',
+    version: '2.5.1',
+    category: 'Languages',
+    description: 'XML formatting, AndroidManifest.xml validation, and activity/permission declaration extractors.',
+    iconBg: '#e67e22',
+    iconSymbol: '🏷️',
+    downloads: '15.9M',
+    rating: 4.8,
+    tags: ['xml', 'android-manifest', 'formatter', 'linting', 'tools'],
+    readme: `# XML Tools for Xivig
+Clean XML editing and Android manifest intelligence:
+- Formats XML documents with nested indentation
+- Validates AndroidManifest.xml structure, activities, and declared permissions.`,
+  },
 ];
 
 interface ExtensionState {
