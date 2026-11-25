@@ -1778,6 +1778,79 @@ High-speed LLVM-based language intelligence:
 - Generates \`.clang-format\` documents (LLVM, Google, Chromium, Mozilla, WebKit styles)
 - Validates \`.clangd\` configuration files and sections.`,
   },
+  // --- Category 14: Rust Development ---
+  {
+    id: 'xivig-tool-rust-analyzer',
+    name: 'rust-analyzer',
+    publisher: 'rust-lang',
+    version: '0.3.2185',
+    category: 'Languages',
+    description: 'Modular compiler frontend and language server for the Rust language with full symbol parsing.',
+    iconBg: '#000000',
+    iconSymbol: '🦀',
+    downloads: '18.4M',
+    rating: 4.9,
+    tags: ['rust', 'rust-analyzer', 'cargo', 'rustc', 'language-server'],
+    readme: `# rust-analyzer for Xivig
+State-of-the-art Rust language intelligence:
+- Cargo and rustc toolchain detection
+- Symbol extractor for functions, structs, traits, enums, and modules
+- Cargo CLI commands (check, build, test, run, clippy)
+- CodeMirror autocompletion for Rust keywords, traits, and types.`,
+  },
+  {
+    id: 'xivig-tool-even-better-toml',
+    name: 'Even Better TOML',
+    publisher: 'tamasfe',
+    version: '0.19.2',
+    category: 'Languages',
+    description: 'Fully-featured TOML support with Cargo.toml package validation, dependency tables, and completions.',
+    iconBg: '#9c4221',
+    iconSymbol: '📑',
+    downloads: '14.8M',
+    rating: 4.9,
+    tags: ['toml', 'cargo', 'even-better-toml', 'rust', 'formatting'],
+    readme: `# Even Better TOML for Xivig
+Delightful TOML configuration editing:
+- Validates \`Cargo.toml\` package metadata and semantic versions
+- Parses string and table dependency definitions
+- Autocompletion for standard Cargo manifest sections.`,
+  },
+  {
+    id: 'xivig-tool-codelldb',
+    name: 'CodeLLDB',
+    publisher: 'Vadim Chugunov',
+    version: '1.10.0',
+    category: 'Productivity',
+    description: 'Native debugger for Rust, C, and C++ powered by LLDB with panic breakpoint interceptors.',
+    iconBg: '#2a5599',
+    iconSymbol: '🔍',
+    downloads: '19.2M',
+    rating: 4.8,
+    tags: ['codelldb', 'lldb', 'debugger', 'rust', 'native-debug'],
+    readme: `# CodeLLDB for Xivig
+Native debugging for compiled systems languages:
+- Generates launch configurations for LLDB binaries
+- Rust panic breakpoint argument generation
+- Support for stopOnEntry and custom working directories.`,
+  },
+  {
+    id: 'xivig-tool-crates',
+    name: 'crates',
+    publisher: 'Seray Uzgur',
+    version: '0.6.5',
+    category: 'Productivity',
+    description: 'Manage Cargo.toml dependencies, inspect crate updates, and view latest versions from crates.io.',
+    iconBg: '#d34524',
+    iconSymbol: '📦',
+    downloads: '5.2M',
+    rating: 4.8,
+    tags: ['crates', 'cargo', 'dependencies', 'rust', 'version-checker'],
+    readme: `# crates for Xivig
+Stay up to date with the Rust crates ecosystem:
+- Parses active dependencies and versions directly from \`Cargo.toml\`
+- Detects newer semantic versions against crates.io registry.`,
+  },
 ];
 
 interface ExtensionState {

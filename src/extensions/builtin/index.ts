@@ -108,6 +108,12 @@ import {
   codeRunnerExtensionModule,
   clangdExtensionModule,
 } from './cpp/index';
+import {
+  rustAnalyzerExtensionModule,
+  evenBetterTomlExtensionModule,
+  codeLldbExtensionModule,
+  cratesExtensionModule,
+} from './rust/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -300,6 +306,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-code-runner': codeRunnerExtensionModule,
   'xivig.vscode-clangd': clangdExtensionModule,
   'xivig-tool-vscode-clangd': clangdExtensionModule,
+
+  // Rust Development Suite
+  'xivig.rust-analyzer': rustAnalyzerExtensionModule,
+  'xivig-tool-rust-analyzer': rustAnalyzerExtensionModule,
+  'xivig.even-better-toml': evenBetterTomlExtensionModule,
+  'xivig-tool-even-better-toml': evenBetterTomlExtensionModule,
+  'xivig.codelldb': codeLldbExtensionModule,
+  'xivig-tool-codelldb': codeLldbExtensionModule,
+  'xivig.crates': cratesExtensionModule,
+  'xivig-tool-crates': cratesExtensionModule,
 };
 
 export {
@@ -385,4 +401,8 @@ export {
   cmakeToolsExtensionModule,
   codeRunnerExtensionModule,
   clangdExtensionModule,
+  rustAnalyzerExtensionModule,
+  evenBetterTomlExtensionModule,
+  codeLldbExtensionModule,
+  cratesExtensionModule,
 };

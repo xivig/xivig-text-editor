@@ -96,6 +96,10 @@ import {
   createCMakeCompletionSource,
 } from '../../extensions/builtin/cpp';
 import {
+  createRustCompletionSource,
+  createTomlCompletionSource,
+} from '../../extensions/builtin/rust';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -284,6 +288,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createMavenCompletionSource(),
             createCppCompletionSource(),
             createCMakeCompletionSource(),
+            createRustCompletionSource(),
+            createTomlCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),
