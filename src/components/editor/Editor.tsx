@@ -74,6 +74,10 @@ import {
   createMySqlCompletionSource,
 } from '../../extensions/builtin/database';
 import {
+  createRestClientCompletionSource,
+  createOpenApiCompletionSource,
+} from '../../extensions/builtin/api-dev';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -250,6 +254,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createBladeDirectivesCompletionSource(),
             createLaravelExtraCompletionSource(),
             createMySqlCompletionSource(),
+            createRestClientCompletionSource(),
+            createOpenApiCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

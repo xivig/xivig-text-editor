@@ -74,6 +74,12 @@ import {
   sqliteViewerExtensionModule,
   redisExtensionModule,
 } from './database/index';
+import {
+  thunderClientExtensionModule,
+  postmanExtensionModule,
+  restClientExtensionModule,
+  openApiEditorExtensionModule,
+} from './api-dev/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -208,6 +214,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-sqlite-viewer': sqliteViewerExtensionModule,
   'xivig.redis': redisExtensionModule,
   'xivig-tool-redis': redisExtensionModule,
+
+  // API Development Suite
+  'xivig.thunder-client': thunderClientExtensionModule,
+  'xivig-tool-thunder-client': thunderClientExtensionModule,
+  'xivig.postman': postmanExtensionModule,
+  'xivig-tool-postman': postmanExtensionModule,
+  'xivig.rest-client': restClientExtensionModule,
+  'xivig-tool-rest-client': restClientExtensionModule,
+  'xivig.openapi-swagger-editor': openApiEditorExtensionModule,
+  'xivig-tool-openapi-swagger-editor': openApiEditorExtensionModule,
 };
 
 export {
@@ -269,4 +285,8 @@ export {
   mongoDbExtensionModule,
   sqliteViewerExtensionModule,
   redisExtensionModule,
+  thunderClientExtensionModule,
+  postmanExtensionModule,
+  restClientExtensionModule,
+  openApiEditorExtensionModule,
 };

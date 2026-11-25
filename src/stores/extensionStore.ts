@@ -1339,6 +1339,80 @@ Redis key-value store explorer:
 - Command builder for strings, hashes, lists, sets, and zsets
 - In-memory data type inspector and key pattern scanner.`,
   },
+  // --- Category 9: API Development ---
+  {
+    id: 'xivig-tool-thunder-client',
+    name: 'Thunder Client',
+    publisher: 'Ranga Vadhineni',
+    version: '2.24.2',
+    category: 'Productivity',
+    description: 'Lightweight REST API Client Extension with environment variables, response viewer, and runners.',
+    iconBg: '#0b5394',
+    iconSymbol: '⚡',
+    downloads: '4.8M',
+    rating: 4.8,
+    tags: ['thunder-client', 'api', 'rest', 'http', 'client', 'graphql'],
+    readme: `# Thunder Client for Xivig
+Lightweight, rapid REST API testing right in your editor:
+- Environment variable substitution (\`{{baseUrl}}\`, \`{{token}}\`)
+- Complete request builder (GET, POST, PUT, DELETE, PATCH, headers, params, body)
+- Response viewer with JSON pretty printing, status badges, and latency benchmarks.`,
+  },
+  {
+    id: 'xivig-tool-postman',
+    name: 'Postman',
+    publisher: 'Postman',
+    version: '1.4.1',
+    category: 'Productivity',
+    description: 'Postman collection v2.1 import, export, collection runner, and environment variable manager.',
+    iconBg: '#ef5b25',
+    iconSymbol: '🚀',
+    downloads: '3.6M',
+    rating: 4.8,
+    tags: ['postman', 'api', 'collection', 'v2.1', 'runner', 'rest'],
+    readme: `# Postman for Xivig
+Seamless Postman ecosystem interoperability:
+- Import and export Postman Collection v2.1 format JSON
+- Nested folder and request flattening into runnable endpoints
+- Postman environment variable JSON importer.`,
+  },
+  {
+    id: 'xivig-tool-rest-client',
+    name: 'REST Client',
+    publisher: 'Huachao Mao',
+    version: '0.25.1',
+    category: 'Productivity',
+    description: 'Execute HTTP requests directly from .http and .rest files with RFC 7230 syntax and variable substitution.',
+    iconBg: '#1e88e5',
+    iconSymbol: '📨',
+    downloads: '5.2M',
+    rating: 4.9,
+    tags: ['rest-client', 'http', 'rest', 'rfc7230', 'curl', 'api'],
+    readme: `# REST Client for Xivig
+RFC 7230 .http and .rest file execution:
+- Parses multi-request files with \`###\` delimiters
+- File variables (\`@baseUrl = https://...\`) and system variables (\`{{$guid}}\`, \`{{$timestamp}}\`, \`{{$randomInt}}\`)
+- Instant export to standard curl command lines.`,
+  },
+  {
+    id: 'xivig-tool-openapi-swagger-editor',
+    name: 'OpenAPI (Swagger) Editor',
+    publisher: '42Crunch',
+    version: '4.20.0',
+    category: 'Languages',
+    description: 'OpenAPI 3.x and Swagger 2.0 navigation, schema linting, parameter checks, and autocompletion.',
+    iconBg: '#85ea2d',
+    iconSymbol: '📖',
+    downloads: '2.1M',
+    rating: 4.8,
+    tags: ['openapi', 'swagger', 'yaml', 'json', 'api-spec', 'linting'],
+    readme: `# OpenAPI (Swagger) Editor for Xivig
+Rich intelligence for OpenAPI 3.x and Swagger specifications:
+- Document validator for versions, info, and paths
+- Operation extractor for endpoints, parameters, and responses
+- Real-time schema linting for missing IDs, summaries, and unreferenced path parameters
+- CodeMirror autocompletion for OpenAPI specifications.`,
+  },
 ];
 
 interface ExtensionState {
