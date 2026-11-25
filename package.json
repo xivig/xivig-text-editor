@@ -33,6 +33,7 @@
   "build": {
     "appId": "com.xivig.texteditor",
     "productName": "Xivig Text Editor",
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
