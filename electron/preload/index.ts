@@ -4,8 +4,11 @@ const xivigAPI = {
   // File operations
   openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
   openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
+  openWorkspaceFileDialog: () => ipcRenderer.invoke('dialog:openWorkspaceFile'),
   saveFile: (filePath: string, content: string) => ipcRenderer.invoke('file:save', { filePath, content }),
   saveFileDialog: (defaultName?: string, content?: string) => ipcRenderer.invoke('file:saveDialog', { defaultName, content }),
+  saveWorkspaceFileDialog: (defaultName?: string, content?: string) =>
+    ipcRenderer.invoke('dialog:saveWorkspaceDialog', { defaultName, content }),
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
   readDir: (dirPath: string) => ipcRenderer.invoke('file:readDir', dirPath),
   createFileOrFolder: (targetPath: string, isDirectory: boolean) =>
@@ -32,6 +35,7 @@ const xivigAPI = {
   saveSession: (session: any) => ipcRenderer.invoke('session:save', session),
   restoreSession: () => ipcRenderer.invoke('session:restore'),
   getRecentHistory: () => ipcRenderer.invoke('history:getRecent'),
+  clearRecentHistory: () => ipcRenderer.invoke('history:clearRecent'),
   getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
   setSetting: (key: string, value: string) => ipcRenderer.invoke('settings:set', { key, value }),
 

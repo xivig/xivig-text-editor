@@ -78,6 +78,12 @@ import {
   createOpenApiCompletionSource,
 } from '../../extensions/builtin/api-dev';
 import {
+  createDockerfileCompletionSource,
+  createK8sCompletionSource,
+  createTerraformCompletionSource,
+  createYamlCompletionSource,
+} from '../../extensions/builtin/devops';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -256,6 +262,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createMySqlCompletionSource(),
             createRestClientCompletionSource(),
             createOpenApiCompletionSource(),
+            createDockerfileCompletionSource(),
+            createK8sCompletionSource(),
+            createTerraformCompletionSource(),
+            createYamlCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

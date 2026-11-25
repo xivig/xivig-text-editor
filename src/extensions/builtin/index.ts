@@ -80,6 +80,14 @@ import {
   restClientExtensionModule,
   openApiEditorExtensionModule,
 } from './api-dev/index';
+import {
+  dockerExtensionModule,
+  kubernetesExtensionModule,
+  devContainersExtensionModule,
+  yamlExtensionModule,
+  terraformExtensionModule,
+  azureToolsExtensionModule,
+} from './devops/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -224,6 +232,20 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rest-client': restClientExtensionModule,
   'xivig.openapi-swagger-editor': openApiEditorExtensionModule,
   'xivig-tool-openapi-swagger-editor': openApiEditorExtensionModule,
+
+  // Docker & DevOps Suite
+  'xivig.docker': dockerExtensionModule,
+  'xivig-tool-docker': dockerExtensionModule,
+  'xivig.kubernetes': kubernetesExtensionModule,
+  'xivig-tool-kubernetes': kubernetesExtensionModule,
+  'xivig.dev-containers': devContainersExtensionModule,
+  'xivig-tool-dev-containers': devContainersExtensionModule,
+  'xivig.yaml': yamlExtensionModule,
+  'xivig-tool-yaml': yamlExtensionModule,
+  'xivig.terraform': terraformExtensionModule,
+  'xivig-tool-terraform': terraformExtensionModule,
+  'xivig.azure-tools': azureToolsExtensionModule,
+  'xivig-tool-azure-tools': azureToolsExtensionModule,
 };
 
 export {
@@ -289,4 +311,10 @@ export {
   postmanExtensionModule,
   restClientExtensionModule,
   openApiEditorExtensionModule,
+  dockerExtensionModule,
+  kubernetesExtensionModule,
+  devContainersExtensionModule,
+  yamlExtensionModule,
+  terraformExtensionModule,
+  azureToolsExtensionModule,
 };

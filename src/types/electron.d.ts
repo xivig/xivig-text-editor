@@ -77,8 +77,10 @@ export interface XivigAPI {
   // File operations
   openFileDialog: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
   openFolderDialog: () => Promise<{ canceled: boolean; folderPath?: string; files?: Array<{ path: string; name: string; isDirectory: boolean }> }>;
+  openWorkspaceFileDialog?: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
   saveFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   saveFileDialog: (defaultName?: string, content?: string) => Promise<{ canceled: boolean; filePath?: string }>;
+  saveWorkspaceFileDialog?: (defaultName?: string, content?: string) => Promise<{ canceled: boolean; filePath?: string; name?: string }>;
   readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   readDir: (dirPath: string) => Promise<{ success: boolean; items?: Array<{ path: string; name: string; isDirectory: boolean }>; error?: string }>;
   createFileOrFolder: (targetPath: string, isDirectory: boolean) => Promise<{ success: boolean; error?: string }>;
@@ -100,6 +102,7 @@ export interface XivigAPI {
   saveSession: (session: SavedSession) => Promise<boolean>;
   restoreSession: () => Promise<SavedSession | null>;
   getRecentHistory: () => Promise<{ files: RecentItem[]; workspaces: RecentItem[] }>;
+  clearRecentHistory?: () => Promise<boolean>;
   getSetting: (key: string) => Promise<string | null>;
   setSetting: (key: string, value: string) => Promise<boolean>;
 

@@ -11,6 +11,7 @@ import {
   getRecentFiles,
   addRecentWorkspace,
   getRecentWorkspaces,
+  clearRecentHistory,
   setSetting,
   getSetting,
   SavedSession,
@@ -393,6 +394,66 @@ ipcMain.handle('dialog:openFolder', async (event) => {
   }
 });
 
+ipcMain.handle('dialog:openWorkspaceFile', async (event) => {
+  const targetWin = getValidatedWindow(event);
+
+  const result = await dialog.showOpenDialog(targetWin, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Workspace Files (*.code-workspace, *.xivig-workspace, *.json)', extensions: ['code-workspace', 'xivig-workspace', 'json'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { canceled: true };
+  }
+
+  const filePath = validatePathInput(result.filePaths[0]);
+  try {
+    addApprovedFile(targetWin.id, filePath);
+    const content = await fs.readFile(filePath, 'utf-8');
+    const name = path.basename(filePath);
+    addRecentWorkspace(filePath, name);
+    return { canceled: false, filePath, content, name };
+  } catch (error: any) {
+    return { canceled: false, filePath, error: error.message };
+  }
+});
+
+ipcMain.handle('dialog:saveWorkspaceDialog', async (event, { defaultName, content }: { defaultName?: string; content?: string }) => {
+  const targetWin = getValidatedWindow(event);
+
+  const result = await dialog.showSaveDialog(targetWin, {
+    defaultPath: defaultName || 'untitled.xivig-workspace',
+    filters: [
+      { name: 'Xivig Workspace (*.xivig-workspace)', extensions: ['xivig-workspace'] },
+      { name: 'VS Code Workspace (*.code-workspace)', extensions: ['code-workspace'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  });
+
+  if (result.canceled || !result.filePath) {
+    return { canceled: true };
+  }
+
+  const safePath = validatePathInput(result.filePath);
+  addApprovedFile(targetWin.id, safePath);
+
+  if (content !== undefined) {
+    try {
+      const safeContent = validateContentPayload(content);
+      await atomicWriteFile(safePath, safeContent);
+      const name = path.basename(safePath);
+      addRecentWorkspace(safePath, name);
+    } catch (error: any) {
+      return { canceled: false, filePath: safePath, error: error.message };
+    }
+  }
+
+  return { canceled: false, filePath: safePath, name: path.basename(safePath) };
+});
+
 ipcMain.handle('file:save', async (event, { filePath, content }: { filePath: string; content: string }) => {
   const targetWin = getValidatedWindow(event);
 
@@ -613,6 +674,12 @@ ipcMain.handle('history:getRecent', async (event) => {
     files: getRecentFiles(12),
     workspaces: getRecentWorkspaces(10),
   };
+});
+
+ipcMain.handle('history:clearRecent', async (event) => {
+  if (!validateIpcSender(event)) return false;
+  clearRecentHistory();
+  return true;
 });
 
 ipcMain.handle('settings:get', async (event, key: string) => {

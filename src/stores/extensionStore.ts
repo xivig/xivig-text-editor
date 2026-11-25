@@ -1413,6 +1413,115 @@ Rich intelligence for OpenAPI 3.x and Swagger specifications:
 - Real-time schema linting for missing IDs, summaries, and unreferenced path parameters
 - CodeMirror autocompletion for OpenAPI specifications.`,
   },
+  // --- Category 10: Docker & DevOps ---
+  {
+    id: 'xivig-tool-docker',
+    name: 'Docker',
+    publisher: 'Microsoft',
+    version: '1.29.1',
+    category: 'Productivity',
+    description: 'Build, manage, and deploy containerized applications with Dockerfile linting and multi-stage awareness.',
+    iconBg: '#2496ed',
+    iconSymbol: '🐳',
+    downloads: '31.2M',
+    rating: 4.8,
+    tags: ['docker', 'dockerfile', 'containers', 'images', 'devops'],
+    readme: `# Docker for Xivig
+Container development and image engineering:
+- Production Dockerfile linter (security checks, sudo usage, unpinned latest tags)
+- CodeMirror completion for Dockerfile instructions and multi-stage builds
+- Docker run command generator with ports, environment variables, and names.`,
+  },
+  {
+    id: 'xivig-tool-kubernetes',
+    name: 'Kubernetes',
+    publisher: 'Microsoft',
+    version: '1.3.16',
+    category: 'Productivity',
+    description: 'Develop, deploy and debug Kubernetes applications with manifest validation and RFC 1123 naming checks.',
+    iconBg: '#326ce5',
+    iconSymbol: '☸️',
+    downloads: '6.4M',
+    rating: 4.8,
+    tags: ['kubernetes', 'k8s', 'manifests', 'deployment', 'pods', 'devops'],
+    readme: `# Kubernetes for Xivig
+Kubernetes manifests intelligence:
+- Multi-document YAML manifest parser (\`---\`)
+- RFC 1123 DNS subdomain naming validator
+- Linter for Pod, Deployment, Service, ConfigMap, and Ingress resources
+- Completions for API versions and core kinds.`,
+  },
+  {
+    id: 'xivig-tool-dev-containers',
+    name: 'Dev Containers',
+    publisher: 'Microsoft',
+    version: '0.388.0',
+    category: 'Productivity',
+    description: 'Open any folder or repository inside a Docker container with devcontainer.json configuration validation.',
+    iconBg: '#007acc',
+    iconSymbol: '📦',
+    downloads: '14.8M',
+    rating: 4.9,
+    tags: ['devcontainer', 'remote-containers', 'docker', 'devops', 'environments'],
+    readme: `# Dev Containers for Xivig
+Reproducible containerized development workspaces:
+- JSONC parser stripping comments and trailing commas
+- Validator for base image, build contexts, forwardPorts, and postCreateCommands.`,
+  },
+  {
+    id: 'xivig-tool-yaml',
+    name: 'YAML',
+    publisher: 'Red Hat',
+    version: '1.15.0',
+    category: 'Languages',
+    description: 'Comprehensive YAML language support with indentation checking, tab prohibition, and schema validation.',
+    iconBg: '#cb171e',
+    iconSymbol: '📄',
+    downloads: '28.1M',
+    rating: 4.9,
+    tags: ['yaml', 'yml', 'linting', 'formatting', 'devops'],
+    readme: `# YAML for Xivig
+Robust YAML syntax and linting rules:
+- Strictly prohibits tab characters for indentation per YAML standard
+- Flags missing space delimiters after key colons
+- Autocompletion for YAML booleans, null, and literal keywords.`,
+  },
+  {
+    id: 'xivig-tool-terraform',
+    name: 'HashiCorp Terraform',
+    publisher: 'HashiCorp',
+    version: '2.32.0',
+    category: 'Languages',
+    description: 'Terraform and HCL intelligence, block parser, duplicate resource detector, and completions.',
+    iconBg: '#7b42bc',
+    iconSymbol: '🏗️',
+    downloads: '7.9M',
+    rating: 4.8,
+    tags: ['terraform', 'hcl', 'infrastructure-as-code', 'iac', 'aws', 'cloud'],
+    readme: `# HashiCorp Terraform for Xivig
+Infrastructure as Code intelligence for Terraform and HCL:
+- Block parser for resource, provider, variable, output, data, and locals
+- Duplicate resource declaration detection
+- Autocomplete for Terraform block keywords and common cloud providers (AWS, Azure, Google).`,
+  },
+  {
+    id: 'xivig-tool-azure-tools',
+    name: 'Azure Tools',
+    publisher: 'Microsoft',
+    version: '1.4.0',
+    category: 'Productivity',
+    description: 'Develop and deploy Azure Resource Manager templates, Bicep, and App Services directly from Xivig.',
+    iconBg: '#0089d6',
+    iconSymbol: '☁️',
+    downloads: '3.3M',
+    rating: 4.8,
+    tags: ['azure', 'arm-templates', 'cloud', 'deployment', 'microsoft'],
+    readme: `# Azure Tools for Xivig
+Azure cloud infrastructure tools:
+- ARM template schema and contentVersion validator
+- Resource inspector (type, name, apiVersion, location)
+- Deployment CLI command generator.`,
+  },
 ];
 
 interface ExtensionState {
