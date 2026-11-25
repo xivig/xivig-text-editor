@@ -30,6 +30,16 @@ import {
   tabnineExtensionModule,
   amazonQExtensionModule,
 } from './ai/index';
+import {
+  liveServerExtensionModule,
+  livePreviewExtensionModule,
+  htmlCssSupportExtensionModule,
+  cssPeekExtensionModule,
+  cssClassIntellisenseExtensionModule,
+  tailwindIntellisenseExtensionModule,
+  bootstrapIntellisenseExtensionModule,
+  svgViewerExtensionModule,
+} from './web/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -86,6 +96,24 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-tabnine': tabnineExtensionModule,
   'xivig.amazon-q': amazonQExtensionModule,
   'xivig-tool-amazon-q': amazonQExtensionModule,
+
+  // Web Development Suite
+  'xivig.live-server': liveServerExtensionModule,
+  'xivig-tool-live-server': liveServerExtensionModule,
+  'xivig.live-preview': livePreviewExtensionModule,
+  'xivig-tool-live-preview': livePreviewExtensionModule,
+  'xivig.html-css-support': htmlCssSupportExtensionModule,
+  'xivig-tool-html-css-support': htmlCssSupportExtensionModule,
+  'xivig.css-peek': cssPeekExtensionModule,
+  'xivig-tool-css-peek': cssPeekExtensionModule,
+  'xivig.css-class-intellisense': cssClassIntellisenseExtensionModule,
+  'xivig-tool-css-class-intellisense': cssClassIntellisenseExtensionModule,
+  'xivig.tailwindcss-intellisense': tailwindIntellisenseExtensionModule,
+  'xivig-tool-tailwindcss-intellisense': tailwindIntellisenseExtensionModule,
+  'xivig.bootstrap-intellisense': bootstrapIntellisenseExtensionModule,
+  'xivig-tool-bootstrap-intellisense': bootstrapIntellisenseExtensionModule,
+  'xivig.svg-viewer': svgViewerExtensionModule,
+  'xivig-tool-svg-viewer': svgViewerExtensionModule,
 };
 
 export {
@@ -113,4 +141,12 @@ export {
   continueExtensionModule,
   tabnineExtensionModule,
   amazonQExtensionModule,
+  liveServerExtensionModule,
+  livePreviewExtensionModule,
+  htmlCssSupportExtensionModule,
+  cssPeekExtensionModule,
+  cssClassIntellisenseExtensionModule,
+  tailwindIntellisenseExtensionModule,
+  bootstrapIntellisenseExtensionModule,
+  svgViewerExtensionModule,
 };

@@ -54,6 +54,11 @@ import { createDiagnosticsLinter } from './diagnosticsLinter';
 import { hoverDocsExtension, parameterHintsExtension, codeIntelligenceKeymap } from './codeIntelligence';
 import { createPathCompletionSource } from '../../extensions/builtin/productivity';
 import {
+  createTailwindCompletionSource,
+  createBootstrapCompletionSource,
+  createHtmlCssCompletionSource,
+} from '../../extensions/builtin/web';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -223,6 +228,9 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           override: [
             createLspCompletionSource(activeDoc.path || '', docLanguage),
             createPathCompletionSource(),
+            createTailwindCompletionSource(),
+            createBootstrapCompletionSource(),
+            createHtmlCssCompletionSource(),
             createEmmetCompletionSource(() => detectEmmetSyntax(activeDoc.name || activeDoc.language)),
             createLanguageCompletionSource(() => activeDoc.name || activeDoc.language),
             getCustomSnippetSource(activeDoc.language || activeDoc.name),

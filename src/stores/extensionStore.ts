@@ -723,6 +723,151 @@ Brings the beloved muscle-memory of PhpStorm live templates and comprehensive PH
 - Instant hover documentation and parameter hints when typing function arguments.
 `,
   },
+  // --- Category 4: Web Development ---
+  {
+    id: 'xivig-tool-live-server',
+    name: 'Live Server',
+    publisher: 'Ritwick Dey',
+    version: '5.7.9',
+    category: 'Productivity',
+    description: 'Launch a local development server with live reload feature for static & dynamic pages.',
+    iconBg: '#9353d3',
+    iconSymbol: '📡',
+    downloads: '42.8M',
+    rating: 4.8,
+    tags: ['live-server', 'server', 'http', 'live-reload', 'web'],
+    readme: `# Live Server for Xivig
+Launch a fast, local development server with real-time automatic browser reload:
+- Automatic detection of workspace root and active documents.
+- Instant reload upon saving HTML, CSS, JS, and image assets.
+- Live status bar indicator and port configurability.`,
+  },
+  {
+    id: 'xivig-tool-live-preview',
+    name: 'Live Preview',
+    publisher: 'Microsoft',
+    version: '0.4.14',
+    category: 'Productivity',
+    description: 'Split-pane in-editor live preview with device emulation presets (iPhone 14, Pixel 7, iPad Air, Desktop HD).',
+    iconBg: '#0e70c0',
+    iconSymbol: '📱',
+    downloads: '6.4M',
+    rating: 4.9,
+    tags: ['live-preview', 'split-pane', 'responsive', 'device-emulation', 'inspector'],
+    readme: `# Live Preview for Xivig
+Integrated side-by-side browser preview embedded right in your editor:
+- Device emulation presets: iPhone 14, Pixel 7, iPad Air, MacBook, Full HD Desktop.
+- Orientation toggling and zoom scaling (25% to 200%).
+- Real-time console log streaming and visual element boundary inspector.`,
+  },
+  {
+    id: 'xivig-tool-html-css-support',
+    name: 'HTML CSS Support',
+    publisher: 'ecmel',
+    version: '2.0.12',
+    category: 'Languages',
+    description: 'CSS class and id attribute completion scraped across workspace CSS and HTML files.',
+    iconBg: '#e44d26',
+    iconSymbol: '🌐',
+    downloads: '16.9M',
+    rating: 4.7,
+    tags: ['html', 'css', 'class-completion', 'id-completion', 'scraper'],
+    readme: `# HTML CSS Support for Xivig
+Missing autocompletion for HTML classes and IDs resolved:
+- Indexes CSS class and ID selectors across all workspace stylesheets.
+- Autocompletes class and id attributes inside HTML, JSX, TSX, Vue, and Blade files.
+- Displays origin stylesheet and rule body previews.`,
+  },
+  {
+    id: 'xivig-tool-css-peek',
+    name: 'CSS Peek',
+    publisher: 'Pranay Prakash',
+    version: '2.2.4',
+    category: 'Productivity',
+    description: 'Jump to CSS selector definition from HTML classes and ids (F12 / Ctrl+Click).',
+    iconBg: '#264de4',
+    iconSymbol: '👁️',
+    downloads: '4.8M',
+    rating: 4.8,
+    tags: ['css-peek', 'jump-to-definition', 'f12', 'hover', 'css'],
+    readme: `# CSS Peek for Xivig
+Instant definition peek and navigation for CSS classes and IDs:
+- Jump to matching CSS rule declarations using F12 or Ctrl+Click.
+- Hover preview reveals full CSS rules directly from HTML markup.
+- Multi-file stylesheet scanning and accurate line/column positioning.`,
+  },
+  {
+    id: 'xivig-tool-css-class-intellisense',
+    name: 'IntelliSense for CSS class names',
+    publisher: 'Zignd',
+    version: '1.20.0',
+    category: 'Languages',
+    description: 'CSS class completions with specificity scoring (a, b, c) and conflict resolution.',
+    iconBg: '#42a5f5',
+    iconSymbol: '🎯',
+    downloads: '9.2M',
+    rating: 4.8,
+    tags: ['css', 'specificity', 'intellisense', 'class-names', 'conflict-resolution'],
+    readme: `# IntelliSense for CSS class names in Xivig
+Advanced class completions with real-time specificity metrics:
+- Computes W3C specificity vectors (IDs, classes/attributes/pseudos, types/elements).
+- Ranks conflicting selector precedence and badges completion suggestions.
+- Clear specificity category badges: LOW, MEDIUM, HIGH, ULTRA.`,
+  },
+  {
+    id: 'xivig-tool-tailwindcss-intellisense',
+    name: 'Tailwind CSS IntelliSense',
+    publisher: 'Tailwind Labs',
+    version: '0.12.7',
+    category: 'Languages',
+    description: 'Intelligent Tailwind CSS utility completions with visual color preview and CSS rule hover expansion.',
+    iconBg: '#06b6d4',
+    iconSymbol: '🎨',
+    downloads: '14.5M',
+    rating: 4.9,
+    tags: ['tailwind', 'tailwindcss', 'colors', 'hover-preview', 'css-utilities'],
+    readme: `# Tailwind CSS IntelliSense for Xivig
+Complete Tailwind CSS experience inside Xivig:
+- Utility completions for layout, flexbox, grid, spacing, sizing, typography, and borders.
+- Hex color swatches directly in completion popup (e.g. bg-blue-500, text-red-500).
+- Hover tooltips reveal expanded raw CSS declarations and pixel calculations.`,
+  },
+  {
+    id: 'xivig-tool-bootstrap-intellisense',
+    name: 'Bootstrap IntelliSense',
+    publisher: 'bootstrap5',
+    version: '5.3.0',
+    category: 'Languages',
+    description: 'Bootstrap 5.3 components, grid utilities, and color modifiers.',
+    iconBg: '#7952b3',
+    iconSymbol: '🅱️',
+    downloads: '3.6M',
+    rating: 4.8,
+    tags: ['bootstrap', 'bootstrap5', 'grid', 'components', 'utilities'],
+    readme: `# Bootstrap IntelliSense for Xivig
+Rich intelligence for Bootstrap 5.3:
+- Complete grid scope autocompletion (col, row, container, g-3).
+- Contextual color classes, badges, alerts, buttons, and card utilities.
+- Quick starter snippets (bs5-template, bs5-navbar, bs5-card, bs5-grid-3col, bs5-modal).`,
+  },
+  {
+    id: 'xivig-tool-svg-viewer',
+    name: 'SVG Viewer & Sanitizer',
+    publisher: 'cssho',
+    version: '2.8.6',
+    category: 'Productivity',
+    description: 'Visual SVG preview, metadata inspector (viewBox, path count, color palette), and XSS sanitizer.',
+    iconBg: '#ffb300',
+    iconSymbol: '📐',
+    downloads: '2.1M',
+    rating: 4.9,
+    tags: ['svg', 'viewer', 'preview', 'sanitizer', 'xss-protection', 'icons'],
+    readme: `# SVG Viewer & Sanitizer for Xivig
+View, inspect, and secure SVG assets with confidence:
+- Deep sanitization eliminates embedded script tags, external links, and inline handlers.
+- Metadata extractor surfaces dimensions, viewBox, path counts, and unique color palettes.
+- Production-ready SVG minifier and data URI generator.`,
+  },
 ];
 
 interface ExtensionState {
