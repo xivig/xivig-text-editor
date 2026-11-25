@@ -62,7 +62,18 @@ jobs:
 
       - name: Package macOS Binaries (DMG & ZIP)
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac dmg zip --arm64 --publish never
+        run: |
+          if [ -n "${CSC_LINK}" ]; then
+            npx electron-builder --mac dmg zip --arm64 --publish never
+          else
+            unset CSC_LINK
+            unset CSC_KEY_PASSWORD
+            unset APPLE_ID
+            unset APPLE_APP_SPECIFIC_PASSWORD
+            unset APPLE_TEAM_ID
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            npx electron-builder --mac dmg zip --arm64 --publish never -c.mac.identity=null
+          fi
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           CSC_LINK: ${{ secrets.CSC_LINK }}

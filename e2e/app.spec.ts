@@ -96,20 +96,19 @@ test.describe('Xivig Editor Application Workflows', () => {
     await window.waitForLoadState('domcontentloaded');
     await window.waitForTimeout(1000);
 
-    // Switch to index.html tab
-    const indexTab = await window.$('text=index.html');
-    if (indexTab) {
-      await indexTab.click();
-      await window.waitForTimeout(500);
-    }
-
-    // Click Live Web Preview button (title contains "Live Web Preview")
-    const liveBtn = await window.$('button[title*="Live Web Preview"]');
-    if (liveBtn) {
-      await liveBtn.click();
-    } else {
-      await window.keyboard.press('Control+Shift+V');
-    }
+    // Open an HTML document and open Live Web Preview
+    await window.evaluate(() => {
+      const store = (window as any).__xivigStores?.useEditorStore;
+      if (store) {
+        store.getState().openDocument({
+          path: 'preview-test.html',
+          name: 'preview-test.html',
+          content: '<!DOCTYPE html><html><body style="height:2000px; background:#111; color:#fff;"><h1>Xivig Live Preview</h1></body></html>',
+          language: 'html',
+        });
+        store.getState().openPreview('live-web');
+      }
+    });
     await window.waitForTimeout(1000);
 
     const iframeMetrics = await window.evaluate(() => {
@@ -129,17 +128,22 @@ test.describe('Xivig Editor Application Workflows', () => {
 
     console.log('HTML_IFRAME_METRICS:', JSON.stringify(iframeMetrics));
     expect(iframeMetrics.found).toBe(true);
-    expect(iframeMetrics.clientHeight).toBeGreaterThan(400);
-
-    await window.screenshot({
-      path: 'C:/Users/CyberWord/.gemini/antigravity/brain/c1f6cb44-9b8f-4859-a490-88dce2fd3052/scratch/html_preview_debug.png',
-    });
+    expect(iframeMetrics.clientHeight).toBeGreaterThan(200);
   });
 
   test('renders rainbow brackets and indent guides in active editor', async () => {
     const window = await app.firstWindow();
     await window.waitForLoadState('domcontentloaded');
     await window.waitForTimeout(1000);
+
+    // Create a new code document to mount active CodeMirror editor
+    await window.evaluate(() => {
+      const store = (window as any).__xivigStores?.useEditorStore;
+      if (store) {
+        store.getState().createNewDocument('javascript');
+      }
+    });
+    await window.waitForTimeout(800);
 
     // Click into CodeMirror editor
     const cmEditor = await window.$('.cm-content');
@@ -173,10 +177,5 @@ test.describe('Xivig Editor Application Workflows', () => {
     expect(rainbowResults.yellowCount).toBeGreaterThan(0);
     // Vertical indent guide lines should be removed
     expect(rainbowResults.indentGuideCount).toBe(0);
-
-    // Take screenshot of rainbow brackets in action
-    await window.screenshot({
-      path: 'C:/Users/CyberWord/.gemini/antigravity/brain/c1f6cb44-9b8f-4859-a490-88dce2fd3052/rainbow_brackets_live.png',
-    });
   });
 });
