@@ -45,6 +45,7 @@ import {
   transformToUppercase,
   transformToLowercase,
   centerCursor,
+  duplicateLineOrSelection,
   setMark,
   selectToMark,
   deleteToMark,
@@ -753,8 +754,16 @@ export const App: React.FC = () => {
         e.preventDefault();
         openDevToolbox();
       } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        useFileStore.getState().setActiveSidebarView('debug');
+        const view = getActiveEditorView();
+        if (view) {
+          e.preventDefault();
+          e.stopPropagation();
+          duplicateLineOrSelection(view);
+          view.focus();
+        } else {
+          e.preventDefault();
+          useFileStore.getState().setActiveSidebarView('debug');
+        }
       } else if (e.key === 'F5' && !isCtrlOrMeta && !e.shiftKey) {
         e.preventDefault();
         if (useDebugStore.getState().sessionState === 'paused') {

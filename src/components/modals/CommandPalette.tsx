@@ -33,6 +33,7 @@ import {
 import { smartToggleLineComment, smartToggleBlockComment } from '../../utils/commentUtils';
 import {
   sortLines,
+  duplicateLineOrSelection,
   removeDuplicateLinesCommand,
   reverseLinesCommand,
   trimTrailingWhitespaceCommand,
@@ -841,6 +842,19 @@ export const CommandPalette: React.FC = () => {
       action: () => {
         const view = getActiveEditorView();
         if (view) sortLines(true)(view);
+      },
+    },
+    {
+      id: 'edit:duplicate-line',
+      category: 'Edit',
+      title: 'Duplicate Line or Selection',
+      shortcut: 'Ctrl+Shift+D',
+      action: () => {
+        const view = getActiveEditorView();
+        if (view) {
+          duplicateLineOrSelection(view);
+          view.focus();
+        }
       },
     },
     {

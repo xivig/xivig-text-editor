@@ -17,7 +17,7 @@ export const ActivityBar: React.FC = () => {
     { id: 'explorer', icon: <Files size={19} />, label: 'Explorer (Ctrl+Shift+E)' },
     { id: 'search', icon: <Search size={19} />, label: 'Search (Ctrl+Shift+F)' },
     { id: 'git', icon: <GitBranch size={19} />, label: 'Source Control (Ctrl+Shift+G)' },
-    { id: 'debug', icon: <Bug size={19} />, label: 'Run & Debug (Ctrl+Shift+D)' },
+    { id: 'debug', icon: <Bug size={19} />, label: 'Run & Debug (F5)' },
     { id: 'extensions', icon: <Package size={19} />, label: 'Extensions (Ctrl+Shift+X)' },
     { id: 'web', icon: <Globe size={19} />, label: 'Web Development Toolkit' },
     { id: 'ai', icon: <Sparkles size={19} />, label: 'AI Assistant' },
