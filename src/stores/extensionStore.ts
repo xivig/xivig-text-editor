@@ -2104,6 +2104,149 @@ Container-based development environments:
 - Mounts workspaces, binds ports, and configures remote execution users
 - Container lifecycle summary and diagnostic inspection.`,
   },
+  {
+    id: 'xivig-tool-material-icon-theme',
+    name: 'Material Icon Theme',
+    publisher: 'Philipp Kief',
+    version: '4.34.0',
+    category: 'Themes',
+    description: 'Material Design icons for files and folders across 100+ languages and frameworks.',
+    iconBg: '#1e293b',
+    iconSymbol: '🎨',
+    downloads: '23.4M',
+    rating: 4.9,
+    tags: ['icons', 'material', 'files', 'folders', 'ui'],
+    readme: `# Material Icon Theme for Xivig
+The ultimate file and folder icon theme:
+- Distinctive, colorful icons for hundreds of file types and extensions
+- Folder icons tailored for components, tests, assets, docs, and configs
+- Dynamic open/closed folder state indications.`,
+  },
+  {
+    id: 'xivig-tool-vscode-icons',
+    name: 'vscode-icons',
+    publisher: 'VSCode Icons Team',
+    version: '12.8.0',
+    category: 'Themes',
+    description: 'The classic official VS Code icon theme with rich file and folder icons.',
+    iconBg: '#1e293b',
+    iconSymbol: '📁',
+    downloads: '19.8M',
+    rating: 4.8,
+    tags: ['icons', 'vscode-icons', 'official', 'classic', 'ui'],
+    readme: `# vscode-icons for Xivig
+Classic VS Code aesthetic:
+- Authentic VS Code icons for major frameworks and runtimes
+- High-contrast folder and file emblems.`,
+  },
+  {
+    id: 'xivig-tool-one-dark-pro',
+    name: 'One Dark Pro',
+    publisher: 'binaryify',
+    version: '3.18.0',
+    category: 'Themes',
+    description: "Atom's iconic One Dark theme for Xivig, with rich syntax highlight tokens.",
+    iconBg: '#282c34',
+    iconSymbol: '🌑',
+    downloads: '16.5M',
+    rating: 4.9,
+    themeId: 'one-dark',
+    tags: ['theme', 'dark', 'one-dark', 'atom', 'syntax'],
+    readme: `# One Dark Pro for Xivig
+Atom's legendary editor theme:
+- Carefully balanced dark canvas and subtle contrast
+- Vibrant syntax colors for functions, keywords, strings, and types.`,
+  },
+  {
+    id: 'xivig-tool-catppuccin',
+    name: 'Catppuccin for Xivig',
+    publisher: 'Catppuccin',
+    version: '3.14.0',
+    category: 'Themes',
+    description: 'Soothing pastel theme for the high-spirited coder (Mocha, Macchiato, Frappe, Latte).',
+    iconBg: '#1e1e2e',
+    iconSymbol: '☕',
+    downloads: '6.4M',
+    rating: 4.9,
+    themeId: 'dracula',
+    tags: ['theme', 'catppuccin', 'pastel', 'mocha', 'latte'],
+    readme: `# Catppuccin for Xivig
+Warm and soothing pastel color palette:
+- 4 delightful flavors: Mocha, Macchiato, Frappe, Latte
+- Optimized for eye comfort during long programming sessions.`,
+  },
+  {
+    id: 'xivig-tool-tokyo-night-theme',
+    name: 'Tokyo Night',
+    publisher: 'enkia',
+    version: '1.0.8',
+    category: 'Themes',
+    description: 'A clean, dark Xivig theme that celebrates the lights of Downtown Tokyo at night.',
+    iconBg: '#1a1b26',
+    iconSymbol: '🗼',
+    downloads: '4.8M',
+    rating: 4.8,
+    themeId: 'tokyo-night',
+    tags: ['theme', 'tokyo-night', 'dark', 'cyberpunk', 'neon'],
+    readme: `# Tokyo Night for Xivig
+Downtown Tokyo aesthetic:
+- Deep twilight background with vibrant neon highlights
+- Balanced contrast with soft cyan, magenta, and green tokens.`,
+  },
+  {
+    id: 'xivig-tool-github-theme',
+    name: 'GitHub Theme',
+    publisher: 'GitHub',
+    version: '6.3.4',
+    category: 'Themes',
+    description: 'Official GitHub theme with Dark, Light, and Dimmed modes styled from Primer design system.',
+    iconBg: '#0d1117',
+    iconSymbol: '🐙',
+    downloads: '13.1M',
+    rating: 4.8,
+    themeId: 'github-dark',
+    tags: ['theme', 'github', 'primer', 'dark', 'light'],
+    readme: `# GitHub Theme for Xivig
+Official Primer styling:
+- GitHub Dark (#0d1117) and GitHub Light (#ffffff)
+- Syntax tokens modeled directly after github.com code view.`,
+  },
+  {
+    id: 'xivig-tool-ayu',
+    name: 'Ayu',
+    publisher: 'teabyii',
+    version: '1.0.5',
+    category: 'Themes',
+    description: 'A simple theme with bright colors and comes in three versions — dark, mirage and light.',
+    iconBg: '#0a0e14',
+    iconSymbol: '🌅',
+    downloads: '3.9M',
+    rating: 4.8,
+    themeId: 'one-dark',
+    tags: ['theme', 'ayu', 'mirage', 'dark', 'light'],
+    readme: `# Ayu for Xivig
+Clean modern color scheme:
+- Ayu Dark, Mirage, and Light
+- Warm golden accents and crystal-clear typography.`,
+  },
+  {
+    id: 'xivig-tool-night-owl',
+    name: 'Night Owl',
+    publisher: 'sarah.drasner',
+    version: '2.0.1',
+    category: 'Themes',
+    description: 'A Xivig theme for night owls tuned for accessibility and low-light coding.',
+    iconBg: '#011627',
+    iconSymbol: '🦉',
+    downloads: '5.2M',
+    rating: 4.9,
+    themeId: 'cyberpunk',
+    tags: ['theme', 'night-owl', 'accessible', 'contrast', 'low-light'],
+    readme: `# Night Owl for Xivig
+Tuned for nighttime coding:
+- High contrast accessible tokens designed by Sarah Drasner
+- Calming deep blue backdrop with glowing highlights.`,
+  },
 ];
 
 interface ExtensionState {

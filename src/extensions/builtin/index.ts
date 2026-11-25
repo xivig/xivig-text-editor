@@ -134,6 +134,16 @@ import {
   wslExtensionModule,
   remoteContainersExtensionModule,
 } from './remote/index';
+import {
+  materialIconThemeExtensionModule,
+  vscodeIconsExtensionModule,
+  oneDarkProExtensionModule,
+  catppuccinExtensionModule,
+  tokyoNightThemeExtensionModule,
+  githubThemeExtensionModule,
+  ayuThemeExtensionModule,
+  nightOwlExtensionModule,
+} from './themes/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -370,6 +380,24 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-remote-wsl': wslExtensionModule,
   'xivig.remote-containers': remoteContainersExtensionModule,
   'xivig-tool-remote-containers': remoteContainersExtensionModule,
+
+  // Themes & UI Suite
+  'xivig.material-icon-theme': materialIconThemeExtensionModule,
+  'xivig-tool-material-icon-theme': materialIconThemeExtensionModule,
+  'xivig.vscode-icons': vscodeIconsExtensionModule,
+  'xivig-tool-vscode-icons': vscodeIconsExtensionModule,
+  'xivig.one-dark-pro': oneDarkProExtensionModule,
+  'xivig-tool-one-dark-pro': oneDarkProExtensionModule,
+  'xivig.catppuccin': catppuccinExtensionModule,
+  'xivig-tool-catppuccin': catppuccinExtensionModule,
+  'xivig.tokyo-night-theme': tokyoNightThemeExtensionModule,
+  'xivig-tool-tokyo-night-theme': tokyoNightThemeExtensionModule,
+  'xivig.github-theme': githubThemeExtensionModule,
+  'xivig-tool-github-theme': githubThemeExtensionModule,
+  'xivig.ayu': ayuThemeExtensionModule,
+  'xivig-tool-ayu': ayuThemeExtensionModule,
+  'xivig.night-owl': nightOwlExtensionModule,
+  'xivig-tool-night-owl': nightOwlExtensionModule,
 };
 
 export {
@@ -473,7 +501,16 @@ export {
   remoteExplorerExtensionModule,
   wslExtensionModule,
   remoteContainersExtensionModule,
+  materialIconThemeExtensionModule,
+  vscodeIconsExtensionModule,
+  oneDarkProExtensionModule,
+  catppuccinExtensionModule,
+  tokyoNightThemeExtensionModule,
+  githubThemeExtensionModule,
+  ayuThemeExtensionModule,
+  nightOwlExtensionModule,
 };
 
 export * from './markdown/index';
 export * from './remote/index';
+export * from './themes/index';
