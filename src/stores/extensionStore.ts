@@ -2337,6 +2337,96 @@ Inline visual test coverage:
 - Marks covered (green) and uncovered (red) lines
 - Computes overall file coverage percentages.`,
   },
+  {
+    id: 'xivig-tool-sonarlint',
+    name: 'SonarLint',
+    publisher: 'SonarSource',
+    version: '4.14.0',
+    category: 'Productivity',
+    description: 'SonarLint detects code smells, bugs, and security vulnerabilities on the fly.',
+    iconBg: '#cb2027',
+    iconSymbol: '🔍',
+    downloads: '16.7M',
+    rating: 4.8,
+    tags: ['security', 'sonarlint', 'code-smells', 'linter', 'static-analysis'],
+    readme: `# SonarLint for Xivig
+Static security analysis and code quality guardian:
+- Flags hardcoded credentials, API keys, and sensitive tokens (S2068)
+- Detects insecure dynamic execution (eval, Function constructor) (S1523)
+- Identifies complex nested ternaries and deprecated APIs.`,
+  },
+  {
+    id: 'xivig-tool-snyk-security',
+    name: 'Snyk Security',
+    publisher: 'Snyk',
+    version: '2.19.0',
+    category: 'Productivity',
+    description: 'Find and automatically fix open source vulnerabilities in project dependencies.',
+    iconBg: '#4c5467',
+    iconSymbol: '🐕',
+    downloads: '5.9M',
+    rating: 4.8,
+    tags: ['security', 'snyk', 'vulnerabilities', 'dependencies', 'cve'],
+    readme: `# Snyk Security for Xivig
+Dependency vulnerability scanner:
+- Scans direct and transitive dependencies across package manifests
+- Reports CVE identifiers, CVSS severity scores, and upgrade recommendations
+- Automated vulnerability fixes.`,
+  },
+  {
+    id: 'xivig-tool-codeql',
+    name: 'CodeQL',
+    publisher: 'GitHub',
+    version: '1.14.0',
+    category: 'Productivity',
+    description: 'Semantic code analysis engine for discovering vulnerabilities and parsing SARIF reports.',
+    iconBg: '#1f2328',
+    iconSymbol: '🛡️',
+    downloads: '4.1M',
+    rating: 4.8,
+    tags: ['security', 'codeql', 'sarif', 'semantic-analysis', 'dataflow'],
+    readme: `# CodeQL for Xivig
+Semantic code analysis by GitHub:
+- Deep dataflow and taint tracking analysis
+- SARIF 2.1.0 report ingestion and structured diagnostic display
+- Detects SQL injection, XSS, and command injection patterns.`,
+  },
+  {
+    id: 'xivig-tool-trivy',
+    name: 'Trivy Vulnerability Scanner',
+    publisher: 'Aqua Security',
+    version: '0.12.0',
+    category: 'Productivity',
+    description: 'Comprehensive vulnerability and secret scanner for containers, repos, and configs.',
+    iconBg: '#1976d2',
+    iconSymbol: '🌊',
+    downloads: '3.8M',
+    rating: 4.8,
+    tags: ['security', 'trivy', 'containers', 'cve', 'secrets'],
+    readme: `# Trivy Vulnerability Scanner for Xivig
+Container and workspace security:
+- Scans container images, filesystem directories, and lockfiles
+- Categorizes findings by severity: CRITICAL, HIGH, MEDIUM, LOW
+- Detects leaked secrets and configuration misconfigurations.`,
+  },
+  {
+    id: 'xivig-tool-owasp-dependency-check',
+    name: 'OWASP Dependency-Check',
+    publisher: 'OWASP',
+    version: '8.4.0',
+    category: 'Productivity',
+    description: 'Software composition analysis utility that detects publicly disclosed CVEs in dependencies.',
+    iconBg: '#212529',
+    iconSymbol: '🔒',
+    downloads: '3.2M',
+    rating: 4.8,
+    tags: ['security', 'owasp', 'cve', 'dependency-check', 'nvd'],
+    readme: `# OWASP Dependency-Check for Xivig
+Software Composition Analysis (SCA):
+- Cross-references project dependencies against the National Vulnerability Database (NVD)
+- Evaluates CVSS v3 base severity scores
+- Detailed CVE summaries and CPE identifiers.`,
+  },
 ];
 
 interface ExtensionState {

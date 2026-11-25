@@ -151,6 +151,13 @@ import {
   cypressExtensionModule,
   coverageGuttersExtensionModule,
 } from './testing/index';
+import {
+  sonarLintExtensionModule,
+  snykSecurityExtensionModule,
+  codeQlExtensionModule,
+  trivyExtensionModule,
+  owaspDependencyCheckExtensionModule,
+} from './security/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -417,6 +424,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-cypress': cypressExtensionModule,
   'xivig.coverage-gutters': coverageGuttersExtensionModule,
   'xivig-tool-coverage-gutters': coverageGuttersExtensionModule,
+
+  // Security Suite
+  'xivig.sonarlint': sonarLintExtensionModule,
+  'xivig-tool-sonarlint': sonarLintExtensionModule,
+  'xivig.snyk-security': snykSecurityExtensionModule,
+  'xivig-tool-snyk-security': snykSecurityExtensionModule,
+  'xivig.codeql': codeQlExtensionModule,
+  'xivig-tool-codeql': codeQlExtensionModule,
+  'xivig.trivy': trivyExtensionModule,
+  'xivig-tool-trivy': trivyExtensionModule,
+  'xivig.owasp-dependency-check': owaspDependencyCheckExtensionModule,
+  'xivig-tool-owasp-dependency-check': owaspDependencyCheckExtensionModule,
 };
 
 export {
@@ -533,9 +552,15 @@ export {
   playwrightExtensionModule,
   cypressExtensionModule,
   coverageGuttersExtensionModule,
+  sonarLintExtensionModule,
+  snykSecurityExtensionModule,
+  codeQlExtensionModule,
+  trivyExtensionModule,
+  owaspDependencyCheckExtensionModule,
 };
 
 export * from './markdown/index';
 export * from './remote/index';
 export * from './themes/index';
 export * from './testing/index';
+export * from './security/index';
