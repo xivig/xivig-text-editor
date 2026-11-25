@@ -40,6 +40,15 @@ import {
   bootstrapIntellisenseExtensionModule,
   svgViewerExtensionModule,
 } from './web/index';
+import {
+  jsSnippetsExtensionModule,
+  typeScriptHeroExtensionModule,
+  npmIntellisenseExtensionModule,
+  importCostExtensionModule,
+  turboConsoleLogExtensionModule,
+  jestExtensionModule,
+  vitestExplorerExtensionModule,
+} from './javascript/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -114,6 +123,22 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-bootstrap-intellisense': bootstrapIntellisenseExtensionModule,
   'xivig.svg-viewer': svgViewerExtensionModule,
   'xivig-tool-svg-viewer': svgViewerExtensionModule,
+
+  // JavaScript / TypeScript Suite
+  'xivig.js-snippets': jsSnippetsExtensionModule,
+  'xivig-tool-js-snippets': jsSnippetsExtensionModule,
+  'xivig.typescript-hero': typeScriptHeroExtensionModule,
+  'xivig-tool-typescript-hero': typeScriptHeroExtensionModule,
+  'xivig.npm-intellisense': npmIntellisenseExtensionModule,
+  'xivig-tool-npm-intellisense': npmIntellisenseExtensionModule,
+  'xivig.import-cost': importCostExtensionModule,
+  'xivig-tool-import-cost': importCostExtensionModule,
+  'xivig.turbo-console-log': turboConsoleLogExtensionModule,
+  'xivig-tool-turbo-console-log': turboConsoleLogExtensionModule,
+  'xivig.jest': jestExtensionModule,
+  'xivig-tool-jest': jestExtensionModule,
+  'xivig.vitest-explorer': vitestExplorerExtensionModule,
+  'xivig-tool-vitest-explorer': vitestExplorerExtensionModule,
 };
 
 export {
@@ -149,4 +174,11 @@ export {
   tailwindIntellisenseExtensionModule,
   bootstrapIntellisenseExtensionModule,
   svgViewerExtensionModule,
+  jsSnippetsExtensionModule,
+  typeScriptHeroExtensionModule,
+  npmIntellisenseExtensionModule,
+  importCostExtensionModule,
+  turboConsoleLogExtensionModule,
+  jestExtensionModule,
+  vitestExplorerExtensionModule,
 };

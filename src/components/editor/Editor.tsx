@@ -59,6 +59,10 @@ import {
   createHtmlCssCompletionSource,
 } from '../../extensions/builtin/web';
 import {
+  createJsSnippetsCompletionSource,
+  createNpmIntellisenseCompletionSource,
+} from '../../extensions/builtin/javascript';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -228,6 +232,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
           override: [
             createLspCompletionSource(activeDoc.path || '', docLanguage),
             createPathCompletionSource(),
+            createNpmIntellisenseCompletionSource(),
+            createJsSnippetsCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

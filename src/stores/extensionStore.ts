@@ -868,6 +868,135 @@ View, inspect, and secure SVG assets with confidence:
 - Metadata extractor surfaces dimensions, viewBox, path counts, and unique color palettes.
 - Production-ready SVG minifier and data URI generator.`,
   },
+  // --- Category 5: JavaScript / TypeScript ---
+  {
+    id: 'xivig-tool-js-snippets',
+    name: 'JavaScript (ES6) code snippets',
+    publisher: 'charalampos karypidis',
+    version: '1.8.0',
+    category: 'Languages',
+    description: 'Code snippets for JavaScript in ES6 syntax (supporting JavaScript and TypeScript).',
+    iconBg: '#f7df1e',
+    iconSymbol: '⚡',
+    downloads: '15.4M',
+    rating: 4.8,
+    tags: ['javascript', 'typescript', 'es6', 'snippets', 'productivity'],
+    readme: `# JavaScript (ES6) Code Snippets for Xivig
+High-velocity ES6+ snippet triggers:
+- \`clg\`: \`console.log('val', val);\`
+- \`clo\`: \`console.log('val', JSON.stringify(val, null, 2));\`
+- \`fn\` / \`afn\` / \`asyncfn\`: Arrow functions and promises
+- \`im\` / \`imd\`: Default and destructuring imports
+- \`fe\` / \`map\` / \`filter\` / \`reduce\`: Array operations`,
+  },
+  {
+    id: 'xivig-tool-typescript-hero',
+    name: 'TypeScript Hero',
+    publisher: 'buehler',
+    version: '3.0.0',
+    category: 'Languages',
+    description: 'Automates import sorting, organizing, specifier deduplication, and TypeScript export outlines.',
+    iconBg: '#3178c6',
+    iconSymbol: '🦸',
+    downloads: '2.8M',
+    rating: 4.8,
+    tags: ['typescript', 'imports', 'organize-imports', 'outline', 'sorting'],
+    readme: `# TypeScript Hero for Xivig
+Supercharge your TypeScript and JavaScript development:
+- 4-Tier standard import grouping (Node built-in, external npm, alias @/, relative).
+- Alphabetical import specifier sorting and duplicate removal.
+- Symbol outline extractor for exported functions, interfaces, types, and classes.`,
+  },
+  {
+    id: 'xivig-tool-npm-intellisense',
+    name: 'npm Intellisense',
+    publisher: 'Christian Kohler',
+    version: '1.4.5',
+    category: 'Languages',
+    description: 'Autocompletes npm modules in import and require statements from package.json.',
+    iconBg: '#cb3837',
+    iconSymbol: '📦',
+    downloads: '8.7M',
+    rating: 4.8,
+    tags: ['npm', 'import', 'modules', 'intellisense', 'package.json'],
+    readme: `# npm Intellisense for Xivig
+Instant autocompletion for npm modules in your code:
+- Scans \`package.json\` dependencies and devDependencies automatically.
+- Sub-path autocompletions (e.g. \`react-dom/client\`, \`lodash/debounce\`, \`@codemirror/state\`).
+- Seamless support inside ES6 \`import\` and CommonJS \`require()\`.`,
+  },
+  {
+    id: 'xivig-tool-import-cost',
+    name: 'Import Cost',
+    publisher: 'Wix',
+    version: '3.3.0',
+    category: 'Productivity',
+    description: 'Displays the size of imported npm packages inline inside the editor with gzip breakdown.',
+    iconBg: '#2b5c8f',
+    iconSymbol: '⚖️',
+    downloads: '3.9M',
+    rating: 4.9,
+    tags: ['import-cost', 'bundle-size', 'gzip', 'performance', 'webpack'],
+    readme: `# Import Cost for Xivig
+Live inline package bundle size indicators:
+- Calculates uncompressed and gzip bundle sizes as you import libraries.
+- Color-coded threshold badges: small (<15kB), medium (<50kB), large (>=50kB).
+- Built-in benchmarks for React, CodeMirror, Lodash, Axios, and ecosystem packages.`,
+  },
+  {
+    id: 'xivig-tool-turbo-console-log',
+    name: 'Turbo Console Log',
+    publisher: 'Chakroun Anas',
+    version: '2.9.2',
+    category: 'Productivity',
+    description: 'Automates creating meaningful console.log messages with file name, line numbers, and cleanup actions.',
+    iconBg: '#ff6f00',
+    iconSymbol: '🚀',
+    downloads: '2.4M',
+    rating: 4.9,
+    tags: ['turbo-console-log', 'console.log', 'debugging', 'productivity'],
+    readme: `# Turbo Console Log for Xivig
+Effortless, meaningful debug logging:
+- Generates contextual log: \`console.log('🚀 ~ file: App.tsx:42 ~ count:', count);\`
+- Batch comment and uncomment all turbo logs with a single command.
+- Quick delete command to clean up debugging logs before committing.`,
+  },
+  {
+    id: 'xivig-tool-jest',
+    name: 'Jest',
+    publisher: 'Orta',
+    version: '6.4.0',
+    category: 'Productivity',
+    description: 'The optimal flow for Jest test suites with test case discovery, runner commands, and snapshots.',
+    iconBg: '#c21325',
+    iconSymbol: '🃏',
+    downloads: '4.6M',
+    rating: 4.7,
+    tags: ['jest', 'testing', 'unit-tests', 'snapshots', 'coverage'],
+    readme: `# Jest for Xivig
+Seamless Jest integration for unit testing:
+- Automatic test file and block discovery (\`describe\`, \`it\`, \`test\`).
+- CLI runner command generator with snapshot update (\`-u\`) and coverage flags.
+- Distinguishes skipped and isolated test executions.`,
+  },
+  {
+    id: 'xivig-tool-vitest-explorer',
+    name: 'Vitest Explorer',
+    publisher: 'Zixuan Chen',
+    version: '1.2.1',
+    category: 'Productivity',
+    description: 'First-class Vitest explorer with hierarchical test tree navigation, watch runner, and status reporting.',
+    iconBg: '#729b1b',
+    iconSymbol: '⚡',
+    downloads: '1.8M',
+    rating: 4.9,
+    tags: ['vitest', 'explorer', 'test-tree', 'watch-mode', 'unit-tests'],
+    readme: `# Vitest Explorer for Xivig
+Native Vitest test tree explorer:
+- Hierarchical tree representation of test files, describe suites, and individual test cases.
+- Configurable test patterns and single-test execution commands.
+- JSON test report parsing with pass/fail counts and execution duration metrics.`,
+  },
 ];
 
 interface ExtensionState {
