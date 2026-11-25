@@ -102,6 +102,12 @@ import {
   mavenForJavaModule,
   debuggerForJavaModule,
 } from './java/index';
+import {
+  cppExtensionModule,
+  cmakeToolsExtensionModule,
+  codeRunnerExtensionModule,
+  clangdExtensionModule,
+} from './cpp/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -284,6 +290,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-vscode-maven': mavenForJavaModule,
   'xivig.vscode-java-debug': debuggerForJavaModule,
   'xivig-tool-vscode-java-debug': debuggerForJavaModule,
+
+  // C/C++ Development Suite
+  'xivig.cpptools': cppExtensionModule,
+  'xivig-tool-cpptools': cppExtensionModule,
+  'xivig.cmake-tools': cmakeToolsExtensionModule,
+  'xivig-tool-cmake-tools': cmakeToolsExtensionModule,
+  'xivig.code-runner': codeRunnerExtensionModule,
+  'xivig-tool-code-runner': codeRunnerExtensionModule,
+  'xivig.vscode-clangd': clangdExtensionModule,
+  'xivig-tool-vscode-clangd': clangdExtensionModule,
 };
 
 export {
@@ -365,4 +381,8 @@ export {
   springBootExtensionPackModule,
   mavenForJavaModule,
   debuggerForJavaModule,
+  cppExtensionModule,
+  cmakeToolsExtensionModule,
+  codeRunnerExtensionModule,
+  clangdExtensionModule,
 };

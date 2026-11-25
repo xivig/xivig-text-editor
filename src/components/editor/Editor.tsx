@@ -92,6 +92,10 @@ import {
   createMavenCompletionSource,
 } from '../../extensions/builtin/java';
 import {
+  createCppCompletionSource,
+  createCMakeCompletionSource,
+} from '../../extensions/builtin/cpp';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -278,6 +282,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createJavaCompletionSource(),
             createSpringBootCompletionSource(),
             createMavenCompletionSource(),
+            createCppCompletionSource(),
+            createCMakeCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

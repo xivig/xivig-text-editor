@@ -1705,6 +1705,79 @@ JVM debugging integration:
 - Standardized launch configuration generator
 - Source file breakpoint validator.`,
   },
+  // --- Category 13: C/C++ Development ---
+  {
+    id: 'xivig-tool-cpptools',
+    name: 'C/C++',
+    publisher: 'Microsoft',
+    version: '1.22.11',
+    category: 'Languages',
+    description: 'C/C++ IntelliSense, debugging, compiler discovery, and compile_commands.json integration.',
+    iconBg: '#00599c',
+    iconSymbol: '🇨',
+    downloads: '64.2M',
+    rating: 4.8,
+    tags: ['c', 'cpp', 'cplusplus', 'compiler', 'gcc', 'clang'],
+    readme: `# C/C++ for Xivig
+Full-featured C and C++ software engineering:
+- Compiler auto-detection for Clang, GCC, and MSVC (cl.exe)
+- Cross-platform build command generation with optimization flags
+- Automatic \`compile_commands.json\` generation for language servers
+- Autocompletion for modern C++20 keywords and stdlib types.`,
+  },
+  {
+    id: 'xivig-tool-cmake-tools',
+    name: 'CMake Tools',
+    publisher: 'Microsoft',
+    version: '1.19.45',
+    category: 'Productivity',
+    description: 'Extended CMake support for Xivig: configure, build, and parse targets from CMakeLists.txt.',
+    iconBg: '#064f8c',
+    iconSymbol: '🛠️',
+    downloads: '26.8M',
+    rating: 4.8,
+    tags: ['cmake', 'build-system', 'c', 'cpp', 'ninja'],
+    readme: `# CMake Tools for Xivig
+CMake build system integration:
+- Real-time \`CMakeLists.txt\` parser extracting projects, executables, and libraries
+- Configure and build CLI command generation with Ninja and release configurations
+- CodeMirror autocompletion for standard CMake commands and options.`,
+  },
+  {
+    id: 'xivig-tool-code-runner',
+    name: 'Code Runner',
+    publisher: 'Jun Han',
+    version: '0.12.2',
+    category: 'Productivity',
+    description: 'Run code snippet or code file for multiple languages: C, C++, Java, JS, Python, Rust, Go, and more.',
+    iconBg: '#ff6600',
+    iconSymbol: '▶️',
+    downloads: '27.5M',
+    rating: 4.8,
+    tags: ['code-runner', 'run', 'execute', 'c', 'cpp', 'python', 'multi-language'],
+    readme: `# Code Runner for Xivig
+Universal one-click code executor:
+- Maps file extensions to exact compile and run CLI commands
+- Parameterized placeholders (\`$fileName\`, \`$fileNameWithoutExt\`, \`$dir\`)
+- Supports C, C++, Python, JavaScript, TypeScript, Java, Rust, Go, Bash, Ruby, and PHP.`,
+  },
+  {
+    id: 'xivig-tool-vscode-clangd',
+    name: 'clangd',
+    publisher: 'LLVM',
+    version: '0.1.30',
+    category: 'Languages',
+    description: 'C/C++ language server providing code completion, compile flags, navigation, and ClangFormat styling.',
+    iconBg: '#2a5599',
+    iconSymbol: '⚡',
+    downloads: '6.9M',
+    rating: 4.9,
+    tags: ['clangd', 'llvm', 'clang-format', 'cpp', 'language-server'],
+    readme: `# clangd for Xivig
+High-speed LLVM-based language intelligence:
+- Generates \`.clang-format\` documents (LLVM, Google, Chromium, Mozilla, WebKit styles)
+- Validates \`.clangd\` configuration files and sections.`,
+  },
 ];
 
 interface ExtensionState {
