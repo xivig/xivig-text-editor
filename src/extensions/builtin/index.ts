@@ -128,6 +128,12 @@ import {
   plantUmlExtensionModule,
   drawioExtensionModule,
 } from './markdown/index';
+import {
+  remoteSshExtensionModule,
+  remoteExplorerExtensionModule,
+  wslExtensionModule,
+  remoteContainersExtensionModule,
+} from './remote/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -354,6 +360,16 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-plantuml': plantUmlExtensionModule,
   'xivig.drawio-integration': drawioExtensionModule,
   'xivig-tool-drawio-integration': drawioExtensionModule,
+
+  // Remote Development Suite
+  'xivig.remote-ssh': remoteSshExtensionModule,
+  'xivig-tool-remote-ssh': remoteSshExtensionModule,
+  'xivig.remote-explorer': remoteExplorerExtensionModule,
+  'xivig-tool-remote-explorer': remoteExplorerExtensionModule,
+  'xivig.remote-wsl': wslExtensionModule,
+  'xivig-tool-remote-wsl': wslExtensionModule,
+  'xivig.remote-containers': remoteContainersExtensionModule,
+  'xivig-tool-remote-containers': remoteContainersExtensionModule,
 };
 
 export {
@@ -453,6 +469,11 @@ export {
   markdownLintExtensionModule,
   plantUmlExtensionModule,
   drawioExtensionModule,
+  remoteSshExtensionModule,
+  remoteExplorerExtensionModule,
+  wslExtensionModule,
+  remoteContainersExtensionModule,
 };
 
 export * from './markdown/index';
+export * from './remote/index';

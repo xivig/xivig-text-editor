@@ -2032,6 +2032,78 @@ Visual diagramming and architecture modeling:
 - Inspects diagram vertices, edges, styles, and shapes
 - Generates valid starter Draw.io diagram XML templates.`,
   },
+  {
+    id: 'xivig-tool-remote-ssh',
+    name: 'Remote - SSH',
+    publisher: 'Microsoft',
+    version: '0.115.0',
+    category: 'Productivity',
+    description: 'Open any folder on a remote machine using SSH and take advantage of full Xivig features.',
+    iconBg: '#0284c7',
+    iconSymbol: '🌐',
+    downloads: '21.5M',
+    rating: 4.8,
+    tags: ['remote', 'ssh', 'linux', 'server', 'tunnel'],
+    readme: `# Remote - SSH for Xivig
+Work on remote servers transparently:
+- Parses OpenSSH ~/.ssh/config files (Host, HostName, User, Port, IdentityFile, ProxyJump)
+- Secure, argument-safe SSH subprocess invocations
+- Uniform remote URI parsing for file buffers and terminal sessions.`,
+  },
+  {
+    id: 'xivig-tool-remote-explorer',
+    name: 'Remote Explorer',
+    publisher: 'Microsoft',
+    version: '0.5.0',
+    category: 'Productivity',
+    description: 'View and manage remote machines, SSH targets, WSL distributions, and Dev Containers in a unified pane.',
+    iconBg: '#0369a1',
+    iconSymbol: '🧭',
+    downloads: '14.2M',
+    rating: 4.8,
+    tags: ['remote', 'explorer', 'targets', 'status', 'wsl', 'ssh'],
+    readme: `# Remote Explorer for Xivig
+Unified target management:
+- Categorized target hierarchy: SSH, WSL, Dev Containers, Tunnels
+- Real-time connection status monitoring
+- Seamless one-click reconnect and session switching.`,
+  },
+  {
+    id: 'xivig-tool-remote-wsl',
+    name: 'WSL',
+    publisher: 'Microsoft',
+    version: '0.88.0',
+    category: 'Productivity',
+    description: 'Open any folder in the Windows Subsystem for Linux (WSL) and use Linux toolchains and runtimes.',
+    iconBg: '#ea580c',
+    iconSymbol: '🐧',
+    downloads: '18.9M',
+    rating: 4.8,
+    tags: ['wsl', 'linux', 'ubuntu', 'windows', 'subsystem'],
+    readme: `# WSL for Xivig
+Native Windows Subsystem for Linux integration:
+- Auto-detects installed WSL distros, versions, and running states
+- Bidirectional path translation between Windows paths and WSL POSIX mounts
+- Safe command execution inside WSL distros with working directory support.`,
+  },
+  {
+    id: 'xivig-tool-remote-containers',
+    name: 'Dev Containers - Remote',
+    publisher: 'Microsoft',
+    version: '0.380.0',
+    category: 'Productivity',
+    description: 'Open your workspace in a Docker development container with automated toolchain isolation.',
+    iconBg: '#0284c7',
+    iconSymbol: '📦',
+    downloads: '11.8M',
+    rating: 4.8,
+    tags: ['devcontainer', 'docker', 'containers', 'isolation', 'remote'],
+    readme: `# Dev Containers - Remote for Xivig
+Container-based development environments:
+- Generates reproducible Docker run and compose execution arguments
+- Mounts workspaces, binds ports, and configures remote execution users
+- Container lifecycle summary and diagnostic inspection.`,
+  },
 ];
 
 interface ExtensionState {
