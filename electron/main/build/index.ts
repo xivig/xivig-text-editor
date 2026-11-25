@@ -100,13 +100,163 @@ export function validateCommandTokens(tokens: string[], isWindowsBatch = false):
 
   for (const token of tokens) {
     if (typeof token !== 'string') continue;
-    if (pattern.test(token)) {
-      const charMatch = token.match(pattern)?.[0];
+    // Allow standard Windows Program Files (x86) directory paths in batch validation
+    const tokenToCheck = isWindowsBatch ? token.replace(/\(x86\)/gi, '') : token;
+    if (pattern.test(tokenToCheck)) {
+      const charMatch = tokenToCheck.match(pattern)?.[0];
       throw new Error(
         `Security Exception: Command argument contains forbidden ${isWindowsBatch ? 'Windows cmd.exe' : 'shell'} metacharacter (${charMatch}): "${token}"`
       );
     }
   }
+}
+
+/**
+ * Auto-detects standard Kotlin compiler locations on Windows if not available on PATH.
+ */
+export function findStandardKotlinCompiler(toolName: string): string | null {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  const cleanName = toolName.toLowerCase().replace(/\.(bat|cmd|exe)$/i, '');
+  const candidateToolNames = [`${cleanName}.bat`, `${cleanName}.cmd`, `${cleanName}.exe`, cleanName];
+
+  // 1. Check PATH
+  const pathEnv = process.env.PATH || '';
+  const pathDirs = pathEnv.split(path.delimiter).filter(Boolean);
+  for (const dir of pathDirs) {
+    for (const cand of candidateToolNames) {
+      const full = path.join(dir, cand);
+      try {
+        if (fs.existsSync(full) && fs.statSync(full).isFile()) {
+          return full;
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Check Standard Installation Paths (Android Studio, IntelliJ IDEA, SDKMAN, Scoop, Chocolatey)
+  const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const localAppData = process.env['LOCALAPPDATA'] || '';
+  const userProfile = process.env['USERPROFILE'] || '';
+  const programData = process.env['ProgramData'] || 'C:\\ProgramData';
+
+  const searchRoots: string[] = [];
+
+  // Android Studio bundled Kotlin
+  searchRoots.push(
+    path.join(programFiles, 'Android', 'Android Studio', 'plugins', 'Kotlin', 'kotlinc', 'bin'),
+    path.join(localAppData, 'Programs', 'Android Studio', 'plugins', 'Kotlin', 'kotlinc', 'bin')
+  );
+
+  // JetBrains IDEs (IntelliJ IDEA Ultimate, Community, etc.)
+  const jetbrainsDirs = [
+    path.join(programFiles, 'JetBrains'),
+    path.join(programFilesX86, 'JetBrains'),
+    path.join(localAppData, 'Programs', 'JetBrains'),
+  ];
+
+  for (const jbRoot of jetbrainsDirs) {
+    try {
+      if (fs.existsSync(jbRoot)) {
+        const subdirs = fs.readdirSync(jbRoot);
+        for (const sub of subdirs) {
+          searchRoots.push(path.join(jbRoot, sub, 'plugins', 'Kotlin', 'kotlinc', 'bin'));
+        }
+      }
+    } catch {}
+  }
+
+  // Standalone Kotlin compiler (SDKMAN, Scoop, Chocolatey, manual C:\kotlinc)
+  searchRoots.push(
+    path.join(userProfile, '.sdkman', 'candidates', 'kotlin', 'current', 'bin'),
+    path.join(userProfile, 'scoop', 'apps', 'kotlin', 'current', 'bin'),
+    path.join(programData, 'chocolatey', 'bin'),
+    path.join(programData, 'chocolatey', 'lib', 'kotlinc', 'tools', 'kotlinc', 'bin'),
+    'C:\\kotlinc\\bin',
+    'C:\\tools\\kotlinc\\bin'
+  );
+
+  for (const root of searchRoots) {
+    for (const cand of candidateToolNames) {
+      const targetPath = path.join(root, cand);
+      try {
+        if (fs.existsSync(targetPath) && fs.statSync(targetPath).isFile()) {
+          return targetPath;
+        }
+      } catch {}
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Auto-detects standard Java JDK installations on Windows if JAVA_HOME is not set.
+ */
+export function findStandardJdkHome(): string | null {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  if (process.env.JAVA_HOME && fs.existsSync(process.env.JAVA_HOME)) {
+    return process.env.JAVA_HOME;
+  }
+
+  const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const localAppData = process.env['LOCALAPPDATA'] || '';
+
+  const candidateHomes: string[] = [];
+
+  // 1. JDKs under Program Files\Java
+  for (const pf of [programFiles, programFilesX86]) {
+    const javaDir = path.join(pf, 'Java');
+    try {
+      if (fs.existsSync(javaDir)) {
+        const entries = fs.readdirSync(javaDir);
+        const jdkEntries = entries
+          .filter((e) => e.startsWith('jdk'))
+          .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        for (const jdk of jdkEntries) {
+          candidateHomes.push(path.join(javaDir, jdk));
+        }
+        if (entries.includes('latest')) {
+          candidateHomes.push(path.join(javaDir, 'latest'));
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Android Studio JetBrains Runtime (jbr)
+  candidateHomes.push(
+    path.join(programFiles, 'Android', 'Android Studio', 'jbr'),
+    path.join(localAppData, 'Programs', 'Android Studio', 'jbr')
+  );
+
+  // 3. JetBrains IDEs jbr
+  const jetbrainsDirs = [path.join(programFiles, 'JetBrains'), path.join(localAppData, 'Programs', 'JetBrains')];
+  for (const jbRoot of jetbrainsDirs) {
+    try {
+      if (fs.existsSync(jbRoot)) {
+        const subdirs = fs.readdirSync(jbRoot);
+        for (const sub of subdirs) {
+          candidateHomes.push(path.join(jbRoot, sub, 'jbr'));
+        }
+      }
+    } catch {}
+  }
+
+  for (const home of candidateHomes) {
+    try {
+      const javaBin = path.join(home, 'bin', 'java.exe');
+      if (fs.existsSync(javaBin)) {
+        return home;
+      }
+    } catch {}
+  }
+
+  return null;
 }
 
 /**
@@ -129,28 +279,43 @@ export function resolveWindowsBinary(commandOrProgram: string, cwd?: string): { 
 
   // Check if executable exists in cwd with .exe or without
   if (cwd && !path.isAbsolute(commandOrProgram)) {
-    const directExe = path.join(cwd, `${commandOrProgram}.exe`);
-    if (fs.existsSync(directExe)) {
-      return { binary: directExe, isBatch: false };
+    for (const candExt of ['.exe', '.bat', '.cmd', '']) {
+      const direct = path.join(cwd, `${commandOrProgram}${candExt}`);
+      if (fs.existsSync(direct)) {
+        const isB = candExt === '.bat' || candExt === '.cmd';
+        return { binary: direct, isBatch: isB };
+      }
     }
-    const directBin = path.join(cwd, commandOrProgram);
-    if (fs.existsSync(directBin)) {
-      return { binary: directBin, isBatch: false };
+  }
+
+  const lower = commandOrProgram.toLowerCase();
+
+  // Kotlin tools on Windows are .bat files, with auto-discovery support
+  const knownKotlinTools = new Set(['kotlinc', 'kotlin', 'kotlinc-jvm', 'kotlinc-js']);
+  if (knownKotlinTools.has(lower)) {
+    const discovered = findStandardKotlinCompiler(lower);
+    if (discovered) {
+      return { binary: discovered, isBatch: true };
     }
+    return { binary: `${commandOrProgram}.bat`, isBatch: true };
   }
 
   // Common tool mappings on Windows:
   // Node, Python, GCC, Java, Swift are direct executables (.exe)
   const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'gcc', 'g++', 'java', 'javac', 'git', 'cargo', 'rustc', 'swift', 'swiftc', 'cmd']);
-  const lower = commandOrProgram.toLowerCase();
   if (knownExeTools.has(lower)) {
     return { binary: `${commandOrProgram}.exe`, isBatch: false };
   }
 
-  // npm, npx, yarn, pnpm, kotlinc, kotlin are batch wrappers on Windows
-  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm', 'kotlinc', 'kotlin']);
+  // npm, npx, yarn, pnpm are .cmd batch wrappers on Windows
+  const knownCmdTools = new Set(['npm', 'npx', 'yarn', 'pnpm']);
   if (knownCmdTools.has(lower)) {
     return { binary: `${commandOrProgram}.cmd`, isBatch: true };
+  }
+
+  // Gradle wrapper on Windows
+  if (lower === 'gradlew') {
+    return { binary: `${commandOrProgram}.bat`, isBatch: true };
   }
 
   return { binary: commandOrProgram, isBatch: false };
@@ -256,11 +421,35 @@ export function runBuildProcess(
     }
 
     const isWin = process.platform === 'win32';
-    const baseEnv = {
+    const baseEnv: Record<string, string | undefined> = {
       ...process.env,
       FORCE_COLOR: '1',
       PYTHONUNBUFFERED: '1',
     };
+
+    if (isWin) {
+      // Auto-detect and configure JAVA_HOME if unset
+      const detectedJdk = findStandardJdkHome();
+      if (detectedJdk) {
+        if (!baseEnv.JAVA_HOME) {
+          baseEnv.JAVA_HOME = detectedJdk;
+        }
+        const jdkBin = path.join(detectedJdk, 'bin');
+        const currentPath = baseEnv.PATH || process.env.PATH || '';
+        if (!currentPath.toLowerCase().includes(jdkBin.toLowerCase())) {
+          baseEnv.PATH = `${jdkBin}${path.delimiter}${currentPath}`;
+        }
+      }
+
+      // Prepend resolved tool directory to PATH so companion executables work seamlessly
+      if (path.isAbsolute(targetBinary)) {
+        const binDir = path.dirname(targetBinary);
+        const currentPath = baseEnv.PATH || process.env.PATH || '';
+        if (!currentPath.toLowerCase().includes(binDir.toLowerCase())) {
+          baseEnv.PATH = `${binDir}${path.delimiter}${currentPath}`;
+        }
+      }
+    }
 
     if (isWin && isBatch) {
       // For Windows batch files, pass discrete arguments to cmd.exe with shell: false
@@ -319,6 +508,8 @@ export function runBuildProcess(
             helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Java Development Kit (JDK 17+) and verify java/javac is in your environment PATH.\r\n`;
           } else if (binLower === 'node' || binLower === 'npm' || binLower === 'npx') {
             helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Node.js from nodejs.org and restart the editor.\r\n`;
+          } else if (binLower === 'kotlinc' || binLower === 'kotlin' || binLower === 'kotlinc-jvm') {
+            helpfulTip = `\r\n[Tip] Kotlin compiler was not found on PATH. Install Kotlin (e.g. via 'winget install JetBrains.Kotlin.Compiler' or Android Studio) and add its bin directory to PATH.\r\n`;
           }
         }
 

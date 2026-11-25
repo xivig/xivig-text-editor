@@ -4,6 +4,8 @@ import {
   validateCommandTokens,
   resolveWindowsBinary,
   resolveStructuredCommand,
+  findStandardKotlinCompiler,
+  findStandardJdkHome,
 } from '../main/build';
 
 describe('Windows Build Execution and Command Safety (P0 Finding)', () => {
@@ -65,6 +67,35 @@ describe('Windows Build Execution and Command Safety (P0 Finding)', () => {
       const npmInfo = resolveWindowsBinary('npm');
       expect(npmInfo.isBatch).toBe(true);
       expect(npmInfo.binary).toBe('npm.cmd');
+
+      const kotlincInfo = resolveWindowsBinary('kotlinc');
+      expect(kotlincInfo.isBatch).toBe(true);
+      expect(kotlincInfo.binary).toMatch(/kotlinc\.bat$/i);
+
+      const kotlinInfo = resolveWindowsBinary('kotlin');
+      expect(kotlinInfo.isBatch).toBe(true);
+      expect(kotlinInfo.binary).toMatch(/kotlin\.bat$/i);
+    }
+  });
+
+  it('allows standard Windows Program Files (x86) paths in batch token validation', () => {
+    expect(() =>
+      validateCommandTokens(['C:\\Program Files (x86)\\Java\\jdk\\bin\\java.exe'], true)
+    ).not.toThrow();
+  });
+
+  it('provides auto-discovery helpers for Kotlin compiler and JDK', () => {
+    if (process.platform === 'win32') {
+      const kotlincPath = findStandardKotlinCompiler('kotlinc');
+      // On systems with Android Studio / IntelliJ installed, returns valid .bat path
+      if (kotlincPath) {
+        expect(kotlincPath).toMatch(/kotlinc\.bat$/i);
+      }
+
+      const jdkHome = findStandardJdkHome();
+      if (jdkHome) {
+        expect(typeof jdkHome).toBe('string');
+      }
     }
   });
 
