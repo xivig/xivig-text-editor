@@ -1,16 +1,14 @@
-# Xivig Text Editor ⚡
+# XIVIG TEXT EDITOR 2.0 ⚡
+### The Ultimate Developer Workspace
+> *A fast, extensible, cross-platform desktop code editor built for professional developers.*
 
 <p align="center">
   <img src="public/logo.png" alt="Xivig Text Editor" width="96" height="96" style="width: 96px; height: 96px; object-fit: contain;" />
 </p>
 
 <p align="center">
-  <strong>⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor editing, live web feedback, and pixel-perfect developer tooling.</strong>
-</p>
-
-<p align="center">
-  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-1.5-6c8cff.svg" alt="Release 1.5" /></a>
-  <a href="#-automated-testing--quality-assurance"><img src="https://img.shields.io/badge/Tests-349%20Passed-success.svg" alt="Tests Passed" /></a>
+  <a href="#-key-features"><img src="https://img.shields.io/badge/Release-2.0-6c8cff.svg" alt="Release 2.0" /></a>
+  <a href="#-automated-testing--quality-assurance"><img src="https://img.shields.io/badge/Tests-580%2B%20Passed-success.svg" alt="Tests Passed" /></a>
   <a href="#-security-architecture--hardening"><img src="https://img.shields.io/badge/Vulnerabilities-0-brightgreen.svg" alt="0 Vulnerabilities" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/Electron-34-47848f.svg" alt="Electron 34" /></a>
   <a href="#-tech-stack--architecture"><img src="https://img.shields.io/badge/CodeMirror-6-black.svg" alt="CodeMirror 6" /></a>
@@ -21,9 +19,33 @@
 
 ---
 
+## 🎯 Product Principles
+
+- **Lightweight and fast**: Sub-second cold startup, low idle memory footprint, instant file indexing, and smooth 60fps scrolling on massive files.
+- **Keyboard-first**: Comprehensive keyboard shortcuts for every action, full Sublime Text & VS Code multi-cursor editing, and universal Command Palette (`Ctrl+Shift+P`).
+- **Beautiful and customizable**: Elite modern aesthetics, 8 built-in themes (One Dark Pro, Catppuccin, Tokyo Night, Dracula, Material), custom font ligatures, and custom accent colors.
+- **Intelligent coding assistance**: Language Server Protocol (LSP) language intelligence, DAP interactive debugging, code actions, hover docs, and functional offline/multi-provider AI Assistant.
+- **Excellent web development experience**: Integrated Web Development Toolkit, Live Server with auto-reload, Live HTML preview, CSS Peek, color pickers, and Emmet abbreviation engine.
+- **Secure extension ecosystem**: Sandboxed host isolation with 20 categories of curated extensions, manifest-driven activation, and granular permission boundaries.
+- **Reliable across Windows, macOS and Linux**: First-class support for Windows (with automated compiler detection for Kotlin, JDK, Python, MinGW), macOS (universal binary), and Linux (AppImage, DEB).
+
+---
+
+## ✅ Definition of Done
+Every feature in Xivig Text Editor adheres to our strict engineering criteria:
+- **Functional implementation**: End-to-end verified logic with no mocked regressions.
+- **Settings and customization**: User-configurable via Settings UI or JSON preferences where appropriate.
+- **Keyboard shortcuts**: Direct, conflict-free hotkey bindings for fast invocation.
+- **Command palette integration**: Searchable and runnable from `Ctrl+Shift+P` / `F1`.
+- **Error handling**: Resilient graceful degradation and informative user guidance.
+- **Automated tests**: Robust test suites across unit, store, integration, and IPC layers.
+- **Documentation**: Clear coverage across README, HOW_TO, release notes, and changelogs.
+
+---
+
 ## 📖 Overview
 
-**Xivig Text Editor** is an ultra-responsive, modern desktop code editor designed for developers who demand speed, elegant typography, powerful multi-cursor editing, and seamless web development tools. Built from the ground up with **CodeMirror 6**, **Electron 45**, **React 18**, and **Vite 6**, Xivig blends the lightning speed of Sublime Text with the intuitive live tooling of modern web IDEs.
+**Xivig Text Editor 2.0** is an ultra-responsive, modern desktop code editor designed for developers who demand speed, elegant typography, powerful multi-cursor editing, and seamless web development tools. Built from the ground up with **CodeMirror 6**, **Electron 45**, **React 18**, and **Vite 6**, Xivig blends the lightning speed of Sublime Text with the intuitive live tooling of modern web IDEs.
 
 For a full step-by-step user manual, check out the [Comprehensive How-To Guide](docs/HOW_TO.md) or read more [About Xivig Text Editor](ABOUT.md).
 
@@ -35,14 +57,14 @@ Download the official release binaries for your operating system:
 
 | Platform | Format | Direct Download Link | Description |
 |---|---|---|---|
-| **Windows** | `.exe` (Installer) | [**Download Setup (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig.Text.Editor.Setup.1.5.0.exe) | NSIS Installer with desktop and start menu shortcuts |
-| **Windows** | `.exe` (Portable) | [**Download Portable (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig.Text.Editor.1.5.0.exe) | Zero-install standalone executable |
-| **macOS** | `.dmg` (Universal) | [**Download DMG (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
-| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
-| **Linux** | `.AppImage` (x64) | [**Download AppImage (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0.AppImage) | Standalone Linux x64 AppImage |
-| **Linux** | `.deb` (x64) | [**Download DEB (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/xivig-text-editor_1.5.0_amd64.deb) | Debian / Ubuntu amd64 package |
-| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
-| **Linux** | `.zip` (x64) | [**Download zip (v1.5.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v1.5.0/Xivig-Text-Editor-1.5.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
+| **Windows** | `.exe` (Installer) | [**Download Setup (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig.Text.Editor.Setup.2.0.0.exe) | NSIS Installer with desktop and start menu shortcuts |
+| **Windows** | `.exe` (Portable) | [**Download Portable (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig.Text.Editor.2.0.0.exe) | Zero-install standalone executable |
+| **macOS** | `.dmg` (Universal) | [**Download DMG (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig-Text-Editor-2.0.0.dmg) | macOS Disk Image (Universal: Apple Silicon & Intel) |
+| **macOS** | `.zip` (Universal) | [**Download macOS Bundle (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig-Text-Editor-2.0.0-mac.zip) | Native macOS `.app` bundle (Universal binary) |
+| **Linux** | `.AppImage` (x64) | [**Download AppImage (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig-Text-Editor-2.0.0.AppImage) | Standalone Linux x64 AppImage |
+| **Linux** | `.deb` (x64) | [**Download DEB (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/xivig-text-editor_2.0.0_amd64.deb) | Debian / Ubuntu amd64 package |
+| **Linux** | `.tar.gz` (x64) | [**Download tar.gz (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig-Text-Editor-2.0.0-linux-x64.tar.gz) | Standalone Linux x64 binary archive |
+| **Linux** | `.zip` (x64) | [**Download zip (v2.0.0)**](https://github.com/xivig/xivig-text-editor/releases/download/v2.0.0/Xivig-Text-Editor-2.0.0-linux-x64.zip) | Standalone Linux x64 zip bundle |
 
 > All releases, release notes, and SHA-256 checksums are hosted on the [GitHub Releases Page](https://github.com/xivig/xivig-text-editor/releases).
 
@@ -373,17 +395,17 @@ Xivig Text Editor is packaged for **Windows**, **Linux**, and **macOS**.
 
 ### Binary Types Produced
 - **Windows**:
-  - `Xivig.Text.Editor.Setup.1.5.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
-  - `Xivig.Text.Editor.1.5.0.exe` (Zero-install standalone portable executable)
+  - `Xivig.Text.Editor.Setup.2.0.0.exe` (NSIS Installer with desktop/start-menu shortcuts)
+  - `Xivig.Text.Editor.2.0.0.exe` (Zero-install standalone portable executable)
   - `win-unpacked/` (Direct portable folder)
 - **Linux**:
-  - `Xivig-Text-Editor-1.5.0.AppImage` (Universal plug-and-play Linux executable)
-  - `xivig-text-editor_1.5.0_amd64.deb` (Debian / Ubuntu amd64 package)
-  - `Xivig-Text-Editor-1.5.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
-  - `Xivig-Text-Editor-1.5.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
+  - `Xivig-Text-Editor-2.0.0.AppImage` (Universal plug-and-play Linux executable)
+  - `xivig-text-editor_2.0.0_amd64.deb` (Debian / Ubuntu amd64 package)
+  - `Xivig-Text-Editor-2.0.0-linux-x64.tar.gz` (Standalone Linux x64 binary archive)
+  - `Xivig-Text-Editor-2.0.0-linux-x64.zip` (Standalone Linux x64 zip bundle)
 - **macOS**:
-  - `Xivig-Text-Editor-1.5.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
-  - `Xivig-Text-Editor-1.5.0-mac.zip` (Native macOS .app bundle: Universal binary)
+  - `Xivig-Text-Editor-2.0.0.dmg` (macOS Drag-and-Drop Disk Image: Universal for Apple Silicon & Intel)
+  - `Xivig-Text-Editor-2.0.0-mac.zip` (Native macOS .app bundle: Universal binary)
 
 ---
 
@@ -440,7 +462,8 @@ Automated cross-platform compilation is powered by GitHub Actions in [`.github/w
 ## 📄 Release Information & Attributions
 
 - **App Name**: Xivig Text Editor
-- **Release Version**: 1.5 (Build 1.5.0)
+- **Release Version**: 2.0 (Build 2.0.0)
+- **Tagline**: The Ultimate Developer Workspace
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)
 - **Legal**: Copyright © 2026 Xivig. All rights reserved.

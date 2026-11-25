@@ -109,7 +109,7 @@ export class LspProcess {
         capabilities: this.getClientCapabilities(),
         clientInfo: {
           name: 'Xivig Text Editor',
-          version: '1.5.0',
+          version: '2.0.0',
         },
         initializationOptions: {},
       }, 12000);

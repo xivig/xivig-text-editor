@@ -1,6 +1,12 @@
-# Xivig Text Editor — Comprehensive How-To Guide 📖
+# XIVIG TEXT EDITOR 2.0 — Comprehensive How-To Guide 📖
 
-Welcome to the official user manual and how-to guide for **Xivig Text Editor** (Release 1.5 — Build 1.5.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
+Welcome to the official user manual and how-to guide for **XIVIG TEXT EDITOR 2.0 — The Ultimate Developer Workspace** (Release 2.0 — Build 2.0.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
+
+### Product Principles
+- **Lightweight and Fast** • **Keyboard-First** • **Beautiful and Customizable** • **Intelligent Coding Assistance** • **Excellent Web Development Experience** • **Secure Extension Ecosystem** • **Reliable Across Windows, macOS and Linux**
+
+### Definition of Done
+Every feature in Xivig 2.0 is functionally implemented, customizable via settings, accessible via keyboard shortcuts, integrated with the Command Palette (`Ctrl+Shift+P`), guarded by error handling, verified with automated tests, and documented here.
 
 ---
 

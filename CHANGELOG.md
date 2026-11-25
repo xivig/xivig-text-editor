@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-11-25 — *XIVIG TEXT EDITOR 2.0: The Ultimate Developer Workspace*
+
+> **XIVIG TEXT EDITOR 2.0**  
+> **The Ultimate Developer Workspace**  
+> *A fast, extensible, cross-platform desktop code editor built for professional developers.*
+
+### 🎯 Product Principles
+* **Lightweight and Fast**: Sub-second startup, low idle memory footprint (<85MB heap), instant file indexing, and smooth 60fps scrolling on large files.
+* **Keyboard-First**: Comprehensive keyboard shortcuts for every action, full Sublime Text & VS Code multi-cursor editing, and universal Command Palette (`Ctrl+Shift+P`).
+* **Beautiful and Customizable**: Modern translucent aesthetics, custom themes (One Dark Pro, Catppuccin, Tokyo Night, Dracula, Material), custom font ligatures, and custom accent colors.
+* **Intelligent Coding Assistance**: Language Server Protocol (LSP) language intelligence, DAP interactive debugging, code actions, hover docs, and functional offline/multi-provider AI Assistant.
+* **Excellent Web Development Experience**: Integrated Web Development Toolkit, Live Server with auto-reload, Live HTML preview, CSS Peek, color pickers, and Emmet abbreviation engine.
+* **Secure Extension Ecosystem**: Sandboxed host isolation with 20 categories of curated extensions, manifest-driven activation, and granular permission boundaries.
+* **Reliable Across Windows, macOS and Linux**: First-class support for Windows (with automated compiler detection for Kotlin, JDK, Python, MinGW), macOS (universal binary), and Linux (AppImage, DEB).
+
+### ✅ Definition of Done
+Every feature across Xivig 2.0 satisfies:
+- Functional implementation with zero mocked regressions.
+- Settings and customization where appropriate.
+- Keyboard shortcuts for high-velocity workflows.
+- Command palette integration (`Ctrl+Shift+P` / `F1`).
+- Error handling and graceful fallback guidance.
+- Automated tests across unit, store, component, and IPC layers.
+- Full documentation across README, HOW_TO, release notes, and changelogs.
+
+### 🌟 Key Highlights in Version 2.0
+* **File Menu Workspace Lifecycle**:
+  - `Open Workspace from File...`: Open `.code-workspace` and `.xivig-workspace` multi-root JSON projects.
+  - `Open Recent >`: Dynamic flyout submenu with recent projects, workspaces, recent files, and `Clear Recently Opened`.
+  - `Add Folder to Workspace...`: Dynamically append root directories to active workspace.
+  - `Save Workspace As...`: Export active multi-folder session to standardized `.code-workspace` JSON.
+  - `Duplicate Workspace`: Clone active project setup into an independent untitled workspace.
+* **Elite Modern & Professional Editor Interface**:
+  - Refined layout, glassmorphic dark palette, polished activity bar, status bar, and menubar ergonomics.
+  - Modernized Help menu with updated **X** branding (formerly Twitter).
+  - Tools menu housing **Emmet Abbreviation Expander** (`Ctrl+Alt+E`) and **Color Picker / Inspector** (`Ctrl+Alt+C`).
+* **AI Coding Assistant**:
+  - Offline local fallback engine with multi-provider connectivity (Google Gemini, OpenAI, Anthropic Claude, Ollama, LM Studio).
+  - Inline prompt bar (`Ctrl+I`), code explanation, generation, test generation, and diff application.
+* **Full 20-Category Curated Extension Ecosystem**:
+  - 20 complete categories spanning Web, React, Python, Java, C/C++, Rust, Kotlin/Android, DevOps, Database, Testing, Security, and Remote Development.
+* **Zero-Config Compiler Auto-Discovery**:
+  - Windows auto-discovery for Kotlin compiler (`kotlinc.bat`), Java JDK (`C:\Program Files\Java\jdk-*` or Android Studio JBR), MinGW/GCC, and Python.
+* **Line Duplication & Editing Enhancements**:
+  - Prioritized `Ctrl+Shift+D` shortcut for line duplication down and inline selection duplication.
+  - Added dedicated Command Palette entry and Edit menu actions for line duplication and line moves.
+
+---
+
 ## [1.4.0] - 2026-11-24 — *Search & Navigation Suite, Advanced Editing Engine & Developer Tooling Release*
 
 ### 🔍 Search & Code Navigation Suite

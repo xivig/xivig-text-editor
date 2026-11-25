@@ -1,3 +1,67 @@
+# XIVIG TEXT EDITOR 2.0 — The Ultimate Developer Workspace ⚡
+
+> **A fast, extensible, cross-platform desktop code editor built for professional developers.**
+
+We are thrilled to announce the official release of **XIVIG TEXT EDITOR 2.0**!
+
+---
+
+## 🎯 Product Principles
+
+- **Lightweight and Fast**: Sub-second startup, minimal idle RAM, fast file indexing, and 60fps rendering on massive source files.
+- **Keyboard-First**: Comprehensive shortcuts for all operations, Sublime & VS Code multi-cursor editing, and universal Command Palette (`Ctrl+Shift+P`).
+- **Beautiful and Customizable**: Elite modern UI aesthetics, custom themes, custom font ligatures, and custom accent colors.
+- **Intelligent Coding Assistance**: Language Server Protocol (LSP), Debug Adapter Protocol (DAP), code actions, hover docs, and functional offline/multi-provider AI Assistant.
+- **Excellent Web Development Experience**: Integrated Web Development Toolkit, Live Server with auto-reload, Live HTML preview, CSS Peek, color pickers, and Emmet abbreviation engine.
+- **Secure Extension Ecosystem**: Sandboxed host isolation with 20 categories of curated extensions, manifest-driven activation, and granular permission boundaries.
+- **Reliable Across Windows, macOS and Linux**: Cross-platform support with automated compiler auto-discovery (Kotlin, Java JDK, Python, GCC/MinGW).
+
+---
+
+## ✅ Definition of Done
+Every feature delivered in 2.0 satisfies:
+1. **Functional implementation**: Fully tested logic without mocks or stubs in runtime.
+2. **Settings and customization**: Custom preferences where appropriate.
+3. **Keyboard shortcuts**: Direct, conflict-free hotkey mappings.
+4. **Command palette integration**: Searchable and runnable via `Ctrl+Shift+P`.
+5. **Error handling**: Graceful fallback and clear troubleshooting guidance.
+6. **Automated tests**: Thorough test coverage across unit, component, store, and IPC layers.
+7. **Documentation**: Clear coverage across all manuals, guides, and release notes.
+
+---
+
+## 🚀 What's New in v2.0.0
+
+### 📂 File Menu Workspace Lifecycle
+- **Open Workspace from File...**: Opens native file dialog for `.code-workspace` and `.xivig-workspace` multi-root JSON projects. Resolves relative directories, loads primary folder file tree, and stores workspace state.
+- **Open Recent > Flyout Submenu**: Instant access to recent `.code-workspace` projects, individual files, `More...` (`Ctrl+R`), and `Clear Recently Opened`.
+- **Add Folder to Workspace...**: Dynamically appends project directories into a unified multi-root session.
+- **Save Workspace As...**: Saves active workspace configuration to standard VS Code compatible JSON.
+- **Duplicate Workspace**: Creates an untitled duplicate workspace session.
+
+### 🎨 Elite Modern & Professional Editor Interface
+- Polished, distraction-free interface with glassmorphic dark styling, improved tab bar contrast, and streamlined status bar.
+- Re-architected Tools menu housing **Emmet Abbreviation Expander** (`Ctrl+Alt+E`) and **Color Picker / Inspector** (`Ctrl+Alt+C`).
+- Updated Help menu featuring modern **X** branding (formerly Twitter).
+
+### 🤖 Fully Functional AI Coding Assistant
+- Multi-provider support (Google Gemini, OpenAI, Anthropic Claude, Ollama, LM Studio) and an offline rule/heuristic fallback engine.
+- Context-aware code explanations, bug fixing, test suite generation, and inline prompt insertion (`Ctrl+I`).
+
+### 🧩 20-Category Curated Extension Ecosystem
+Comprehensive built-in suite covering 20 development disciplines:
+- Web Development, JavaScript/TypeScript, React, Laravel/PHP, Database, API Development, Docker & DevOps, Python, Java, C/C++, Rust, Android & Kotlin, Markdown & Documentation, Remote Development, Themes & UI, Testing, Security & Auditing, and Developer Productivity.
+
+### ⚙️ Zero-Config Compiler Auto-Discovery & Execution
+- Automatic Windows detection for **Kotlin compiler** (`kotlinc.bat` in Android Studio / IntelliJ IDEA), **Java JDK** (`C:\Program Files\Java\jdk-*` / JBR), MinGW, and Python.
+- Seamless one-click compile & run via `Ctrl+Shift+B` or `F7`.
+
+### ⚡ Line Duplication & Multi-Cursor Velocity
+- Prioritized `Ctrl+Shift+D` shortcut for line duplication down and inline selection duplication.
+- Conflict-free activity bar keymap with `F5` designated for Run & Debug.
+
+---
+
 # Xivig Text Editor v1.0.0 — Official Launch ⚡
 
 > **⚡ Ultra-fast, keyboard-first desktop code editor built for pure velocity — Sublime-grade multi-cursor workflows, instant live web feedback, and pixel-perfect developer tooling.**
