@@ -121,6 +121,13 @@ import {
   adbExtensionModule,
   xmlToolsExtensionModule,
 } from './android-kotlin/index';
+import {
+  markdownAllInOneExtensionModule,
+  markdownPreviewEnhancedExtensionModule,
+  markdownLintExtensionModule,
+  plantUmlExtensionModule,
+  drawioExtensionModule,
+} from './markdown/index';
 
 export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-rainbow': rainbowBracketsExtension,
@@ -335,6 +342,18 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig-tool-adb-interface': adbExtensionModule,
   'xivig.xml-tools': xmlToolsExtensionModule,
   'xivig-tool-xml-tools': xmlToolsExtensionModule,
+
+  // Markdown & Documentation Suite
+  'xivig.markdown-all-in-one': markdownAllInOneExtensionModule,
+  'xivig-tool-markdown-all-in-one': markdownAllInOneExtensionModule,
+  'xivig.markdown-preview-enhanced': markdownPreviewEnhancedExtensionModule,
+  'xivig-tool-markdown-preview-enhanced': markdownPreviewEnhancedExtensionModule,
+  'xivig.markdownlint': markdownLintExtensionModule,
+  'xivig-tool-markdownlint': markdownLintExtensionModule,
+  'xivig.plantuml': plantUmlExtensionModule,
+  'xivig-tool-plantuml': plantUmlExtensionModule,
+  'xivig.drawio-integration': drawioExtensionModule,
+  'xivig-tool-drawio-integration': drawioExtensionModule,
 };
 
 export {
@@ -429,4 +448,11 @@ export {
   gradleAndroidExtensionModule,
   adbExtensionModule,
   xmlToolsExtensionModule,
+  markdownAllInOneExtensionModule,
+  markdownPreviewEnhancedExtensionModule,
+  markdownLintExtensionModule,
+  plantUmlExtensionModule,
+  drawioExtensionModule,
 };
+
+export * from './markdown/index';

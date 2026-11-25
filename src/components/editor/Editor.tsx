@@ -104,6 +104,10 @@ import {
   createGradleCompletionSource,
 } from '../../extensions/builtin/android-kotlin';
 import {
+  createMarkdownCompletionSource,
+  createPlantUmlCompletionSource,
+} from '../../extensions/builtin/markdown';
+import {
   createLspSyncExtension,
   createLspCompletionSource,
   createLspHoverExtension,
@@ -296,6 +300,8 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createTomlCompletionSource(),
             createKotlinCompletionSource(),
             createGradleCompletionSource(),
+            createMarkdownCompletionSource(),
+            createPlantUmlCompletionSource(),
             createTailwindCompletionSource(),
             createBootstrapCompletionSource(),
             createHtmlCssCompletionSource(),

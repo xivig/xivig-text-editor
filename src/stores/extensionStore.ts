@@ -1939,6 +1939,99 @@ Clean XML editing and Android manifest intelligence:
 - Formats XML documents with nested indentation
 - Validates AndroidManifest.xml structure, activities, and declared permissions.`,
   },
+  {
+    id: 'xivig-tool-markdown-all-in-one',
+    name: 'Markdown All in One',
+    publisher: 'Yu Zhang',
+    version: '3.6.0',
+    category: 'Productivity',
+    description: 'All you need to write Markdown: table formatter, table of contents generator, list continuation, and shortcuts.',
+    iconBg: '#083344',
+    iconSymbol: '📑',
+    downloads: '9.2M',
+    rating: 4.9,
+    tags: ['markdown', 'toc', 'table-formatter', 'list-continuation', 'documentation'],
+    readme: `# Markdown All in One for Xivig
+Rich Markdown writing experience:
+- Automatic Table of Contents generator with heading slugs and customizable depth
+- Beautiful Markdown table column alignment and formatting
+- Intelligent list & task continuation upon pressing Enter
+- Formatting shortcuts for bold, italic, code, and strike-through.`,
+  },
+  {
+    id: 'xivig-tool-markdown-preview-enhanced',
+    name: 'Markdown Preview Enhanced',
+    publisher: 'Yiyi Wang',
+    version: '0.8.0',
+    category: 'Productivity',
+    description: 'Enhanced Markdown preview with KaTeX mathematics, Mermaid diagrams, YAML frontmatter, and file transclusion.',
+    iconBg: '#0369a1',
+    iconSymbol: '🔬',
+    downloads: '5.8M',
+    rating: 4.8,
+    tags: ['markdown', 'preview', 'katex', 'mermaid', 'frontmatter'],
+    readme: `# Markdown Preview Enhanced for Xivig
+Scientific and technical markdown documentation:
+- YAML frontmatter parser for post and document metadata
+- LaTeX math formulas powered by KaTeX ($...$ and $$...$$)
+- Mermaid workflow diagrams and chart rendering
+- Obsidian and Wiki-style transclusions (![[note]] and @import).`,
+  },
+  {
+    id: 'xivig-tool-markdownlint',
+    name: 'markdownlint',
+    publisher: 'David Anson',
+    version: '0.54.0',
+    category: 'Linters',
+    description: 'Markdown linting and style checking for standards compliance and consistent documentation.',
+    iconBg: '#b91c1c',
+    iconSymbol: '🛡️',
+    downloads: '8.4M',
+    rating: 4.8,
+    tags: ['markdown', 'lint', 'markdownlint', 'standards', 'autofix'],
+    readme: `# markdownlint for Xivig
+Enforce clean, compliant Markdown documentation:
+- Validates heading increments (MD001) and top-level header structure (MD041)
+- Flags trailing spaces (MD009) and hard tab characters (MD010)
+- Detects spacing errors after ATX hashes (MD018, MD019)
+- One-click auto-fixer for whitespace and heading formatting.`,
+  },
+  {
+    id: 'xivig-tool-plantuml',
+    name: 'PlantUML',
+    publisher: 'jebbs',
+    version: '2.18.0',
+    category: 'Productivity',
+    description: 'Diagramming tool with rich UML diagram type detection, server rendering, and autocompletion.',
+    iconBg: '#c2410c',
+    iconSymbol: '📊',
+    downloads: '3.7M',
+    rating: 4.8,
+    tags: ['plantuml', 'uml', 'diagrams', 'sequence', 'architecture'],
+    readme: `# PlantUML for Xivig
+Rich architectural diagramming in code:
+- Detects Sequence, Class, State, Mindmap, and WBS diagrams
+- Generates instant SVG preview URLs via PlantUML servers
+- Autocompletion snippets for participants, actors, notes, and classes.`,
+  },
+  {
+    id: 'xivig-tool-drawio-integration',
+    name: 'Draw.io Integration',
+    publisher: 'Henning Dieterichs',
+    version: '1.6.6',
+    category: 'Productivity',
+    description: 'Draw.io diagrams editor support, mxGraphModel parser, and diagram template generator.',
+    iconBg: '#ea580c',
+    iconSymbol: '📐',
+    downloads: '6.1M',
+    rating: 4.8,
+    tags: ['drawio', 'diagrams', 'xml', 'mxgraph', 'architecture'],
+    readme: `# Draw.io Integration for Xivig
+Visual diagramming and architecture modeling:
+- Parses mxGraphModel XML files (.drawio, .dio)
+- Inspects diagram vertices, edges, styles, and shapes
+- Generates valid starter Draw.io diagram XML templates.`,
+  },
 ];
 
 interface ExtensionState {
