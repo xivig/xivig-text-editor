@@ -3,7 +3,7 @@ import { useBuildStore } from '../stores/buildStore';
 import { useEditorStore } from '../stores/editorStore';
 import { useFileStore } from '../stores/fileStore';
 
-describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
+describe('Language Runners (Python, C/C++, Java, Node.js, PHP)', () => {
   beforeEach(() => {
     useFileStore.setState({
       currentFolderPath: null,
@@ -228,6 +228,42 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
     expect(available.some((t) => t.id === 'bat-run-file')).toBe(true);
   });
 
+  it('detects and configures PHP runner for .php and .phtml files', () => {
+    useEditorStore.setState({
+      documents: [
+        {
+          id: 'php-1',
+          name: 'index.php',
+          path: 'C:/projects/app/index.php',
+          content: '<?php echo "Hello from PHP"; ?>',
+          language: 'php',
+          isDirty: false,
+          cursor: { line: 1, col: 1 },
+        },
+      ],
+      activeDocumentId: 'php-1',
+    });
+
+    const defaultTarget = useBuildStore.getState().detectDefaultTarget();
+    expect(defaultTarget.category).toBe('php');
+    expect(defaultTarget.command).toBe('php');
+    expect(defaultTarget.args).toContain('C:/projects/app/index.php');
+
+    const available = useBuildStore.getState().getAvailableTargets();
+    const phpTargets = available.filter((t) => t.category === 'php');
+    expect(phpTargets.length).toBeGreaterThanOrEqual(4);
+    expect(phpTargets.some((t) => t.id === 'php-run-file')).toBe(true);
+    expect(phpTargets.some((t) => t.id === 'php-lint-file')).toBe(true);
+    expect(phpTargets.some((t) => t.id === 'php-serve-dev')).toBe(true);
+    expect(phpTargets.some((t) => t.id === 'php-info')).toBe(true);
+
+    const lintTarget = phpTargets.find((t) => t.id === 'php-lint-file');
+    expect(lintTarget?.args).toEqual(['-l', 'C:/projects/app/index.php']);
+
+    const serveTarget = phpTargets.find((t) => t.id === 'php-serve-dev');
+    expect(serveTarget?.args).toEqual(['-S', 'localhost:8000', '-t', 'C:/projects/app']);
+  });
+
   it('automatically discovers runnable files in workspace fileTree', () => {
     useFileStore.setState({
       currentFolderPath: 'C:/projects/app',
@@ -239,6 +275,7 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
         { id: '5', name: 'service.swift', path: 'C:/projects/app/service.swift', isDirectory: false },
         { id: '6', name: 'Main.kt', path: 'C:/projects/app/Main.kt', isDirectory: false },
         { id: '7', name: 'deploy.bat', path: 'C:/projects/app/deploy.bat', isDirectory: false },
+        { id: '8', name: 'server.php', path: 'C:/projects/app/server.php', isDirectory: false },
       ],
     });
 
@@ -250,6 +287,7 @@ describe('Language Runners (Python, C/C++, Java, Node.js)', () => {
     expect(available.some((t) => t.name.includes('Swift: Run service.swift'))).toBe(true);
     expect(available.some((t) => t.name.includes('Kotlin: Compile & Run Main.kt'))).toBe(true);
     expect(available.some((t) => t.name.includes('Batch: Run deploy.bat'))).toBe(true);
+    expect(available.some((t) => t.name.includes('PHP: Run server.php'))).toBe(true);
   });
 
   it('standardizes build:done completion contract with exitCode and durationMs', () => {

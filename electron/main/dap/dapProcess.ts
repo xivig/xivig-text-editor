@@ -27,6 +27,9 @@ export class DapProcess extends EventEmitter {
     } else if (type === 'python') {
       command = 'python';
       commandArgs = ['-m', 'debugpy', '--wait-for-client', program || 'main.py', ...args];
+    } else if (type === 'swift' || type === 'lldb') {
+      command = 'lldb-dap';
+      commandArgs = [...args];
     } else {
       command = type;
       commandArgs = [...args];

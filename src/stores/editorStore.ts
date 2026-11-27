@@ -40,6 +40,8 @@ interface EditorState {
   markDocumentSaved: (id: string, newPath?: string) => void;
   updateCursor: (id: string, line: number, col: number) => void;
   createNewDocument: (language?: string) => void;
+  scratchCount: number;
+  createScratchDocument: (language?: string, extension?: string) => void;
   getActiveDocument: () => EditorDocument | undefined;
   getSecondaryDocument: () => EditorDocument | undefined;
   setRestoredSession: (docs: EditorDocument[], activeId: string | null) => void;
@@ -156,6 +158,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   splitLayout: 'single',
   activePane: 'primary',
   untitledCount: 1,
+  scratchCount: 1,
   closedDocumentsHistory: [],
   isPreviewOpen: false,
   previewMode: 'live-web',
@@ -318,12 +321,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     // 3. If document has a file path, check if already open by path
     if (doc.path) {
-      const existing = documents.find((d) => d.path === doc.path);
-      if (existing) {
+      const existingIndex = documents.findIndex((d) => d.path === doc.path);
+      if (existingIndex !== -1) {
+        const existing = documents[existingIndex];
+        const updatedDocs = [...documents];
+        // If new content is supplied and differs (e.g. fresh binary image dataUrl or reloaded content), update tab content
+        if (doc.content && (!existing.content || (!existing.isDirty && existing.content !== doc.content))) {
+          updatedDocs[existingIndex] = {
+            ...existing,
+            content: doc.content,
+            name: doc.name || existing.name,
+            language: doc.language || existing.language,
+          };
+        }
         if (get().activePane === 'secondary') {
-          set({ secondaryDocumentId: existing.id });
+          set({ documents: updatedDocs, secondaryDocumentId: existing.id });
         } else {
-          set({ activeDocumentId: existing.id });
+          set({ documents: updatedDocs, activeDocumentId: existing.id });
         }
         triggerAutoSave();
         return;
@@ -615,6 +629,44 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       documents: [...documents, newDoc],
       activeDocumentId: id,
       untitledCount: untitledCount + 1,
+    });
+    triggerAutoSave();
+  },
+
+  createScratchDocument: (language = 'javascript', extension?: string) => {
+    const { documents, scratchCount } = get();
+    const ext = extension
+      ? extension.replace(/^\./, '')
+      : language === 'javascript' ? 'js'
+      : language === 'typescript' ? 'ts'
+      : language === 'json' ? 'json'
+      : language === 'markdown' ? 'md'
+      : language === 'html' ? 'html'
+      : language === 'css' ? 'css'
+      : language === 'python' ? 'py'
+      : language === 'sql' ? 'sql'
+      : language === 'xml' ? 'xml'
+      : language === 'yaml' ? 'yaml'
+      : language === 'rust' ? 'rs'
+      : language === 'cpp' ? 'cpp'
+      : 'txt';
+
+    const id = `scratch-${scratchCount}`;
+    const name = `scratch-${scratchCount}.${ext}`;
+    const newDoc: EditorDocument = {
+      id,
+      path: null,
+      name,
+      content: '',
+      language,
+      isDirty: false,
+      cursor: { line: 1, col: 1 },
+    };
+
+    set({
+      documents: [...documents, newDoc],
+      activeDocumentId: id,
+      scratchCount: scratchCount + 1,
     });
     triggerAutoSave();
   },

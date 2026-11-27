@@ -2,9 +2,30 @@
 
 > **A fast, extensible, cross-platform desktop code editor built for professional developers.**
 
-We are thrilled to announce **XIVIG TEXT EDITOR v2.0.3**!
+We are thrilled to announce **XIVIG TEXT EDITOR v2.0.4**!
 
-## 🚀 What's New & Fixed in v2.0.3
+## 🚀 What's New & Fixed in v2.0.4
+
+### ⚡ Swift Language Support & Toolchain Integration
+- **Swift Extension**: Complete Swift support including Lezer-based syntax highlighting, symbol parsing (`struct`, `class`, `actor`, `protocol`, `enum`, `func`, `var`/`let`), and keyword/type completions.
+- **Unified Autocompletion**: Clean CodeMirror 6 autocompletion wiring avoiding facet merge conflicts in editor state.
+- **Toolchain Auto-Discovery**: Automatic discovery of Swift 6.4.3 toolchain on Windows across `%LOCALAPPDATA%\Programs\Swift\Toolchains\*\usr\bin` and `%ProgramFiles%`.
+- **Runtime & SDK Setup**: Automatically sets `SDKROOT` to `Windows.platform\Developer\SDKs\Windows.sdk` and prepends companion runtime DLLs (`Runtimes\6.4.3\usr\bin`) to the runner environment.
+- **One-Click Runners**: Direct `swift` script runner and `swiftc -O` compiler with automatic execution of output binaries.
+
+### 🐘 PHP & C/C++ Runners
+- **PHP Auto-Detection**: Searches standard Windows PHP installations (XAMPP, Laragon, WampServer, Chocolatey, Scoop, standalone `C:\php`, and system PATH).
+- **PHP Script Execution**: One-click PHP file execution in the integrated build runner.
+- **C/C++ Compiler Auto-Detection**: Auto-detects standard GCC, G++, Clang, and Clang++ installations across Embarcadero Dev-Cpp, TDM-GCC, MSYS2 (`ucrt64`, `mingw64`, `clang64`), MinGW-w64, CodeBlocks, and WinGet packages.
+- **C/C++ Build & Run Targets**: Multi-target compilation with `-O2`, `-Wall`, and secondary target binary execution.
+
+### 📁 Nested Folder Creation & Scratch Files
+- **Deep Nested Folder Creation**: Added recursive directory creation in file explorer, allowing paths like `src/components/modals/MyModal.tsx` or `nested/deep/folders` to be created seamlessly.
+- **New Scratch File**: Added `File` &rarr; `New Scratch File...` (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd>) and Command Palette action with interactive language picker and persistent buffer.
+
+---
+
+## 🚀 Improvements in v2.0.3
 
 ### 🖼️ Image Viewer Self-Fetch & Global Drag-and-Drop
 - **Security Authorization Auto-Approval**: Fixed `file:read` security checking in the main process to auto-authorize file paths requested directly by the verified application window, fixing silent access denials on recent files, workspace files, and standalone opened files.

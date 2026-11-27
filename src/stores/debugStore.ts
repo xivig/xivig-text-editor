@@ -100,6 +100,12 @@ export const useDebugStore = create<DebugState>((set, get) => ({
       program: '${file}',
     },
     {
+      name: 'Launch Swift File (LLDB)',
+      type: 'swift',
+      request: 'launch',
+      program: '${file}',
+    },
+    {
       name: 'Attach to Local Process (9229)',
       type: 'node',
       request: 'attach',

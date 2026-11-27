@@ -147,7 +147,7 @@ export const DiagnosticLogModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'health' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <HealthCard title="Electron Architecture" value={typeof process !== 'undefined' ? `${process.arch} / ${process.platform}` : 'Renderer'} status="ok" />
-              <HealthCard title="Application Version" value="2.0.3 (Release 2.0.3)" status="ok" />
+              <HealthCard title="Application Version" value="2.0.4 (Release 2.0.4)" status="ok" />
               <HealthCard title="Heap Memory" value={typeof performance !== 'undefined' && (performance as any).memory ? `${Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024)} MB` : 'Normal (< 85 MB)'} status="ok" />
               <HealthCard title="Sandboxed Host Status" value="Active (0 privilege leaks)" status="ok" />
               <HealthCard title="Crash Recovery System" value="Enabled (Automatic session restore)" status="ok" />

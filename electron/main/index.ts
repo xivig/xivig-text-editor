@@ -773,6 +773,19 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
 
   try {
     const safePath = validatePathInput(targetPath);
+
+    // Auto-authorize if targetPath is inside any recent or open workspace
+    try {
+      const recentWs = getRecentWorkspaces(50);
+      for (const w of recentWs) {
+        const wsResolved = path.resolve(w.path);
+        const rel = path.relative(wsResolved, safePath);
+        if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+          addApprovedWorkspace(targetWin.id, wsResolved);
+        }
+      }
+    } catch {}
+
     assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:create');
 
     if (isDirectory) {
@@ -780,13 +793,16 @@ ipcMain.handle('file:create', async (event, { targetPath, isDirectory }: { targe
         return { success: false, error: `Directory already exists: ${safePath}` };
       }
       await fs.mkdir(safePath, { recursive: true });
+      addApprovedWorkspace(targetWin.id, safePath);
+      addApprovedFile(targetWin.id, safePath);
     } else {
       const parentDir = path.dirname(safePath);
       await fs.mkdir(parentDir, { recursive: true });
       // Use 'wx' (exclusive write) to fail if the file already exists, preventing truncation
       await fs.writeFile(safePath, '', { flag: 'wx' });
+      addApprovedWorkspace(targetWin.id, parentDir);
+      addApprovedFile(targetWin.id, safePath);
     }
-    addApprovedFile(targetWin.id, safePath);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -1101,8 +1117,8 @@ ipcMain.handle('updater:check', async (event) => {
   if (!validateIpcSender(event)) {
     return {
       updateAvailable: false,
-      currentVersion: app.getVersion() || '2.0.3',
-      latestVersion: app.getVersion() || '2.0.3',
+      currentVersion: app.getVersion() || '2.0.4',
+      latestVersion: app.getVersion() || '2.0.4',
       error: 'Unauthorized IPC invocation',
     };
   }
@@ -1140,7 +1156,7 @@ ipcMain.handle('app:info', async (event) => {
   if (!validateIpcSender(event)) return null;
   return {
     name: app.getName() || 'Xivig Text Editor',
-    version: app.getVersion() || '2.0.3',
+    version: app.getVersion() || '2.0.4',
     electron: process.versions.electron,
     node: process.versions.node,
     chrome: process.versions.chrome,

@@ -103,6 +103,7 @@ import {
   createKotlinCompletionSource,
   createGradleCompletionSource,
 } from '../../extensions/builtin/android-kotlin';
+import { createSwiftCompletionSource } from '../../extensions/builtin/swift';
 import {
   createMarkdownCompletionSource,
   createPlantUmlCompletionSource,
@@ -309,6 +310,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
             createTomlCompletionSource(),
             createKotlinCompletionSource(),
             createGradleCompletionSource(),
+            createSwiftCompletionSource(),
             createMarkdownCompletionSource(),
             createPlantUmlCompletionSource(),
             createTailwindCompletionSource(),

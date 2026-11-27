@@ -202,15 +202,18 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
     const fileName = window.prompt('Enter new file name:');
     if (fileName && fileName.trim() && window.xivig?.createFileOrFolder) {
-      const targetPath = `${dir}/${fileName.trim()}`;
+      const cleanDir = dir.replace(/[/\\]+$/, '');
+      const cleanInput = fileName.trim().replace(/^[/\\]+/, '');
+      const targetPath = `${cleanDir}/${cleanInput}`;
       const res = await window.xivig.createFileOrFolder(targetPath, false);
       if (res.success) {
-        await refreshCurrentFolder();
+        await refreshCurrentFolder(targetPath);
+        const name = cleanInput.split(/[/\\]/).pop() || cleanInput;
         openDocument({
           path: targetPath,
-          name: fileName.trim(),
+          name,
           content: '',
-          language: fileName.trim(),
+          language: name,
         });
       } else {
         alert(`Failed to create file: ${res.error}`);
@@ -227,10 +230,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     }
     const folderName = window.prompt('Enter new folder name:');
     if (folderName && folderName.trim() && window.xivig?.createFileOrFolder) {
-      const targetPath = `${dir}/${folderName.trim()}`;
+      const cleanDir = dir.replace(/[/\\]+$/, '');
+      const cleanInput = folderName.trim().replace(/^[/\\]+/, '');
+      const targetPath = `${cleanDir}/${cleanInput}`;
       const res = await window.xivig.createFileOrFolder(targetPath, true);
       if (res.success) {
-        await refreshCurrentFolder();
+        await refreshCurrentFolder(targetPath);
       } else {
         alert(`Failed to create folder: ${res.error}`);
       }

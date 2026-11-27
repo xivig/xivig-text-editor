@@ -171,20 +171,23 @@ export const Sidebar: React.FC = () => {
     const baseDir = promptTargetDir || currentFolderPath;
     if (!baseDir) return;
 
-    const targetPath = `${baseDir}/${promptInput.trim()}`;
+    const cleanBase = baseDir.replace(/[/\\]+$/, '');
+    const cleanInput = promptInput.trim().replace(/^[/\\]+/, '');
+    const targetPath = `${cleanBase}/${cleanInput}`;
     const res = await window.xivig.createFileOrFolder(targetPath, promptType === 'folder');
 
     if (res.success) {
       setIsPromptOpen(false);
       setPromptInput('');
-      await refreshCurrentFolder();
+      const targetNameToOpen = cleanInput.split(/[/\\]/).pop() || cleanInput;
+      await refreshCurrentFolder(targetPath);
 
       if (promptType === 'file') {
         openDocument({
           path: targetPath,
-          name: promptInput.trim(),
+          name: targetNameToOpen,
           content: '',
-          language: promptInput.trim(),
+          language: targetNameToOpen,
         });
       }
     } else {
@@ -293,13 +296,13 @@ export const Sidebar: React.FC = () => {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--xivig-surface-hover)';
-              const btn = e.currentTarget.querySelector('.item-action-delete') as HTMLElement;
-              if (btn) btn.style.display = 'flex';
+              const btns = e.currentTarget.querySelectorAll('.item-action-btn');
+              btns.forEach((btn: any) => (btn.style.display = 'flex'));
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              const btn = e.currentTarget.querySelector('.item-action-delete') as HTMLElement;
-              if (btn) btn.style.display = 'none';
+              const btns = e.currentTarget.querySelectorAll('.item-action-btn');
+              btns.forEach((btn: any) => (btn.style.display = 'none'));
             }}
           >
             {item.isDirectory ? (
@@ -344,15 +347,57 @@ export const Sidebar: React.FC = () => {
               );
             })()}
 
-            {/* Quick delete button */}
-            <button
-              className="item-action-delete"
-              onClick={(e) => handleDeleteItem(e, item)}
-              title={`Delete ${item.name}`}
-              style={deleteItemBtnStyle}
+            {/* Tree item quick action buttons */}
+            <div
+              className="item-actions-group"
+              style={{
+                position: 'absolute',
+                right: '6px',
+                top: '3px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+              }}
             >
-              <Trash2 size={11} />
-            </button>
+              {item.isDirectory && (
+                <>
+                  <button
+                    className="item-action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPromptType('file');
+                      setPromptTargetDir(item.path);
+                      setIsPromptOpen(true);
+                    }}
+                    title={`New File inside ${item.name}`}
+                    style={treeActionBtnStyle}
+                  >
+                    <FilePlus size={12} />
+                  </button>
+                  <button
+                    className="item-action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPromptType('folder');
+                      setPromptTargetDir(item.path);
+                      setIsPromptOpen(true);
+                    }}
+                    title={`New Folder inside ${item.name}`}
+                    style={treeActionBtnStyle}
+                  >
+                    <FolderPlus size={12} />
+                  </button>
+                </>
+              )}
+              <button
+                className="item-action-btn item-action-delete"
+                onClick={(e) => handleDeleteItem(e, item)}
+                title={`Delete ${item.name}`}
+                style={treeActionBtnStyle}
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
           </div>
 
           {item.isDirectory && item.isExpanded && item.children && (
@@ -504,6 +549,14 @@ export const Sidebar: React.FC = () => {
           <div style={promptHeaderStyle}>
             <span style={{ fontSize: '11px', fontWeight: 600 }}>
               New {promptType === 'file' ? 'File' : 'Folder'}
+              {(() => {
+                if (!promptTargetDir || !currentFolderPath || promptTargetDir === currentFolderPath) return '';
+                const rel = promptTargetDir
+                  .replace(/\\/g, '/')
+                  .replace(currentFolderPath.replace(/\\/g, '/'), '')
+                  .replace(/^\/+/, '');
+                return rel ? ` in /${rel}` : '';
+              })()}
             </span>
             <button
               type="button"
@@ -518,7 +571,7 @@ export const Sidebar: React.FC = () => {
             type="text"
             value={promptInput}
             onChange={(e) => setPromptInput(e.target.value)}
-            placeholder={promptType === 'file' ? 'filename.ts' : 'folder-name'}
+            placeholder={promptType === 'file' ? 'e.g. filename.ts or dir/file.ts' : 'e.g. folder or dir/nested'}
             style={promptInputStyle}
           />
         </form>
@@ -1212,15 +1265,19 @@ const treeItemStyle: React.CSSProperties = {
   margin: '1px 6px',
 };
 
-const deleteItemBtnStyle: React.CSSProperties = {
+const treeActionBtnStyle: React.CSSProperties = {
   display: 'none',
-  position: 'absolute',
-  right: '8px',
-  top: '4px',
   color: 'var(--xivig-text-dim)',
-  padding: '2px',
-  borderRadius: '2px',
+  padding: '2px 4px',
+  borderRadius: '3px',
+  backgroundColor: 'var(--xivig-surface)',
+  border: '1px solid var(--xivig-border-subtle)',
+  cursor: 'pointer',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
+
+const deleteItemBtnStyle = treeActionBtnStyle;
 
 const chevronIconStyle: React.CSSProperties = {
   display: 'inline-flex',

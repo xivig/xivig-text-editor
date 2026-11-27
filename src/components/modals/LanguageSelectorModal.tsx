@@ -3,7 +3,7 @@ import { Search, Code2, Check } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useEditorStore } from '../../stores/editorStore';
 
-interface LanguageOption {
+export interface LanguageOption {
   id: string;
   name: string;
   extensions: string[];

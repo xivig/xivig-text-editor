@@ -7,6 +7,8 @@ function getCategoryInfo(category?: RunnerCategory) {
   switch (category) {
     case 'python':
       return { label: 'Python', color: '#4b8bbe', bg: 'rgba(75, 139, 190, 0.15)', icon: <Terminal size={13} color="#4b8bbe" /> };
+    case 'php':
+      return { label: 'PHP', color: '#777bb4', bg: 'rgba(119, 123, 180, 0.15)', icon: <Code2 size={13} color="#777bb4" /> };
     case 'c':
       return { label: 'C', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: <Cpu size={13} color="#3b82f6" /> };
     case 'cpp':
@@ -30,7 +32,7 @@ export const BuildSystemModal: React.FC = () => {
   const activeTarget = useBuildStore((state) => state.activeTarget);
 
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'python' | 'cpp' | 'java' | 'nodejs'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'php' | 'python' | 'cpp' | 'java' | 'nodejs'>('all');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +108,7 @@ export const BuildSystemModal: React.FC = () => {
         <div style={{ display: 'flex', gap: '6px', padding: '10px 16px', borderBottom: '1px solid var(--xivig-border-subtle)', backgroundColor: 'var(--xivig-sidebar)' }}>
           {[
             { id: 'all', label: 'All Runners' },
+            { id: 'php', label: 'PHP' },
             { id: 'python', label: 'Python' },
             { id: 'cpp', label: 'C / C++' },
             { id: 'java', label: 'Java' },

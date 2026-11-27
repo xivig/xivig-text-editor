@@ -71,6 +71,7 @@ export const CommandPalette: React.FC = () => {
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const openLanguageSelector = useUIStore((state) => state.openLanguageSelector);
+  const openScratchModal = useUIStore((state) => state.openScratchModal);
   const openAboutModal = useUIStore((state) => state.openAboutModal);
   const openUpdateCheckModal = useUIStore((state) => state.openUpdateCheckModal);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
@@ -167,6 +168,13 @@ export const CommandPalette: React.FC = () => {
       title: 'New File',
       shortcut: 'Ctrl+N',
       action: () => createNewDocument(),
+    },
+    {
+      id: 'file:new-scratch',
+      category: 'File',
+      title: 'New Scratch File...',
+      shortcut: 'Ctrl+Shift+Alt+N',
+      action: () => openScratchModal(),
     },
     {
       id: 'file:open',
@@ -346,6 +354,46 @@ export const CommandPalette: React.FC = () => {
       category: 'Build',
       title: 'Build: Cancel / Stop Running Build',
       action: () => useBuildStore.getState().stopBuild(),
+    },
+    {
+      id: 'runner:php-run',
+      category: 'Run',
+      title: 'Run: Execute Active File with PHP (php)',
+      action: () => {
+        const activeDoc = useEditorStore.getState().getActiveDocument();
+        if (activeDoc?.path) {
+          useBuildStore.getState().executeBuild({
+            id: 'php-run-file',
+            name: `PHP: Run ${activeDoc.name}`,
+            command: 'php',
+            args: [activeDoc.path],
+            description: `Execute current script (${activeDoc.name}) with PHP CLI interpreter`,
+            category: 'php',
+          });
+        } else {
+          useBuildStore.getState().executeBuild();
+        }
+      },
+    },
+    {
+      id: 'runner:php-server',
+      category: 'Run',
+      title: 'Run: Start PHP Built-in Server (localhost:8000)',
+      action: () => {
+        const activeDoc = useEditorStore.getState().getActiveDocument();
+        const workspacePath = useFileStore.getState().currentFolderPath;
+        const targetDir = activeDoc?.path ? activeDoc.path.replace(/[/\\][^/\\]+$/, '') : workspacePath;
+        if (targetDir) {
+          useBuildStore.getState().executeBuild({
+            id: 'php-serve-dev',
+            name: 'PHP: Start Built-in Server (localhost:8000)',
+            command: 'php',
+            args: ['-S', 'localhost:8000', '-t', targetDir],
+            description: `Start PHP development web server (http://localhost:8000) serving ${targetDir}`,
+            category: 'php',
+          });
+        }
+      },
     },
     {
       id: 'pkg:marketplace',

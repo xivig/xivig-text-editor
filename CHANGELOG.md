@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.4] - 2026-11-28 — *Release 2.0.4: Swift Toolchain & Extension, PHP Runner, C/C++ Runner, Nested Folders & Scratch Files*
+
+### ⚡ Swift Language Support & Toolchain Integration
+* **Swift Language Intelligence**: Full Swift language support with Lezer-based syntax highlighting, symbol parsing (struct, class, actor, protocol, enum, func, var/let), and autocomplete suggestions.
+* **Non-Conflicting Autocompletion**: Seamless CodeMirror 6 autocompletion integration avoiding facet merge collisions in unified editor instances.
+* **Swift Toolchain Auto-Discovery**: Automatic discovery of Swift 6.4.3 toolchain on Windows across `%LOCALAPPDATA%\Programs\Swift\Toolchains\*\usr\bin` and `%ProgramFiles%`.
+* **Runtime & SDK Auto-Configuration**: Automatically configures companion runtime DLL paths (`Runtimes\6.4.3\usr\bin`) and sets `SDKROOT` to `Windows.platform\Developer\SDKs\Windows.sdk`.
+* **Build & Run Targets**: Added one-click Swift build and run commands (`swift` interpreter and `swiftc -O` release compiler with secondary executable execution).
+
+### 🐘 PHP & C/C++ Runners
+* **PHP Executable Auto-Detection**: Auto-detects `php.exe` across XAMPP, Laragon, WampServer, Chocolatey, Scoop, and system PATH.
+* **PHP Script Runner**: One-click PHP script execution directly in the integrated terminal/build runner.
+* **C/C++ Compiler Auto-Detection**: Auto-detects standard GCC, G++, Clang, and Clang++ installations across Embarcadero Dev-Cpp, TDM-GCC, MSYS2 (`ucrt64`, `mingw64`, `clang64`), MinGW-w64, CodeBlocks, and WinGet packages.
+* **C/C++ Build & Run Targets**: Multi-target compilation with `-O2`, `-Wall`, and secondary target binary execution.
+
+### 📁 Nested Folder Creation & Scratch Files
+* **Deep Nested Folder Creation**: Added recursive directory creation in file explorer, allowing paths like `src/components/modals/MyModal.tsx` or `nested/deep/folders` to be created seamlessly.
+* **New Scratch File**: Added `File` &rarr; `New Scratch File...` (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd>) and Command Palette action with interactive language picker and persistent buffer.
+
+---
+
 ## [2.0.3] - 2026-11-28 — *Release 2.0.3: Image Viewer Self-Fetch & Drag-Drop, High-Specificity Rainbow Brackets*
 
 ### 🖼️ Image Viewer Hardening & Universal File Opening

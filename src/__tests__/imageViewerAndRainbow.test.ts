@@ -81,6 +81,35 @@ describe('Image Viewer & Detection Utilities', () => {
     expect(isClean).toBe(false);
     expect(removedElements.length).toBeGreaterThan(0);
   });
+
+  it('updates tab content when openDocument is called for a file previously opened with empty content', async () => {
+    const { useEditorStore } = await import('../stores/editorStore');
+    useEditorStore.setState({
+      documents: [
+        {
+          id: 'test-img-doc',
+          name: 'logo.png',
+          path: 'C:/assets/logo.png',
+          content: '',
+          language: 'logo.png',
+          isDirty: false,
+          cursor: { line: 1, col: 1 },
+        },
+      ],
+      activeDocumentId: 'test-img-doc',
+    });
+
+    const sampleDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    useEditorStore.getState().openDocument({
+      path: 'C:/assets/logo.png',
+      name: 'logo.png',
+      content: sampleDataUrl,
+      language: 'logo.png',
+    });
+
+    const doc = useEditorStore.getState().documents.find((d) => d.path === 'C:/assets/logo.png');
+    expect(doc?.content).toBe(sampleDataUrl);
+  });
 });
 
 describe('Rainbow Brackets Integration', () => {

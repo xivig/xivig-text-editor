@@ -260,6 +260,258 @@ export function findStandardJdkHome(): string | null {
 }
 
 /**
+ * Auto-detects standard PHP executable installations on Windows if not available on PATH.
+ */
+export function findStandardPhpExecutable(): string | null {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  // 1. Check PATH
+  const pathEnv = process.env.PATH || '';
+  const pathDirs = pathEnv.split(path.delimiter).filter(Boolean);
+  for (const dir of pathDirs) {
+    const full = path.join(dir, 'php.exe');
+    try {
+      if (fs.existsSync(full) && fs.statSync(full).isFile()) {
+        return full;
+      }
+    } catch {}
+  }
+
+  // 2. Check Standard Environments: XAMPP, Laragon, WampServer, Chocolatey, Scoop, standalone C:\php
+  const userProfile = process.env['USERPROFILE'] || '';
+  const programData = process.env['ProgramData'] || 'C:\\ProgramData';
+
+  const candidatePaths: string[] = [
+    'C:\\xampp\\php\\php.exe',
+    'D:\\xampp\\php\\php.exe',
+    'C:\\php\\php.exe',
+    'C:\\tools\\php\\php.exe',
+    path.join(programData, 'chocolatey', 'bin', 'php.exe'),
+    path.join(userProfile, 'scoop', 'apps', 'php', 'current', 'php.exe'),
+  ];
+
+  // Laragon (e.g. C:\laragon\bin\php\php-8.x.x\php.exe)
+  for (const root of ['C:\\laragon\\bin\\php', 'D:\\laragon\\bin\\php']) {
+    try {
+      if (fs.existsSync(root)) {
+        const subdirs = fs.readdirSync(root).sort().reverse();
+        for (const sub of subdirs) {
+          candidatePaths.push(path.join(root, sub, 'php.exe'));
+        }
+      }
+    } catch {}
+  }
+
+  // WampServer (e.g. C:\wamp64\bin\php\php8.x.x\php.exe)
+  for (const root of ['C:\\wamp64\\bin\\php', 'C:\\wamp\\bin\\php', 'D:\\wamp64\\bin\\php']) {
+    try {
+      if (fs.existsSync(root)) {
+        const subdirs = fs.readdirSync(root).sort().reverse();
+        for (const sub of subdirs) {
+          candidatePaths.push(path.join(root, sub, 'php.exe'));
+        }
+      }
+    } catch {}
+  }
+
+  for (const cand of candidatePaths) {
+    try {
+      if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
+        return cand;
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+/**
+ * Auto-detects standard C and C++ compilers (GCC, G++, Clang, Clang++) on Windows if not available on PATH.
+ */
+export function findStandardCCompiler(tool: 'gcc' | 'g++' | 'clang' | 'clang++'): string | null {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  const targetExe = `${tool}.exe`;
+
+  // 1. Check PATH
+  const pathEnv = process.env.PATH || '';
+  const pathDirs = pathEnv.split(path.delimiter).filter(Boolean);
+  for (const dir of pathDirs) {
+    const full = path.join(dir, targetExe);
+    try {
+      if (fs.existsSync(full) && fs.statSync(full).isFile()) {
+        return full;
+      }
+    } catch {}
+  }
+
+  // 2. Common Windows compiler directories
+  const userProfile = process.env['USERPROFILE'] || '';
+  const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const programData = process.env['ProgramData'] || 'C:\\ProgramData';
+  const localAppData = process.env['LOCALAPPDATA'] || path.join(userProfile, 'AppData', 'Local');
+
+  const candidateDirs: string[] = [
+    // Embarcadero Dev-Cpp TDM-GCC
+    path.join(programFilesX86, 'Embarcadero', 'Dev-Cpp', 'TDM-GCC-64', 'bin'),
+    path.join(programFiles, 'Embarcadero', 'Dev-Cpp', 'TDM-GCC-64', 'bin'),
+    path.join(programFilesX86, 'Dev-Cpp', 'MinGW64', 'bin'),
+    path.join(programFiles, 'Dev-Cpp', 'MinGW64', 'bin'),
+
+    // MSYS2 (ucrt64, mingw64, clang64, usr/bin)
+    'C:\\msys64\\ucrt64\\bin',
+    'C:\\msys64\\mingw64\\bin',
+    'C:\\msys64\\clang64\\bin',
+    'C:\\msys64\\usr\\bin',
+    'D:\\msys64\\ucrt64\\bin',
+    'D:\\msys64\\mingw64\\bin',
+
+    // MinGW / MinGW-w64 / TDM-GCC
+    'C:\\MinGW\\bin',
+    'C:\\mingw-w64\\bin',
+    'C:\\mingw64\\bin',
+    'C:\\TDM-GCC-64\\bin',
+    'C:\\TDM-GCC-32\\bin',
+    'D:\\MinGW\\bin',
+    'D:\\mingw64\\bin',
+
+    // Strawberry Perl MinGW bundle
+    'C:\\Strawberry\\c\\bin',
+
+    // LLVM / Clang
+    path.join(programFiles, 'LLVM', 'bin'),
+    path.join(programFilesX86, 'LLVM', 'bin'),
+
+    // CodeBlocks MinGW
+    path.join(programFiles, 'CodeBlocks', 'MinGW', 'bin'),
+    path.join(programFilesX86, 'CodeBlocks', 'MinGW', 'bin'),
+
+    // Package managers (Chocolatey, Scoop, WinGet)
+    path.join(programData, 'chocolatey', 'bin'),
+    path.join(userProfile, 'scoop', 'shims'),
+    path.join(userProfile, 'scoop', 'apps', 'mingw', 'current', 'bin'),
+    path.join(userProfile, 'scoop', 'apps', 'llvm', 'current', 'bin'),
+  ];
+
+  // Also check WinGet package directories under %LOCALAPPDATA%\Microsoft\WinGet\Packages
+  try {
+    const wingetPackages = path.join(localAppData, 'Microsoft', 'WinGet', 'Packages');
+    if (fs.existsSync(wingetPackages)) {
+      const entries = fs.readdirSync(wingetPackages);
+      for (const entry of entries) {
+        if (/llvm|mingw|gcc|clang/i.test(entry)) {
+          candidateDirs.push(path.join(wingetPackages, entry, 'bin'));
+        }
+      }
+    }
+  } catch {}
+
+  // Check direct tool match in candidate directories
+  for (const dir of candidateDirs) {
+    const candidateFile = path.join(dir, targetExe);
+    try {
+      if (fs.existsSync(candidateFile) && fs.statSync(candidateFile).isFile()) {
+        return candidateFile;
+      }
+    } catch {}
+  }
+
+  // Cross-fallback: if tool is 'gcc' but 'clang.exe' exists, or if 'g++' but 'clang++.exe' exists
+  const fallbackExe = tool === 'gcc' ? 'clang.exe' : tool === 'g++' ? 'clang++.exe' : null;
+  if (fallbackExe) {
+    for (const dir of candidateDirs) {
+      const candidateFile = path.join(dir, fallbackExe);
+      try {
+        if (fs.existsSync(candidateFile) && fs.statSync(candidateFile).isFile()) {
+          return candidateFile;
+        }
+      } catch {}
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Auto-detects standard Swift compiler toolchain executables (swift, swiftc, lldb) on Windows.
+ */
+export function findStandardSwiftCompiler(tool: 'swift' | 'swiftc' | 'lldb' = 'swift'): string | null {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  const targetExe = `${tool}.exe`;
+
+  // 1. Check PATH
+  const pathEnv = process.env.PATH || '';
+  const pathDirs = pathEnv.split(path.delimiter).filter(Boolean);
+  for (const dir of pathDirs) {
+    const full = path.join(dir, targetExe);
+    try {
+      if (fs.existsSync(full) && fs.statSync(full).isFile()) {
+        return full;
+      }
+    } catch {}
+  }
+
+  // 2. Common Windows Swift installation paths
+  const userProfile = process.env['USERPROFILE'] || '';
+  const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const localAppData = process.env['LOCALAPPDATA'] || path.join(userProfile, 'AppData', 'Local');
+
+  const candidateDirs: string[] = [
+    'C:\\Program Files\\Swift\\bin',
+    'C:\\Program Files\\Swift\\usr\\bin',
+    'C:\\Program Files (x86)\\Swift\\bin',
+    'C:\\Program Files (x86)\\Swift\\usr\\bin',
+    'C:\\Swift\\bin',
+    'C:\\Swift\\usr\\bin',
+    path.join(localAppData, 'Programs', 'Swift', 'bin'),
+    path.join(localAppData, 'Programs', 'Swift', 'usr', 'bin'),
+    path.join(userProfile, 'scoop', 'shims'),
+    path.join(userProfile, 'scoop', 'apps', 'swift', 'current', 'bin'),
+    path.join(process.env['ProgramData'] || 'C:\\ProgramData', 'chocolatey', 'bin'),
+  ];
+
+  // Dynamic search in Swift Toolchains roots:
+  // 1. User local AppData (standard winget / user-level installer):
+  //    %LOCALAPPDATA%\Programs\Swift\Toolchains\<version>\usr\bin
+  // 2. System Program Files:
+  //    C:\Program Files\Swift\Toolchains\<version>\usr\bin
+  const toolchainRoots = [
+    path.join(localAppData, 'Programs', 'Swift', 'Toolchains'),
+    path.join(programFiles, 'Swift', 'Toolchains'),
+    path.join(programFilesX86, 'Swift', 'Toolchains'),
+  ];
+
+  for (const root of toolchainRoots) {
+    try {
+      if (fs.existsSync(root)) {
+        const versions = fs.readdirSync(root).sort().reverse();
+        for (const v of versions) {
+          candidateDirs.unshift(path.join(root, v, 'usr', 'bin'));
+          candidateDirs.unshift(path.join(root, v, 'bin'));
+        }
+      }
+    } catch {}
+  }
+
+  for (const dir of candidateDirs) {
+    const candidateFile = path.join(dir, targetExe);
+    try {
+      if (fs.existsSync(candidateFile) && fs.statSync(candidateFile).isFile()) {
+        return candidateFile;
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+/**
  * Resolves the executable path on Windows safely.
  * Prefers direct .exe binaries over batch files to avoid shell interpreter invocation.
  */
@@ -300,9 +552,38 @@ export function resolveWindowsBinary(commandOrProgram: string, cwd?: string): { 
     return { binary: `${commandOrProgram}.bat`, isBatch: true };
   }
 
+  // PHP runner executable auto-discovery on Windows
+  if (lower === 'php') {
+    const discovered = findStandardPhpExecutable();
+    if (discovered) {
+      return { binary: discovered, isBatch: false };
+    }
+    return { binary: 'php.exe', isBatch: false };
+  }
+
+  // C/C++ compiler executable auto-discovery on Windows (GCC, G++, Clang, Clang++)
+  const knownCCompilerTools = new Set(['gcc', 'g++', 'clang', 'clang++']);
+  if (knownCCompilerTools.has(lower)) {
+    const discovered = findStandardCCompiler(lower as any);
+    if (discovered) {
+      return { binary: discovered, isBatch: false };
+    }
+    return { binary: `${commandOrProgram}.exe`, isBatch: false };
+  }
+
+  // Swift compiler executable auto-discovery on Windows (swift, swiftc)
+  const knownSwiftTools = new Set(['swift', 'swiftc']);
+  if (knownSwiftTools.has(lower)) {
+    const discovered = findStandardSwiftCompiler(lower as any);
+    if (discovered) {
+      return { binary: discovered, isBatch: false };
+    }
+    return { binary: `${commandOrProgram}.exe`, isBatch: false };
+  }
+
   // Common tool mappings on Windows:
-  // Node, Python, GCC, Java, Swift are direct executables (.exe)
-  const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'gcc', 'g++', 'java', 'javac', 'git', 'cargo', 'rustc', 'swift', 'swiftc', 'cmd']);
+  // Node, Python, PHP, GCC, Java, Swift are direct executables (.exe)
+  const knownExeTools = new Set(['node', 'python', 'py', 'python3', 'php', 'composer', 'gcc', 'g++', 'clang', 'clang++', 'java', 'javac', 'git', 'cargo', 'rustc', 'swift', 'swiftc', 'cmd']);
   if (knownExeTools.has(lower)) {
     return { binary: `${commandOrProgram}.exe`, isBatch: false };
   }
@@ -448,6 +729,39 @@ export function runBuildProcess(
         if (!currentPath.toLowerCase().includes(binDir.toLowerCase())) {
           baseEnv.PATH = `${binDir}${path.delimiter}${currentPath}`;
         }
+
+        // If running Swift toolchain, also ensure companion Runtimes usr/bin is on PATH and SDKROOT is configured
+        if (targetBinary.toLowerCase().includes('swift')) {
+          const swiftRoot = path.resolve(binDir, '../../../..');
+          const runtimesRoot = path.join(swiftRoot, 'Runtimes');
+          try {
+            if (fs.existsSync(runtimesRoot)) {
+              const runtimes = fs.readdirSync(runtimesRoot).sort().reverse();
+              for (const r of runtimes) {
+                const rBin = path.join(runtimesRoot, r, 'usr', 'bin');
+                if (fs.existsSync(rBin) && !(baseEnv.PATH || '').toLowerCase().includes(rBin.toLowerCase())) {
+                  baseEnv.PATH = `${rBin}${path.delimiter}${baseEnv.PATH || ''}`;
+                }
+              }
+            }
+          } catch {}
+
+          if (!baseEnv.SDKROOT) {
+            const platformsRoot = path.join(swiftRoot, 'Platforms');
+            try {
+              if (fs.existsSync(platformsRoot)) {
+                const platforms = fs.readdirSync(platformsRoot).sort().reverse();
+                for (const p of platforms) {
+                  const sdk = path.join(platformsRoot, p, 'Windows.platform', 'Developer', 'SDKs', 'Windows.sdk');
+                  if (fs.existsSync(sdk)) {
+                    baseEnv.SDKROOT = sdk;
+                    break;
+                  }
+                }
+              }
+            } catch {}
+          }
+        }
       }
     }
 
@@ -483,9 +797,20 @@ export function runBuildProcess(
     proc.stderr?.on('data', (chunk: Buffer) => {
       if (entry.cancelled) return;
       if (!win.isDestroyed()) {
+        const text = chunk.toString('utf-8');
+        let extraTip = '';
+        if (
+          targetBinary.toLowerCase().includes('swift') &&
+          (text.includes("'stdlib.h' file not found") || text.includes("could not build C module 'SwiftShims'"))
+        ) {
+          extraTip =
+            '\r\n[Tip] Swift on Windows requires the Microsoft Windows 10/11 SDK & Visual C++ Runtime (UCRT) headers.' +
+            '\r\nPlease install Visual Studio Build Tools with C++ or the Windows SDK in an Administrator terminal:\r\n' +
+            '  winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"\r\n';
+        }
         win.webContents.send('build:data', {
           type: 'stderr',
-          text: chunk.toString('utf-8'),
+          text: text + extraTip,
         });
       }
     });
@@ -502,14 +827,16 @@ export function runBuildProcess(
           const binLower = rawProgram.toLowerCase();
           if (binLower === 'python' || binLower === 'py' || binLower === 'python3') {
             helpfulTip = '\r\n[Tip] Python interpreter was not found on PATH. Please ensure Python is installed and added to PATH (e.g. from python.org or Microsoft Store).\r\n';
-          } else if (binLower === 'gcc' || binLower === 'g++') {
-            helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. For C/C++ development on Windows, install MinGW-w64 (e.g. winlibs.com or MSYS2) and add its bin folder to PATH.\r\n`;
+          } else if (binLower === 'gcc' || binLower === 'g++' || binLower === 'clang' || binLower === 'clang++') {
+            helpfulTip = `\r\n[Tip] C/C++ compiler '${targetBinary}' was not found. Please install MinGW-w64 (e.g. from winlibs.com or MSYS2 or Embarcadero Dev-C++) or LLVM Clang, and verify it is accessible.\r\n`;
           } else if (binLower === 'javac' || binLower === 'java') {
             helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Java Development Kit (JDK 17+) and verify java/javac is in your environment PATH.\r\n`;
           } else if (binLower === 'node' || binLower === 'npm' || binLower === 'npx') {
             helpfulTip = `\r\n[Tip] '${targetBinary}' was not found on PATH. Install Node.js from nodejs.org and restart the editor.\r\n`;
           } else if (binLower === 'kotlinc' || binLower === 'kotlin' || binLower === 'kotlinc-jvm') {
             helpfulTip = `\r\n[Tip] Kotlin compiler was not found on PATH. Install Kotlin (e.g. via 'winget install JetBrains.Kotlin.Compiler' or Android Studio) and add its bin directory to PATH.\r\n`;
+          } else if (binLower === 'swift' || binLower === 'swiftc') {
+            helpfulTip = `\r\n[Tip] Swift toolchain was not found on PATH. Install the official Swift for Windows toolchain from swift.org/download or via 'winget install Swift.Swift' (or 'choco install swift') and add its usr/bin folder to PATH.\r\n`;
           }
         }
 

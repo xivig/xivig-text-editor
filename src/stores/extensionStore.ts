@@ -1939,6 +1939,26 @@ Clean XML editing and Android manifest intelligence:
 - Formats XML documents with nested indentation
 - Validates AndroidManifest.xml structure, activities, and declared permissions.`,
   },
+  // --- Category 16: Swift Development ---
+  {
+    id: 'xivig-tool-swift',
+    name: 'Swift',
+    publisher: 'swift-lang',
+    version: '6.0.1',
+    category: 'Languages',
+    description: 'Complete Swift language development support for Xivig: syntax highlighting, autocompletion, Swift toolchains, and LLDB debugging.',
+    iconBg: '#f05138',
+    iconSymbol: '🦅',
+    downloads: '16.7M',
+    rating: 4.9,
+    tags: ['swift', 'swiftui', 'apple', 'ios', 'macos', 'lldb', 'compiler', 'language-server'],
+    readme: `# Swift for Xivig
+Rich Swift language and iOS/macOS/server development support:
+- **Syntax Highlighting**: Comprehensive StreamLanguage tokenization for Swift 6 keywords, SwiftUI view builders, property wrappers (@State, @Binding, @main, @Observable), compiler directives, multiline string literals, and nested block comments.
+- **Autocomplete**: Context-aware CodeMirror autocompletion for Swift language keywords, property wrappers, Foundation standard library types, SwiftUI views, and rich snippets.
+- **Debugging Support**: LLDB native debugger integration with automatic launch configuration generation and Swift fatal error / precondition breakpoint handlers.
+- **Swift Toolchain**: Automatic discovery of official Swift toolchains on Windows, macOS, and Linux with \`Package.swift\` manifest parsing and one-click build/test/run targets.`,
+  },
   {
     id: 'xivig-tool-markdown-all-in-one',
     name: 'Markdown All in One',
@@ -2444,8 +2464,8 @@ interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>((set, get) => ({
   marketplace: MARKETPLACE_EXTENSIONS,
-  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php'],
-  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php'],
+  installedIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php', 'xivig-tool-swift'],
+  enabledIds: ['xivig-theme-dracula', 'xivig-theme-nord', 'xivig-tool-todo', 'xivig-tool-rainbow', 'xivig-tool-bootstrap5', 'xivig-tool-laravel', 'xivig-tool-php', 'xivig-tool-swift'],
   selectedExtension: null,
 
   selectExtension: (pkg) => set({ selectedExtension: pkg }),
@@ -2467,7 +2487,7 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
     }
 
     // Persist to database
-    if (window.xivig?.setSetting) {
+    if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('installed_extensions', JSON.stringify(newInstalled));
       window.xivig.setSetting('enabled_extensions', JSON.stringify(newEnabled));
     }
@@ -2487,7 +2507,7 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
       useSettingsStore.getState().updateSettings({ theme: 'xivig-dark' });
     }
 
-    if (window.xivig?.setSetting) {
+    if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('installed_extensions', JSON.stringify(newInstalled));
       window.xivig.setSetting('enabled_extensions', JSON.stringify(newEnabled));
     }
@@ -2517,7 +2537,7 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
       }
     }
 
-    if (window.xivig?.setSetting) {
+    if (typeof window !== 'undefined' && window.xivig?.setSetting) {
       window.xivig.setSetting('enabled_extensions', JSON.stringify(newEnabled));
     }
   },
@@ -2526,7 +2546,7 @@ export const useExtensionStore = create<ExtensionState>((set, get) => ({
     let installed = get().installedIds;
     let enabled = get().enabledIds;
 
-    if (window.xivig?.getSetting) {
+    if (typeof window !== 'undefined' && window.xivig?.getSetting) {
       const savedInstalled = await window.xivig.getSetting('installed_extensions');
       const savedEnabled = await window.xivig.getSetting('enabled_extensions');
       if (savedInstalled) {

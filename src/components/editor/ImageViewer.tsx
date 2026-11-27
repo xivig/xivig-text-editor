@@ -10,6 +10,7 @@ import {
   Sun,
   Moon,
   Image as ImageIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { EditorDocument } from '../../types/editor';
 import { useEditorStore } from '../../stores/editorStore';
@@ -46,9 +47,18 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
 
   const isSvg = isSvgFile(doc.name || doc.path);
 
-  // Auto-fetch file content from disk if doc.content is not yet populated
-  useEffect(() => {
-    if ((!doc.content || doc.content.length === 0) && doc.path && window.xivig?.readFile) {
+  // Check if content is a valid data/blob/http URL or SVG markup
+  const hasValidImageContent = Boolean(
+    doc.content &&
+    (isSvg ||
+      doc.content.startsWith('data:image/') ||
+      doc.content.startsWith('blob:') ||
+      doc.content.startsWith('http') ||
+      /^[A-Za-z0-9+/=]+$/.test(doc.content.replace(/[\r\n\s]/g, '').slice(0, 100)))
+  );
+
+  const fetchImageFromDisk = useCallback(() => {
+    if (doc.path && window.xivig?.readFile) {
       window.xivig.readFile(doc.path).then((res) => {
         if (res.success && res.content) {
           useEditorStore.setState((state) => ({
@@ -62,7 +72,14 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
         }
       });
     }
-  }, [doc.content, doc.id, doc.path]);
+  }, [doc.id, doc.path]);
+
+  // Auto-fetch file content from disk if doc.content is not valid
+  useEffect(() => {
+    if (!hasValidImageContent && doc.path && window.xivig?.readFile) {
+      fetchImageFromDisk();
+    }
+  }, [hasValidImageContent, doc.path, fetchImageFromDisk]);
 
   // Compute SVG sanitized markup & dimensions
   const svgMeta = React.useMemo(() => {
@@ -102,10 +119,11 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
       }
       return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(preparedSvg)}`;
     }
-    // If raw base64 without prefix
-    if (/^[A-Za-z0-9+/=]+$/.test(doc.content.trim().slice(0, 100))) {
+    // Clean whitespace and test if raw base64
+    const cleanContent = doc.content.replace(/[\r\n\s]/g, '');
+    if (/^[A-Za-z0-9+/=]+$/.test(cleanContent.slice(0, 100))) {
       const mime = getImageMimeType(doc.name || doc.path);
-      return `data:${mime};base64,${doc.content.trim()}`;
+      return `data:${mime};base64,${cleanContent}`;
     }
     return doc.content;
   }, [doc.content, doc.name, doc.path, isSvg]);
@@ -123,12 +141,32 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
   // Handle image load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    const naturalW = img.naturalWidth;
+    const naturalH = img.naturalHeight;
+    setDimensions({ width: naturalW, height: naturalH });
     setLoadError(null);
+
+    // Auto-fit if image exceeds container
+    if (containerRef.current && naturalW > 0 && naturalH > 0) {
+      const containerWidth = containerRef.current.clientWidth - 64;
+      const containerHeight = containerRef.current.clientHeight - 64;
+      if (containerWidth > 0 && containerHeight > 0) {
+        const scaleX = containerWidth / naturalW;
+        const scaleY = containerHeight / naturalH;
+        const fitScale = Math.min(scaleX, scaleY, 1);
+        if (fitScale < 1) {
+          setZoom(Math.max(0.05, Number(fitScale.toFixed(2))));
+          setPan({ x: 0, y: 0 });
+        }
+      }
+    }
   };
 
   const handleImageError = () => {
-    setLoadError('Failed to decode or display image binary data.');
+    // Only flag error if there was actually an imageSrc attempted
+    if (imageSrc) {
+      setLoadError('Failed to decode or display image binary data.');
+    }
   };
 
   // Zoom helpers
@@ -411,22 +449,49 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
             <ImageIcon size={48} color="#ef4444" style={{ marginBottom: '12px' }} />
             <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '6px' }}>Image Preview Failed</h3>
             <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>{loadError}</p>
-            {isSvg && onSwitchToCode && (
-              <button
-                onClick={onSwitchToCode}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  backgroundColor: 'var(--xivig-accent, #3b82f6)',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Open SVG Markup in Code Editor
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {doc.path && (
+                <button
+                  onClick={fetchImageFromDisk}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '4px',
+                    backgroundColor: 'var(--xivig-accent, #3b82f6)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <RefreshCw size={13} />
+                  Reload from Disk
+                </button>
+              )}
+              {isSvg && onSwitchToCode && (
+                <button
+                  onClick={onSwitchToCode}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--xivig-border, #444)',
+                    color: 'var(--xivig-text, #ffffff)',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Open SVG Markup in Code Editor
+                </button>
+              )}
+            </div>
+          </div>
+        ) : !imageSrc && !isSvg ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: 'var(--xivig-text-muted, #94a3b8)' }}>
+            <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: '12px' }}>Loading image...</span>
           </div>
         ) : (
           <div

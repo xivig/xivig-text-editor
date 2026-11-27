@@ -49,7 +49,7 @@ interface FileState {
 
   setCurrentFolder: (folderPath: string, items: Array<{ path: string; name: string; isDirectory: boolean }>) => void;
   closeCurrentFolder: () => void;
-  refreshCurrentFolder: () => Promise<void>;
+  refreshCurrentFolder: (targetPathToExpand?: string) => Promise<void>;
   toggleFolderExpanded: (itemPath: string) => void;
   setFolderChildren: (folderPath: string, children: FileItem[]) => void;
   setActiveSidebarView: (view: ActiveSidebarView) => void;
@@ -478,31 +478,85 @@ export const useFileStore = create<FileState>((set, get) => ({
     });
   },
 
-  refreshCurrentFolder: async () => {
-    const { currentFolderPath } = get();
+  refreshCurrentFolder: async (targetPathToExpand?: string) => {
+    const { currentFolderPath, fileTree } = get();
     if (!currentFolderPath || !window.xivig?.readDir) return;
 
-    const res = await window.xivig.readDir(currentFolderPath);
-    if (res.success && res.items) {
-      const items: FileItem[] = res.items
-        .map((item) => ({
-          id: item.path,
-          name: item.name,
-          path: item.path,
-          isDirectory: item.isDirectory,
-          extension: item.name.includes('.') ? item.name.split('.').pop() : undefined,
-          isExpanded: false,
-          children: item.isDirectory ? [] : undefined,
-        }))
-        .sort((a, b) => {
-          if (a.isDirectory && !b.isDirectory) return -1;
-          if (!a.isDirectory && b.isDirectory) return 1;
-          return a.name.localeCompare(b.name);
-        });
+    const norm = (p: string) => p.replace(/\\/g, '/');
 
-      set({ fileTree: items });
-      get().loadGitStatus();
+    // 1. Collect all paths that were already expanded by the user
+    const expandedPaths = new Set<string>();
+    const walkCollect = (items: FileItem[]) => {
+      for (const item of items) {
+        if (item.isDirectory && item.isExpanded) {
+          expandedPaths.add(norm(item.path));
+          if (item.children) {
+            walkCollect(item.children);
+          }
+        }
+      }
+    };
+    walkCollect(fileTree);
+
+    // 2. If targetPathToExpand is provided (e.g. after creating nested folder/file),
+    // automatically expand every ancestor directory leading to it so it is immediately visible
+    if (targetPathToExpand) {
+      const normCurrent = norm(currentFolderPath).replace(/\/+$/, '');
+      const normTarget = norm(targetPathToExpand).replace(/\/+$/, '');
+      if (normTarget.startsWith(normCurrent)) {
+        const relative = normTarget.slice(normCurrent.length).replace(/^\/+/, '');
+        const segments = relative.split('/').filter(Boolean);
+        let curr = normCurrent;
+        for (let i = 0; i < segments.length; i++) {
+          curr = `${curr}/${segments[i]}`;
+          expandedPaths.add(curr);
+        }
+      }
     }
+
+    // 3. Recursively load file tree preserving expanded state and fetching children
+    const loadDirectoryChildren = async (dirPath: string): Promise<FileItem[]> => {
+      if (!window.xivig?.readDir) return [];
+      const res = await window.xivig.readDir(dirPath);
+      if (!res.success || !res.items) return [];
+
+      const items: FileItem[] = [];
+      for (const entry of res.items) {
+        const entryNorm = norm(entry.path);
+        const isExpanded = entry.isDirectory && expandedPaths.has(entryNorm);
+        let children: FileItem[] | undefined = undefined;
+
+        if (entry.isDirectory) {
+          if (isExpanded) {
+            children = await loadDirectoryChildren(entry.path);
+          } else {
+            children = [];
+          }
+        }
+
+        items.push({
+          id: entry.path,
+          name: entry.name,
+          path: entry.path,
+          isDirectory: entry.isDirectory,
+          extension: entry.name.includes('.') ? entry.name.split('.').pop() : undefined,
+          isExpanded,
+          children,
+        });
+      }
+
+      items.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      return items;
+    };
+
+    const updatedTree = await loadDirectoryChildren(currentFolderPath);
+    set({ fileTree: updatedTree });
+    get().loadGitStatus();
   },
 
   setCurrentFolder: (folderPath, rawItems) => {

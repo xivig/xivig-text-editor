@@ -4,7 +4,7 @@ import { useEditorStore } from './editorStore';
 import { useFileStore } from './fileStore';
 import { formatOutputTimestamp } from '../utils/ansi';
 
-export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'swift' | 'kotlin' | 'bat' | 'workspace' | 'general';
+export type RunnerCategory = 'nodejs' | 'python' | 'c' | 'cpp' | 'java' | 'php' | 'swift' | 'kotlin' | 'bat' | 'workspace' | 'general';
 
 export interface BuildTarget {
   id: string;
@@ -15,6 +15,7 @@ export interface BuildTarget {
   description: string;
   icon?: string;
   category?: RunnerCategory;
+  cwd?: string;
   secondaryCommand?: {
     command: string;
     program?: string;
@@ -140,6 +141,9 @@ export const useBuildStore = create<BuildState>((set, get) => {
       if (ext === 'py' || ext === 'pyw') {
         const py = targets.find((t) => t.category === 'python');
         if (py) return py;
+      } else if (ext === 'php' || ext === 'phtml' || ext === 'php8' || ext === 'php7') {
+        const phpTarget = targets.find((t) => t.id === 'php-run-file') || targets.find((t) => t.category === 'php');
+        if (phpTarget) return phpTarget;
       } else if (ext === 'c') {
         const cTarget = targets.find((t) => t.id === 'c-compile-run');
         if (cTarget) return cTarget;
@@ -189,7 +193,8 @@ export const useBuildStore = create<BuildState>((set, get) => {
       if (docPath) {
         const fileDir = docPath.replace(/[/\\][^/\\]+$/, '');
         const baseName = docName.replace(/\.[^.]+$/, '');
-        const outExe = `${baseName}${exeSuffix}`;
+        const outExeName = `${baseName}${exeSuffix}`;
+        const outExe = `${fileDir}/${outExeName}`;
 
         // --- Python Runner ---
         if (ext === 'py' || ext === 'pyw') {
@@ -211,6 +216,42 @@ export const useBuildStore = create<BuildState>((set, get) => {
           });
         }
 
+        // --- PHP Runner ---
+        else if (ext === 'php' || ext === 'phtml' || ext === 'php8' || ext === 'php7') {
+          targets.push({
+            id: 'php-run-file',
+            name: `PHP: Run ${docName}`,
+            command: 'php',
+            args: [docPath],
+            description: `Execute current script (${docName}) with PHP CLI interpreter`,
+            category: 'php',
+          });
+          targets.push({
+            id: 'php-lint-file',
+            name: `PHP: Lint / Syntax Check (${docName})`,
+            command: 'php',
+            args: ['-l', docPath],
+            description: `Check syntax of ${docName} for errors (php -l)`,
+            category: 'php',
+          });
+          targets.push({
+            id: 'php-serve-dev',
+            name: `PHP: Start Built-in Server (localhost:8000)`,
+            command: 'php',
+            args: ['-S', 'localhost:8000', '-t', fileDir],
+            description: `Start PHP development web server (http://localhost:8000) serving ${fileDir}`,
+            category: 'php',
+          });
+          targets.push({
+            id: 'php-info',
+            name: `PHP: Version & Configuration`,
+            command: 'php',
+            args: ['-v'],
+            description: `Display PHP version and environment details`,
+            category: 'php',
+          });
+        }
+
         // --- C Runner ---
         else if (ext === 'c') {
           targets.push({
@@ -223,7 +264,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
               args: [],
               cwd: fileDir,
             },
-            description: `Compile ${docName} with GCC and immediately execute ${outExe}`,
+            description: `Compile ${docName} with GCC and immediately execute ${outExeName}`,
             category: 'c',
           });
           targets.push({
@@ -235,11 +276,25 @@ export const useBuildStore = create<BuildState>((set, get) => {
             category: 'c',
           });
           targets.push({
+            id: 'c-compile-run-clang',
+            name: `C: Compile & Run with Clang`,
+            command: 'clang',
+            args: ['-Wall', docPath, '-o', outExe],
+            secondaryCommand: {
+              command: outExe,
+              args: [],
+              cwd: fileDir,
+            },
+            description: `Compile ${docName} with LLVM Clang and execute ${outExeName}`,
+            category: 'c',
+          });
+          targets.push({
             id: 'c-run-binary',
-            name: `C: Run ${outExe}`,
+            name: `C: Run ${outExeName}`,
             command: outExe,
             args: [],
-            description: `Execute compiled binary ${outExe}`,
+            cwd: fileDir,
+            description: `Execute compiled binary ${outExeName}`,
             category: 'c',
           });
         }
@@ -256,7 +311,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
               args: [],
               cwd: fileDir,
             },
-            description: `Compile ${docName} with G++ (C++17) and immediately execute ${outExe}`,
+            description: `Compile ${docName} with G++ (C++17) and immediately execute ${outExeName}`,
             category: 'cpp',
           });
           targets.push({
@@ -268,11 +323,25 @@ export const useBuildStore = create<BuildState>((set, get) => {
             category: 'cpp',
           });
           targets.push({
+            id: 'cpp-compile-run-clang',
+            name: `C++: Compile & Run with Clang++`,
+            command: 'clang++',
+            args: ['-Wall', '-std=c++17', docPath, '-o', outExe],
+            secondaryCommand: {
+              command: outExe,
+              args: [],
+              cwd: fileDir,
+            },
+            description: `Compile ${docName} with LLVM Clang++ and execute ${outExeName}`,
+            category: 'cpp',
+          });
+          targets.push({
             id: 'cpp-run-binary',
-            name: `C++: Run ${outExe}`,
+            name: `C++: Run ${outExeName}`,
             command: outExe,
             args: [],
-            description: `Execute compiled binary ${outExe}`,
+            cwd: fileDir,
+            description: `Execute compiled binary ${outExeName}`,
             category: 'cpp',
           });
         }
@@ -364,7 +433,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
               args: [],
               cwd: fileDir,
             },
-            description: `Compile ${docName} with swiftc and execute ${outExe}`,
+            description: `Compile ${docName} with swiftc and execute ${outExeName}`,
             category: 'swift',
           });
         } else if (ext === 'kt' || ext === 'kts') {
@@ -450,6 +519,15 @@ export const useBuildStore = create<BuildState>((set, get) => {
               description: `Execute workspace script ${f.name} with Python`,
               category: 'python',
             });
+          } else if (fExt === 'php' || fExt === 'phtml' || fExt === 'php8' || fExt === 'php7') {
+            targets.push({
+              id: `ws-php-${f.name}`,
+              name: `PHP: Run ${f.name}`,
+              command: 'php',
+              args: [f.path],
+              description: `Execute workspace script ${f.name} with PHP`,
+              category: 'php',
+            });
           } else if (fExt === 'js') {
             targets.push({
               id: `ws-node-${f.name}`,
@@ -525,7 +603,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
         }
       }
 
-      // 3. Workspace npm targets if in a project
+      // 3. Workspace npm & SPM targets if in a project
       if (workspacePath) {
         targets.push({
           id: 'npm-start',
@@ -551,13 +629,46 @@ export const useBuildStore = create<BuildState>((set, get) => {
           description: 'Execute build script in package.json',
           category: 'workspace',
         });
+
+        const hasPackageSwift = fileTree?.some((f) => f.name === 'Package.swift') || docName === 'Package.swift';
+        if (hasPackageSwift) {
+          targets.push({
+            id: 'swift-package-build',
+            name: 'Swift: Build Package (swift build)',
+            command: 'swift',
+            args: ['build'],
+            cwd: workspacePath,
+            description: 'Compile Swift package using Swift Package Manager',
+            category: 'swift',
+          });
+          targets.push({
+            id: 'swift-package-run',
+            name: 'Swift: Run Package (swift run)',
+            command: 'swift',
+            args: ['run'],
+            cwd: workspacePath,
+            description: 'Run Swift package executable target with SPM',
+            category: 'swift',
+          });
+          targets.push({
+            id: 'swift-package-test',
+            name: 'Swift: Test Package (swift test)',
+            command: 'swift',
+            args: ['test'],
+            cwd: workspacePath,
+            description: 'Run Swift package unit tests with SPM',
+            category: 'swift',
+          });
+        }
       }
 
-      // 4. Always provide standard runner presets so all 4 runners are directly discoverable
+      // 4. Always provide standard runner presets so all major runners are directly discoverable
       const hasNode = targets.some((t) => t.category === 'nodejs');
       const hasPy = targets.some((t) => t.category === 'python');
+      const hasPhp = targets.some((t) => t.category === 'php');
       const hasC = targets.some((t) => t.category === 'c' || t.category === 'cpp');
       const hasJava = targets.some((t) => t.category === 'java');
+      const hasSwift = targets.some((t) => t.category === 'swift');
 
       if (!hasNode) {
         targets.push({
@@ -581,6 +692,17 @@ export const useBuildStore = create<BuildState>((set, get) => {
         });
       }
 
+      if (!hasPhp) {
+        targets.push({
+          id: 'generic-php',
+          name: 'PHP Runner',
+          command: 'php',
+          args: docPath && ext?.match(/^(php|phtml|php8|php7)$/) ? [docPath] : ['-v'],
+          description: 'Execute PHP scripts with PHP CLI runtime',
+          category: 'php',
+        });
+      }
+
       if (!hasC) {
         targets.push({
           id: 'generic-c-cpp',
@@ -600,6 +722,17 @@ export const useBuildStore = create<BuildState>((set, get) => {
           args: docPath && ext === 'java' ? [docPath] : ['-version'],
           description: 'Run Java source code directly (Java 11+)',
           category: 'java',
+        });
+      }
+
+      if (!hasSwift) {
+        targets.push({
+          id: 'generic-swift',
+          name: 'Swift Runner',
+          command: 'swift',
+          args: docPath && ext === 'swift' ? [docPath] : ['--version'],
+          description: 'Execute Swift files or invoke Swift compiler',
+          category: 'swift',
         });
       }
 
@@ -627,7 +760,7 @@ export const useBuildStore = create<BuildState>((set, get) => {
       }
 
       const workspacePath = useFileStore.getState().currentFolderPath;
-      const cwd = workspacePath || (activeDoc?.path ? activeDoc.path.replace(/[/\\][^/\\]+$/, '') : undefined);
+      const cwd = target.cwd || workspacePath || (activeDoc?.path ? activeDoc.path.replace(/[/\\][^/\\]+$/, '') : undefined);
 
       if (window.xivig?.buildRun) {
         await window.xivig.buildRun({

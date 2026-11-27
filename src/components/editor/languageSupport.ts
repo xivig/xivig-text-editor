@@ -7,6 +7,7 @@ import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { python } from '@codemirror/lang-python';
 import { rust } from '@codemirror/lang-rust';
+import { swiftCompletionSource } from '../../extensions/builtin/swift/swiftAutocompletePlugin';
 
 interface CStyleParserState {
   inBlockComment: boolean;
@@ -768,6 +769,7 @@ export const swiftLanguage = StreamLanguage.define<SwiftParserState>({
     commentTokens: { line: '//', block: { open: '/*', close: '*/' } },
     closeBrackets: { brackets: ['(', '[', '{', '"'] },
     indentOnInput: /^\s*\}$/,
+    autocomplete: swiftCompletionSource,
   },
 });
 

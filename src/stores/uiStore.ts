@@ -7,6 +7,7 @@ interface UIState {
   searchMode: 'find' | 'replace';
   isMinimapOpen: boolean;
   isLanguageSelectorOpen: boolean;
+  isScratchModalOpen: boolean;
   isBottomPanelOpen: boolean;
   activeBottomTab: 'terminal' | 'output' | 'problems' | 'debugConsole';
   isKeymapModalOpen: boolean;
@@ -101,6 +102,8 @@ interface UIState {
 
   openLanguageSelector: () => void;
   closeLanguageSelector: () => void;
+  openScratchModal: () => void;
+  closeScratchModal: () => void;
 
   openKeymapModal: () => void;
   closeKeymapModal: () => void;
@@ -141,6 +144,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   searchMode: 'find',
   isMinimapOpen: true,
   isLanguageSelectorOpen: false,
+  isScratchModalOpen: false,
   isKeymapModalOpen: false,
   isBuildSystemModalOpen: false,
   isWrapWithAbbreviationOpen: false,
@@ -253,6 +257,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   openLanguageSelector: () =>
     set({ isLanguageSelectorOpen: true, isCommandPaletteOpen: false, isQuickOpenOpen: false }),
   closeLanguageSelector: () => set({ isLanguageSelectorOpen: false }),
+
+  openScratchModal: () =>
+    set({ isScratchModalOpen: true, isCommandPaletteOpen: false, isQuickOpenOpen: false }),
+  closeScratchModal: () => set({ isScratchModalOpen: false }),
 
   toggleMinimap: () => set((state) => ({ isMinimapOpen: !state.isMinimapOpen })),
 

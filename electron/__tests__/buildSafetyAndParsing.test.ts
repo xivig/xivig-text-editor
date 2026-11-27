@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   parseCommandLine,
@@ -6,6 +7,8 @@ import {
   resolveStructuredCommand,
   findStandardKotlinCompiler,
   findStandardJdkHome,
+  findStandardCCompiler,
+  findStandardSwiftCompiler,
 } from '../main/build';
 
 describe('Windows Build Execution and Command Safety (P0 Finding)', () => {
@@ -96,6 +99,27 @@ describe('Windows Build Execution and Command Safety (P0 Finding)', () => {
       if (jdkHome) {
         expect(typeof jdkHome).toBe('string');
       }
+
+      const gccPath = findStandardCCompiler('gcc');
+      if (gccPath) {
+        expect(gccPath).toMatch(/gcc\.exe$/i);
+      }
+      const gppPath = findStandardCCompiler('g++');
+      if (gppPath) {
+        expect(gppPath).toMatch(/g\+\+\.exe$/i);
+      }
+
+      const swiftPath = findStandardSwiftCompiler('swift');
+      const swiftcPath = findStandardSwiftCompiler('swiftc');
+      expect(swiftPath).toBeTruthy();
+      expect(swiftPath).toMatch(/swift\.exe$/i);
+      expect(swiftcPath).toBeTruthy();
+      expect(swiftcPath).toMatch(/swiftc\.exe$/i);
+
+      const resSwiftc = resolveWindowsBinary('swiftc');
+      expect(path.isAbsolute(resSwiftc.binary)).toBe(true);
+      expect(resSwiftc.binary).toMatch(/swiftc\.exe$/i);
+      expect(resSwiftc.isBatch).toBe(false);
     }
   });
 

@@ -15,6 +15,7 @@ import { CommandPalette } from '../components/modals/CommandPalette';
 import { QuickOpen } from '../components/modals/QuickOpen';
 import { SearchPanel } from '../components/search/SearchPanel';
 import { LanguageSelectorModal } from '../components/modals/LanguageSelectorModal';
+import { ScratchFileModal } from '../components/modals/ScratchFileModal';
 import { KeymapModal } from '../components/modals/KeymapModal';
 import { WrapWithAbbreviationModal } from '../components/modals/WrapWithAbbreviationModal';
 import { BuildSystemModal } from '../components/modals/BuildSystemModal';
@@ -772,6 +773,9 @@ export const App: React.FC = () => {
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'h') {
         e.preventDefault();
         openSearchPanel('replace');
+      } else if (isCtrlOrMeta && e.shiftKey && e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        useUIStore.getState().openScratchModal();
       } else if (isCtrlOrMeta && !e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         createNewDocument();
@@ -1060,6 +1064,7 @@ export const App: React.FC = () => {
       <CommandPalette />
       <QuickOpen />
       <LanguageSelectorModal />
+      <ScratchFileModal />
       <KeymapModal />
       <WrapWithAbbreviationModal />
       <BuildSystemModal />
@@ -1111,6 +1116,9 @@ const editorAreaStyle: React.CSSProperties = {
 
 const editorSurfaceStyle: React.CSSProperties = {
   flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
   position: 'relative',
   overflow: 'hidden',
 };

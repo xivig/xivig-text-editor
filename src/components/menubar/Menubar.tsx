@@ -86,6 +86,7 @@ export const Menubar: React.FC = () => {
 
   const openSearchPanel = useUIStore((state) => state.openSearchPanel);
   const openCommandPalette = useUIStore((state) => state.openCommandPalette);
+  const openScratchModal = useUIStore((state) => state.openScratchModal);
   const openQuickOpen = useUIStore((state) => state.openQuickOpen);
   const toggleMinimap = useUIStore((state) => state.toggleMinimap);
   const toggleBottomPanel = useUIStore((state) => state.toggleBottomPanel);
@@ -284,6 +285,7 @@ export const Menubar: React.FC = () => {
   const menus: Record<string, MenuItem[]> = {
     File: [
       { label: 'New File', shortcut: 'Ctrl+N', action: () => createNewDocument() },
+      { label: 'New Scratch File...', shortcut: 'Ctrl+Shift+Alt+N', action: () => openScratchModal() },
       { label: 'Open File...', shortcut: 'Ctrl+O', action: handleOpenFile },
       { label: 'Open Folder...', shortcut: 'Ctrl+K Ctrl+O', action: handleOpenFolder },
       { label: 'Open Workspace from File...', action: handleOpenWorkspaceFromFile },

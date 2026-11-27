@@ -122,6 +122,9 @@ import {
   xmlToolsExtensionModule,
 } from './android-kotlin/index';
 import {
+  swiftExtensionModule,
+} from './swift/index';
+import {
   markdownAllInOneExtensionModule,
   markdownPreviewEnhancedExtensionModule,
   markdownLintExtensionModule,
@@ -373,6 +376,10 @@ export const BUILTIN_EXTENSIONS: Record<string, BuiltinExtensionModule> = {
   'xivig.xml-tools': xmlToolsExtensionModule,
   'xivig-tool-xml-tools': xmlToolsExtensionModule,
 
+  // Swift Development Suite
+  'xivig.swift-lang': swiftExtensionModule,
+  'xivig-tool-swift': swiftExtensionModule,
+
   // Markdown & Documentation Suite
   'xivig.markdown-all-in-one': markdownAllInOneExtensionModule,
   'xivig-tool-markdown-all-in-one': markdownAllInOneExtensionModule,
@@ -530,6 +537,7 @@ export {
   gradleAndroidExtensionModule,
   adbExtensionModule,
   xmlToolsExtensionModule,
+  swiftExtensionModule,
   markdownAllInOneExtensionModule,
   markdownPreviewEnhancedExtensionModule,
   markdownLintExtensionModule,
@@ -564,3 +572,4 @@ export * from './remote/index';
 export * from './themes/index';
 export * from './testing/index';
 export * from './security/index';
+export * from './swift/index';
