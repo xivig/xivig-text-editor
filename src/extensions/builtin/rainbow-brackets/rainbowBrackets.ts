@@ -207,6 +207,19 @@ export function createRainbowDecorations(view: EditorView): DecorationSet {
 }
 
 /**
+ * CodeMirror baseTheme for rainbow brackets.
+ * Ensures the 6 depth colors override default punctuation themes.
+ */
+export const rainbowBracketsTheme = EditorView.baseTheme({
+  '& .xivig-rainbow-bracket-red': { color: '#ff5370 !important', fontWeight: '600' },
+  '& .xivig-rainbow-bracket-orange': { color: '#ff9e64 !important', fontWeight: '600' },
+  '& .xivig-rainbow-bracket-yellow': { color: '#e6c07b !important', fontWeight: '600' },
+  '& .xivig-rainbow-bracket-green': { color: '#c3e88d !important', fontWeight: '600' },
+  '& .xivig-rainbow-bracket-cyan': { color: '#89ddff !important', fontWeight: '600' },
+  '& .xivig-rainbow-bracket-purple': { color: '#c792ea !important', fontWeight: '600' },
+});
+
+/**
  * CodeMirror ViewPlugin for rainbow bracket highlighting.
  */
 export const rainbowBracketsPlugin = ViewPlugin.fromClass(

@@ -75,13 +75,13 @@ export interface UpdateCheckResult {
 
 export interface XivigAPI {
   // File operations
-  openFileDialog: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
+  openFileDialog: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string; isBinary?: boolean }>;
   openFolderDialog: () => Promise<{ canceled: boolean; folderPath?: string; files?: Array<{ path: string; name: string; isDirectory: boolean }> }>;
-  openWorkspaceFileDialog?: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string }>;
+  openWorkspaceFileDialog?: () => Promise<{ canceled: boolean; filePath?: string; content?: string; name?: string; isBinary?: boolean }>;
   saveFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   saveFileDialog: (defaultName?: string, content?: string) => Promise<{ canceled: boolean; filePath?: string }>;
   saveWorkspaceFileDialog?: (defaultName?: string, content?: string) => Promise<{ canceled: boolean; filePath?: string; name?: string }>;
-  readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
+  readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string; isBinary?: boolean; dataUrl?: string }>;
   readDir: (dirPath: string) => Promise<{ success: boolean; items?: Array<{ path: string; name: string; isDirectory: boolean }>; error?: string }>;
   createFileOrFolder: (targetPath: string, isDirectory: boolean) => Promise<{ success: boolean; error?: string }>;
   deleteFileOrFolder: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
@@ -90,6 +90,24 @@ export interface XivigAPI {
   revealInExplorer: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
   clipboardReadText?: () => Promise<string>;
   clipboardWriteText?: (text: string) => Promise<boolean>;
+
+  // Command-line & External Open with
+  getStartupPath?: () => Promise<{
+    type: 'file' | 'folder';
+    path: string;
+    name?: string;
+    content?: string;
+    isBinary?: boolean;
+    files?: Array<{ path: string; name: string; isDirectory: boolean }>;
+  } | null>;
+  onOpenPath?: (callback: (data: {
+    type: 'file' | 'folder';
+    path: string;
+    name?: string;
+    content?: string;
+    isBinary?: boolean;
+    files?: Array<{ path: string; name: string; isDirectory: boolean }>;
+  }) => void) => () => void;
 
   // Window controls
   minimizeWindow: () => void;

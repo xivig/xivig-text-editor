@@ -133,8 +133,12 @@ import { navigationHistory } from '../../utils/navigationHistory';
 import { FileIcon } from '../common/FileIcon';
 import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
-import { AlertTriangle, Zap, FolderOpen, Search, Sparkles } from 'lucide-react';
+import { AlertTriangle, Zap, FolderOpen, Search, Sparkles, Eye } from 'lucide-react';
 import logoUrl from '../../assets/logo.png';
+import { rainbowBracketsPlugin, rainbowBracketsTheme } from '../../extensions/builtin/rainbow-brackets/rainbowBrackets';
+import { createIndentGuidesPlugin } from '../../extensions/builtin/rainbow-brackets/indentGuides';
+import { ImageViewer } from './ImageViewer';
+import { isImageFile, isSvgFile } from '../../utils/imageUtils';
 
 interface EditorProps {
   pane?: 'primary' | 'secondary';
@@ -150,6 +154,10 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const wordWrapEnabled = useSettingsStore((state) => state.settings.wordWrap);
   const tabSize = useSettingsStore((state) => state.settings.tabSize);
   const renderWhitespace = useSettingsStore((state) => state.settings.renderWhitespace || 'selection');
+  const rainbowBrackets = useSettingsStore((state) => state.settings.rainbowBrackets !== false);
+  const rainbowIndentGuides = useSettingsStore((state) => Boolean(state.settings.rainbowIndentGuides));
+
+  const [svgViewModes, setSvgViewModes] = useState<Record<string, 'preview' | 'code'>>({});
 
   const themeCompartmentRef = useRef<Compartment>(new Compartment());
   const lineNumbersCompartmentRef = useRef<Compartment>(new Compartment());
@@ -159,6 +167,7 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   const extensionCompartmentRef = useRef<Compartment>(new Compartment());
   const readOnlyCompartmentRef = useRef<Compartment>(new Compartment());
   const whitespaceCompartmentRef = useRef<Compartment>(new Compartment());
+  const rainbowCompartmentRef = useRef<Compartment>(new Compartment());
 
   const activeDoc = useEditorStore((state) =>
     pane === 'secondary' ? state.getSecondaryDocument() : state.getActiveDocument()
@@ -322,6 +331,11 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         codeIntelligenceKeymap,
         languageCompartmentRef.current.of(langExtension),
         extensionCompartmentRef.current.of(extensionManager.getActiveCodeMirrorExtensions()),
+        rainbowCompartmentRef.current.of(
+          rainbowBrackets
+            ? [rainbowBracketsPlugin, rainbowBracketsTheme, ...(rainbowIndentGuides ? [createIndentGuidesPlugin(tabSize)] : [])]
+            : []
+        ),
         keymap.of([
           {
             key: 'Tab',
@@ -532,6 +546,42 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
   useEffect(() => {
     extensionManager.setSetting('rainbow.tabSize', tabSize);
   }, [tabSize]);
+
+  // Reconfigure rainbow brackets and indent guides compartment
+  useEffect(() => {
+    if (viewRef.current) {
+      const exts = rainbowBrackets
+        ? [rainbowBracketsPlugin, rainbowBracketsTheme, ...(rainbowIndentGuides ? [createIndentGuidesPlugin(tabSize)] : [])]
+        : [];
+      viewRef.current.dispatch({
+        effects: rainbowCompartmentRef.current.reconfigure(exts),
+      });
+    }
+  }, [rainbowBrackets, rainbowIndentGuides, tabSize]);
+
+  // Emit onEditorCreated activation event on editor mount
+  useEffect(() => {
+    extensionManager.triggerActivationEvent('onEditorCreated');
+  }, []);
+
+  const isImage = Boolean(activeDoc && isImageFile(activeDoc.name || activeDoc.path));
+  const isSvg = Boolean(activeDoc && isSvgFile(activeDoc.name || activeDoc.path));
+  const currentSvgMode = activeDoc ? (svgViewModes[activeDoc.id] || 'preview') : 'preview';
+
+  if (activeDoc && isImage) {
+    if (!isSvg || currentSvgMode === 'preview') {
+      return (
+        <ImageViewer
+          document={activeDoc}
+          onSwitchToCode={
+            isSvg
+              ? () => setSvgViewModes((prev) => ({ ...prev, [activeDoc.id]: 'code' }))
+              : undefined
+          }
+        />
+      );
+    }
+  }
 
   if (activeDoc?.id === 'settings') {
     return <SettingsView />;
@@ -786,6 +836,24 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         </div>
       )}
 
+      {/* SVG Code Mode Switcher Banner */}
+      {isSvg && currentSvgMode === 'code' && (
+        <div style={svgCodeBannerStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#f1f5f9' }}>SVG Source Code</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Editing XML markup directly</span>
+          </div>
+          <button
+            onClick={() => setSvgViewModes((prev) => ({ ...prev, [activeDoc.id]: 'preview' }))}
+            style={svgPreviewSwitchBtnStyle}
+            title="Switch back to visual SVG preview"
+          >
+            <Eye size={12} style={{ marginRight: '5px' }} />
+            Switch to Visual Preview
+          </button>
+        </div>
+      )}
+
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
         <StickyScroll view={viewRef.current} content={activeDoc.content} />
         <div
@@ -872,4 +940,28 @@ const largeFileBannerStyle: React.CSSProperties = {
   color: '#a7f3d0',
   userSelect: 'none',
   zIndex: 9,
+};
+
+const svgCodeBannerStyle: React.CSSProperties = {
+  backgroundColor: '#1a1f2c',
+  borderBottom: '1px solid #2d3748',
+  padding: '6px 14px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  userSelect: 'none',
+  zIndex: 10,
+};
+
+const svgPreviewSwitchBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  backgroundColor: 'var(--xivig-accent, #3b82f6)',
+  color: '#ffffff',
+  border: 'none',
+  borderRadius: '4px',
+  padding: '4px 10px',
+  fontSize: '11px',
+  fontWeight: 600,
+  cursor: 'pointer',
 };

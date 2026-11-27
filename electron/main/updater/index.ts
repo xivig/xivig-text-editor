@@ -489,9 +489,9 @@ export function applyUpdateAndRestart(): { success: boolean; error?: string } {
 
   try {
     if (isWin && filePath.toLowerCase().endsWith('.exe')) {
-      // NSIS installer with /S flag installs seamlessly in-place without showing installer wizard prompts.
+      // NSIS installer with /S and --updated flags installs seamlessly in-place without deleting old versions or settings.
       // Detach the installer process with --force-run so it completes in-place and launches the updated IDE.
-      const child = spawn(filePath, ['/S', '--force-run'], {
+      const child = spawn(filePath, ['/S', '--updated', '--force-run'], {
         detached: true,
         stdio: 'ignore',
       });

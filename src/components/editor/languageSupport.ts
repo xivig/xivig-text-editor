@@ -1237,8 +1237,9 @@ export function detectLanguageName(filenameOrLang?: string, fallbackLangId?: str
     case 'htm':
       return 'HTML';
     case 'xml':
-    case 'svg':
       return 'XML';
+    case 'svg':
+      return 'SVG';
     case 'css':
     case 'scss':
     case 'less':
@@ -1297,6 +1298,19 @@ export function detectLanguageName(filenameOrLang?: string, fallbackLangId?: str
     case 'cmd':
     case 'batch':
       return 'Batch Script';
+    case 'png':
+      return 'PNG Image';
+    case 'jpg':
+    case 'jpeg':
+      return 'JPEG Image';
+    case 'gif':
+      return 'GIF Image';
+    case 'webp':
+      return 'WebP Image';
+    case 'bmp':
+      return 'BMP Image';
+    case 'ico':
+      return 'Icon Image';
     default:
       if (fallbackLangId && fallbackLangId !== target) {
         return detectLanguageName(fallbackLangId);

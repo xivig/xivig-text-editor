@@ -1,6 +1,6 @@
 import { BuiltinExtensionModule, ExtensionContext } from '../../api/types';
 import manifestJson from './xivig-extension.json';
-import { rainbowBracketsPlugin } from './rainbowBrackets';
+import { rainbowBracketsPlugin, rainbowBracketsTheme } from './rainbowBrackets';
 import { createIndentGuidesPlugin } from './indentGuides';
 import { DEFAULT_RAINBOW_SETTINGS, RainbowBracketsSettings } from './settings';
 import { Extension as CodeMirrorExtension } from '@codemirror/state';
@@ -37,6 +37,7 @@ export class RainbowBracketsExtension implements BuiltinExtensionModule {
 
     if (this.settings.brackets) {
       exts.push(rainbowBracketsPlugin);
+      exts.push(rainbowBracketsTheme);
     }
 
     if (this.settings.indentGuides) {

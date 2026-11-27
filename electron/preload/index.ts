@@ -293,6 +293,14 @@ const xivigAPI = {
 
   // Environment
   platform: process.platform,
+
+  // Command-line & External Open with
+  getStartupPath: () => ipcRenderer.invoke('app:get-startup-path'),
+  onOpenPath: (callback: (data: any) => void) => {
+    const handler = (_: any, data: any) => callback(data);
+    ipcRenderer.on('app:open-path', handler);
+    return () => ipcRenderer.removeListener('app:open-path', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('xivig', xivigAPI);

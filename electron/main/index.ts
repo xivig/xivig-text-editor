@@ -88,22 +88,82 @@ process.on('unhandledRejection', (reason) => {
   console.error('[Xivig Main] Unhandled Rejection:', reason);
 });
 
+import { extractPathFromArgv, readFileContent } from './pathUtils';
+export { extractPathFromArgv, readFileContent };
+
+let pendingStartupPath: string | null = extractPathFromArgv(process.argv);
+
+export async function openPathInWindow(targetWin: BrowserWindow, targetPath: string): Promise<boolean> {
+  try {
+    const safePath = path.resolve(targetPath);
+    if (!fsSync.existsSync(safePath)) return false;
+
+    const stat = fsSync.statSync(safePath);
+    if (stat.isDirectory()) {
+      addApprovedWorkspace(targetWin.id, safePath);
+      const folderName = path.basename(safePath) || safePath;
+      addRecentWorkspace(safePath, folderName);
+      watchWorkspace(safePath, targetWin);
+
+      const entries = await fs.readdir(safePath, { withFileTypes: true });
+      const files = entries.map((entry) => ({
+        path: path.join(safePath, entry.name),
+        name: entry.name,
+        isDirectory: entry.isDirectory(),
+      }));
+
+      targetWin.webContents.send('app:open-path', {
+        type: 'folder',
+        path: safePath,
+        files,
+      });
+      return true;
+    } else {
+      addApprovedFile(targetWin.id, safePath);
+      addApprovedWorkspace(targetWin.id, path.dirname(safePath));
+      const readResult = await readFileContent(safePath);
+      const content = readResult.content;
+      const name = path.basename(safePath);
+      addRecentFile(safePath, name);
+
+      targetWin.webContents.send('app:open-path', {
+        type: 'file',
+        path: safePath,
+        name,
+        content,
+      });
+      return true;
+    }
+  } catch (err) {
+    console.error('[Xivig Main] openPathInWindow failed for path:', targetPath, err);
+    return false;
+  }
+}
+
 // Windows GPU cache & single instance management:
 // 1. Enforce single instance lock so multiple processes don't lock GPU/disk cache
-const gotTheSingleInstanceLock = app.requestSingleInstanceLock();
+const gotTheSingleInstanceLock =
+  typeof app?.requestSingleInstanceLock === 'function' ? app.requestSingleInstanceLock() : true;
 if (!gotTheSingleInstanceLock) {
   console.log('[Xivig Main] Another instance is already running. Quitting duplicate instance.');
   app.quit();
   process.exit(0);
 }
 
-app.on('second-instance', () => {
-  const win = getActiveWindow();
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
-});
+if (typeof app?.on === 'function') {
+  app.on('second-instance', (_event, commandLine) => {
+    const win = getActiveWindow();
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+
+      const targetPath = extractPathFromArgv(commandLine);
+      if (targetPath) {
+        openPathInWindow(win, targetPath);
+      }
+    }
+  });
+}
 
 // 2. Prevent Chromium shader disk cache access denied errors on Windows
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
@@ -183,6 +243,18 @@ async function createWindow() {
 
   currentWin.on('focus', () => {
     activeWindow = currentWin;
+  });
+
+  currentWin.webContents.on('did-finish-load', () => {
+    if (pendingStartupPath && !currentWin.isDestroyed()) {
+      const startup = pendingStartupPath;
+      pendingStartupPath = null;
+      setTimeout(() => {
+        if (!currentWin.isDestroyed()) {
+          openPathInWindow(currentWin, startup);
+        }
+      }, 400);
+    }
   });
 
   if (url) {
@@ -410,6 +482,59 @@ ipcMain.handle('clipboard:writeText', (event, text: string) => {
   return true;
 });
 
+ipcMain.handle('app:get-startup-path', async (event) => {
+  if (!validateIpcSender(event)) return null;
+  if (!pendingStartupPath) return null;
+  const targetPath = pendingStartupPath;
+  pendingStartupPath = null;
+
+  const targetWin = BrowserWindow.fromWebContents(event.sender) || getActiveWindow();
+  if (!targetWin) return null;
+
+  try {
+    const safePath = path.resolve(targetPath);
+    if (!fsSync.existsSync(safePath)) return null;
+
+    const stat = fsSync.statSync(safePath);
+    if (stat.isDirectory()) {
+      addApprovedWorkspace(targetWin.id, safePath);
+      const folderName = path.basename(safePath) || safePath;
+      addRecentWorkspace(safePath, folderName);
+      watchWorkspace(safePath, targetWin);
+
+      const entries = await fs.readdir(safePath, { withFileTypes: true });
+      const files = entries.map((entry) => ({
+        path: path.join(safePath, entry.name),
+        name: entry.name,
+        isDirectory: entry.isDirectory(),
+      }));
+
+      return {
+        type: 'folder',
+        path: safePath,
+        files,
+      };
+    } else {
+      addApprovedFile(targetWin.id, safePath);
+      addApprovedWorkspace(targetWin.id, path.dirname(safePath));
+      const readResult = await readFileContent(safePath);
+      const content = readResult.content;
+      const name = path.basename(safePath);
+      addRecentFile(safePath, name);
+
+      return {
+        type: 'file',
+        path: safePath,
+        name,
+        content,
+      };
+    }
+  } catch (err) {
+    console.error('[Xivig Main] Failed to process startup path:', targetPath, err);
+    return null;
+  }
+});
+
 // File dialogs & System operations (Only explicit user selection approves paths)
 ipcMain.handle('dialog:openFile', async (event) => {
   if (!validateIpcSender(event)) return { canceled: true };
@@ -421,6 +546,7 @@ ipcMain.handle('dialog:openFile', async (event) => {
     filters: [
       { name: 'All Files', extensions: ['*'] },
       { name: 'Code Files', extensions: ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'py', 'rs', 'c', 'cpp', 'md', 'txt'] },
+      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'] },
     ],
   });
 
@@ -431,10 +557,11 @@ ipcMain.handle('dialog:openFile', async (event) => {
   const filePath = result.filePaths[0];
   try {
     addApprovedFile(targetWin.id, filePath);
-    const content = await fs.readFile(filePath, 'utf-8');
+    const readResult = await readFileContent(filePath);
+    const content = readResult.content;
     const name = path.basename(filePath);
     addRecentFile(filePath, name);
-    return { canceled: false, filePath, content, name };
+    return { canceled: false, filePath, content, name, isBinary: readResult.isBinary };
   } catch (error: any) {
     return { canceled: false, filePath, error: error.message };
   }
@@ -536,9 +663,19 @@ ipcMain.handle('file:save', async (event, { filePath, content }: { filePath: str
 
   try {
     const safePath = validatePathInput(filePath);
-    const safeContent = validateContentPayload(content);
     assertImmediateDestructiveAuthorization(targetWin.id, safePath, 'file:save');
 
+    if (typeof content === 'string' && content.startsWith('data:image/') && content.includes(';base64,')) {
+      const base64Data = content.split(';base64,')[1];
+      const buffer = Buffer.from(base64Data, 'base64');
+      await fs.writeFile(safePath, buffer);
+      addApprovedFile(targetWin.id, safePath);
+      addRecentFile(safePath, path.basename(safePath));
+      triggerLiveReload();
+      return { success: true };
+    }
+
+    const safeContent = validateContentPayload(content);
     await atomicWriteFile(safePath, safeContent);
     addApprovedFile(targetWin.id, safePath);
     addRecentFile(safePath, path.basename(safePath));
@@ -585,9 +722,9 @@ ipcMain.handle('file:read', async (event, filePath: string) => {
     const safePath = validatePathInput(filePath);
     assertPathAuthorized(targetWin.id, safePath, 'file:read');
 
-    const content = await fs.readFile(safePath, 'utf-8');
+    const readResult = await readFileContent(safePath);
     addRecentFile(safePath, path.basename(safePath));
-    return { success: true, content };
+    return { success: true, content: readResult.content, isBinary: readResult.isBinary, dataUrl: readResult.dataUrl };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

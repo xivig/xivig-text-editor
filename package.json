@@ -71,10 +71,53 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Xivig Text Editor"
+      "shortcutName": "Xivig Text Editor",
+      "include": "build/installer.nsh"
     },
+    "fileAssociations": [
+      {
+        "ext": [
+          "txt",
+          "md",
+          "json",
+          "js",
+          "ts",
+          "tsx",
+          "jsx",
+          "html",
+          "htm",
+          "css",
+          "scss",
+          "py",
+          "java",
+          "kt",
+          "c",
+          "cpp",
+          "h",
+          "hpp",
+          "php",
+          "rs",
+          "go",
+          "sql",
+          "xml",
+          "yaml",
+          "yml",
+          "ini",
+          "conf",
+          "sh",
+          "bat",
+          "cmd",
+          "ps1"
+        ],
+        "name": "Source File",
+        "description": "Code and text file editable with Xivig Text Editor",
+        "role": "Editor"
+      }
+    ],
     "linux": {
       "maintainer": "Bandhu <dev@xivig.com>",
       "executableName": "xivig-text-editor",

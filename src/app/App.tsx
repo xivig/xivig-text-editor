@@ -223,6 +223,42 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Listen for command-line and Windows Explorer "Open with" paths
+  useEffect(() => {
+    const handleOpenPath = (data: {
+      type: 'file' | 'folder';
+      path: string;
+      name?: string;
+      content?: string;
+      files?: Array<{ path: string; name: string; isDirectory: boolean }>;
+    }) => {
+      if (!data) return;
+      if (data.type === 'folder' && data.files) {
+        setCurrentFolder(data.path, data.files);
+      } else if (data.type === 'file') {
+        openDocument({
+          path: data.path,
+          name: data.name || data.path.split(/[/\\]/).pop() || 'File',
+          content: data.content || '',
+          language: data.name || 'text',
+        });
+      }
+    };
+
+    if (window.xivig?.getStartupPath) {
+      window.xivig.getStartupPath().then((startup) => {
+        if (startup) {
+          handleOpenPath(startup);
+        }
+      });
+    }
+
+    if (window.xivig?.onOpenPath) {
+      const unsubscribe = window.xivig.onOpenPath(handleOpenPath);
+      return unsubscribe;
+    }
+  }, [openDocument, setCurrentFolder]);
+
   // Save session on window beforeunload
   useEffect(() => {
     const handleBeforeUnload = () => {
