@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.2] - 2026-11-28 — *Release 2.0.2: Image Viewer, In-Place Updates, Explorer Integration & Rainbow Brackets*
+
+### 🖼️ Interactive Image Viewer (PNG, JPG, SVG, WebP, GIF, BMP, ICO)
+* **Direct Image Rendering**: Added native visual image previewing directly within editor document tabs.
+* **Interactive Navigation**: Interactive zoom (`Ctrl` + `+`/`-`, mouse wheel, 100% reset, and Fit-to-Window) and mouse drag panning.
+* **Metadata & Transparency**: Real-time natural pixel dimensions (`width × height px`), estimated file size, and background toggles (transparency checkerboard, dark, and light modes).
+* **SVG Dual-Mode**: Visual SVG rendering with XSS sanitization, plus seamless 1-click **[ Preview ]** / **[ Code ]** toggling to edit raw SVG XML markup in CodeMirror.
+* **Binary Safe File Read**: Implemented `readFileContent` in backend to load binary images as Base64 Data URLs, avoiding UTF-8 decoding corruption.
+
+### 🌈 Rainbow Brackets & Indent Guides
+* **Scoped Base Theme**: Added `rainbowBracketsTheme` with high-specificity cyclical depth colors (`red`, `orange`, `yellow`, `green`, `cyan`, `purple`) ensuring colors render reliably over syntax highlighting themes.
+* **Dynamic State Compartment**: Integrated dedicated `rainbowCompartmentRef` in CodeMirror responding live to `rainbowBrackets` and `rainbowIndentGuides` settings.
+* **Activation Event Lifecycle**: Emitted `onEditorCreated` on editor mount so manifest-declared extensions activate automatically.
+
+### 🔄 In-Place NSIS Updating & Explorer "Open With"
+* **In-Place Updater**: Added NSIS configuration (`deleteAppDataOnUninstall: false`, `differentialPackage: true`, and `installer.nsh`) to preserve user settings, extensions, and desktop shortcuts during updates without wiping the installation folder.
+* **Windows Explorer Context Menu**: Registered "Open with Xivig Text Editor" for files, folders, and directory backgrounds in Windows Explorer.
+* **CLI & Startup Path Routing**: Added single-instance argument extraction (`extractPathFromArgv`) and IPC delivery to open files or folders passed from Explorer or terminal.
+
+---
+
 ## [2.0.1] - 2026-11-27 — *Release 2.0.1 Stability, Link & Wiring Patch*
 
 ### 🔧 Fixes & Wiring

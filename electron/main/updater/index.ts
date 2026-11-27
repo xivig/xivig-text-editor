@@ -212,7 +212,7 @@ function downloadFile(
       rawUrl,
       {
         headers: {
-          'User-Agent': `Xivig-Update-Downloader/${app.getVersion() || '2.0.1'}`,
+          'User-Agent': `Xivig-Update-Downloader/${app.getVersion() || '2.0.2'}`,
           Accept: 'application/octet-stream',
         },
       },
@@ -308,7 +308,7 @@ function downloadFile(
  * Queries GitHub Releases API for the latest release tag and metadata.
  */
 export async function checkGitHubRelease(): Promise<UpdateCheckResult> {
-  const currentVersion = app.getVersion() || '2.0.1';
+  const currentVersion = app.getVersion() || '2.0.2';
 
   return new Promise((resolve) => {
     const options = {

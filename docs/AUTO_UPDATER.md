@@ -1,6 +1,6 @@
 # Xivig Text Editor — In-Place Seamless Auto-Updater 🔄
 
-This document details the architecture, IPC event pipeline, user experience, and silent in-place installation workflow for **Xivig Text Editor 2.0.1**.
+This document details the architecture, IPC event pipeline, user experience, and silent in-place installation workflow for **Xivig Text Editor 2.0.2**.
 
 ---
 
@@ -19,7 +19,7 @@ The auto-update system in Xivig is modeled directly after **Visual Studio Code**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 🔄 Xivig Update Ready: Version 2.0.1 is ready. [ ⟳ Restart Xivig to Update ] │
+│ 🔄 Xivig Update Ready: Version 2.0.2 is ready. [ ⟳ Restart Xivig to Update ] │
 ├──────┬──────────────────────────────────────────────────────────────┬───────┤
 │ 📁   │                                                              │       │
 │ 🔍   │  Code Editor                                                 │       │

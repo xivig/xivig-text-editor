@@ -2,9 +2,29 @@
 
 > **A fast, extensible, cross-platform desktop code editor built for professional developers.**
 
-We are thrilled to announce **XIVIG TEXT EDITOR v2.0.1**!
+We are thrilled to announce **XIVIG TEXT EDITOR v2.0.2**!
 
-## 🔧 What's Fixed in v2.0.1
+## 🚀 What's New & Fixed in v2.0.2
+
+### 🖼️ Interactive Image Viewer (PNG, JPG, SVG, WebP, GIF, BMP, ICO)
+- **Direct Image Rendering**: Images now render visually directly inside editor document tabs instead of binary text decoding.
+- **Interactive Navigation**: Zoom in/out (`Ctrl` + `+`/`-`, mouse wheel, 100% reset, and Fit-to-Window) and mouse drag panning.
+- **Metadata & Themes**: Natural pixel dimensions (`width × height px`), estimated file size, and background toggles (transparency checkerboard, dark mode, light mode).
+- **SVG Dual-Mode**: Visual SVG rendering with XSS sanitization, plus seamless 1-click **[ Preview ]** / **[ Code ]** toggling to edit raw SVG XML markup in CodeMirror.
+
+### 🌈 Rainbow Brackets & Indent Guides
+- **Scoped Base Theme**: `rainbowBracketsTheme` with 6 cyclical depth colors (`red`, `orange`, `yellow`, `green`, `cyan`, `purple`) ensuring bracket colors take priority over syntax highlighting themes.
+- **Dynamic Compartment**: CodeMirror state compartment responds live to `rainbowBrackets` and `rainbowIndentGuides` settings.
+- **Lifecycle Activation**: Emitted `onEditorCreated` on editor mount so manifest-declared extensions activate automatically.
+
+### 🔄 In-Place NSIS Updating & Explorer "Open With"
+- **In-Place Updates**: NSIS configuration (`deleteAppDataOnUninstall: false`, `differentialPackage: true`, and `installer.nsh`) preserves user settings, extensions, and desktop shortcuts during updates without wiping the installation folder.
+- **Windows Explorer Context Menu**: Registered "Open with Xivig Text Editor" for files, folders, and directory backgrounds in Windows Explorer.
+- **Startup Path Routing**: Single-instance argument extraction (`extractPathFromArgv`) and IPC delivery to open files or folders passed from Explorer or terminal.
+
+---
+
+## 🔧 Previous Improvements in v2.0.1
 - **Terminal IPC Cleanup**: Added the missing `terminal:stop` main-process IPC handler so closed terminal tabs cleanly terminate shell process trees.
 - **UI & Modal Wiring**: Connected `FormattingSettingsModal` to the Tools menu and Command Palette, wired the Web Toolkit panel's Flexbox/Grid CSS Studio buttons, fixed `Ctrl+Shift+N` new-window launching in Electron, and updated Help menu branding to **X (formerly Twitter)**.
 - **Explorer Context Menu & Signing**: Added Explorer blank-space context menu actions and Windows/macOS code-signing support (`docs/CODE_SIGNING.md`).

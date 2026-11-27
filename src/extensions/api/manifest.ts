@@ -1,6 +1,6 @@
 import { ExtensionManifest } from './types';
 
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.2';
 
 export interface ManifestValidationResult {
   valid: boolean;
