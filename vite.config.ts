@@ -13,7 +13,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['chokidar'],
+              external: ['chokidar', 'node-pty'],
             },
           },
         },
@@ -30,7 +30,7 @@ export default defineConfig({
     }),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.4.0'),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.1'),
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
   },
   resolve: {

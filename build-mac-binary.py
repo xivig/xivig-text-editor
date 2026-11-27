@@ -1,10 +1,14 @@
+import json
 import zipfile
 import os
 import shutil
 
+with open("package.json", "r", encoding="utf-8") as pkg_file:
+    app_version = json.load(pkg_file).get("version", "2.0.0")
+
 src_zip_path = r"C:\Users\CyberWord\AppData\Local\electron\Cache\073c10f139c87e3badb3ab4fec283ab33ea3ccf18b5cb8ce88ffcc6cb893b618\electron-v34.5.8-darwin-x64.zip"
 app_asar_path = r"release\win-unpacked\resources\app.asar"
-out_zip_path = r"release\Xivig-Text-Editor-1.0.0-mac-x64.zip"
+out_zip_path = rf"release\Xivig-Text-Editor-{app_version}-mac-x64.zip"
 
 print(f"Reading base Electron darwin zip: {src_zip_path}")
 print(f"Injecting app.asar from: {app_asar_path}")
@@ -65,7 +69,7 @@ src_zip.close()
 out_zip.close()
 
 # Also create standard mac.zip alias
-target_alias = r"release\Xivig-Text-Editor-1.0.0-mac.zip"
+target_alias = rf"release\Xivig-Text-Editor-{app_version}-mac.zip"
 shutil.copyfile(out_zip_path, target_alias)
 print(f"Successfully generated macOS binaries:")
 print(f" - {out_zip_path} ({os.path.getsize(out_zip_path):,} bytes)")

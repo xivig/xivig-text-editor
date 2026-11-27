@@ -8,7 +8,7 @@
 
 ### Application Information
 - **Application Name**: Xivig Text Editor
-- **Release Version**: Release 2.0 (Build 2.0.0)
+- **Release Version**: Release 2.0.1 (Build 2.0.1)
 - **Tagline**: The Ultimate Developer Workspace
 - **Release Credits**: **Bandhu**
 - **Documentation & Source**: [https://github.com/xivig/xivig-text-editor](https://github.com/xivig/xivig-text-editor)

@@ -62,6 +62,10 @@ interface UIState {
   openProjectSwitcherModal: () => void;
   closeProjectSwitcherModal: () => void;
 
+  isFormattingModalOpen: boolean;
+  openFormattingModal: () => void;
+  closeFormattingModal: () => void;
+
   openDiffModal: () => void;
   closeDiffModal: () => void;
   openRenameSymbolModal: (target: { oldName: string; line: number; col: number }) => void;
@@ -182,6 +186,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   isProjectSwitcherOpen: false,
   openProjectSwitcherModal: () => set({ isProjectSwitcherOpen: true }),
   closeProjectSwitcherModal: () => set({ isProjectSwitcherOpen: false }),
+
+  isFormattingModalOpen: false,
+  openFormattingModal: () => set({ isFormattingModalOpen: true }),
+  closeFormattingModal: () => set({ isFormattingModalOpen: false }),
 
   openDiffModal: () => set({ isDiffModalOpen: true }),
   closeDiffModal: () => set({ isDiffModalOpen: false }),

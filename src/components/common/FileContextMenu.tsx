@@ -26,11 +26,12 @@ export interface FileContextMenuProps {
   x: number;
   y: number;
   target: ContextMenuTarget;
-  source?: 'editor' | 'sidebar' | 'tab';
+  source?: 'editor' | 'sidebar' | 'sidebar-empty' | 'tab';
   onClose: () => void;
   onRename?: (target: ContextMenuTarget) => void;
   onNewFile?: (dir: string) => void;
   onNewFolder?: (dir: string) => void;
+  onOpenFolder?: () => void;
 }
 
 export const FileContextMenu: React.FC<FileContextMenuProps> = ({
@@ -42,6 +43,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   onRename,
   onNewFile,
   onNewFolder,
+  onOpenFolder,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const currentFolderPath = useFileStore((state) => state.currentFolderPath);
@@ -445,6 +447,60 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   };
 
   // ==========================================================================
+  // SIDEBAR BLANK-SPACE ACTIONS
+  // ==========================================================================
+
+  const handleNewUntitledFile = () => {
+    onClose();
+    useEditorStore.getState().createNewDocument();
+  };
+
+  const handleOpenFile = async () => {
+    onClose();
+    if (window.xivig?.openFileDialog) {
+      const res = await window.xivig.openFileDialog();
+      if (!res.canceled && res.filePath && res.content !== undefined) {
+        const name = res.filePath.split(/[/\\]/).pop() || 'untitled';
+        openDocument({
+          path: res.filePath,
+          name,
+          content: res.content,
+          language: name,
+        });
+      }
+    }
+  };
+
+  const handleOpenFolder = async () => {
+    onClose();
+    if (onOpenFolder) {
+      onOpenFolder();
+      return;
+    }
+    if (window.xivig?.openFolderDialog) {
+      const res = await window.xivig.openFolderDialog();
+      if (!res.canceled && res.folderPath && res.files) {
+        useFileStore.getState().setCurrentFolder(res.folderPath, res.files);
+      }
+    }
+  };
+
+  const handleRefreshExplorer = async () => {
+    onClose();
+    await refreshCurrentFolder();
+  };
+
+  const handleCollapseFolders = () => {
+    onClose();
+    useFileStore.getState().collapseAllFolders();
+  };
+
+  const handleCloseFolder = () => {
+    onClose();
+    useFileStore.getState().closeCurrentFolder();
+  };
+
+  // ==========================================================================
   // TAB BAR ACTIONS
   // ==========================================================================
 
@@ -686,9 +742,106 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 3. SIDEBAR / DEFAULT FILE CONTEXT MENU                        */}
+      {/* 3. SIDEBAR BLANK-SPACE CONTEXT MENU                           */}
       {/* ------------------------------------------------------------- */}
-      {source !== 'editor' && source !== 'tab' && (
+      {source === 'sidebar-empty' && (
+        <>
+          {target.path ? (
+            <>
+              <div onClick={handleNewFile} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>New File...</span>
+              </div>
+              <div onClick={handleNewFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>New Folder...</span>
+              </div>
+
+              <div style={menuDividerStyle} />
+
+              <div onClick={handleRefreshExplorer} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Refresh Explorer</span>
+              </div>
+              <div onClick={handleCollapseFolders} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Collapse Folders in Explorer</span>
+              </div>
+              <div
+                onClick={() => {
+                  onClose();
+                  useFileStore.getState().setSearchFolderFilter(target.path);
+                  useFileStore.getState().setActiveSidebarView('search');
+                }}
+                style={menuItemStyle}
+                onMouseEnter={onHover}
+                onMouseLeave={onUnhover}
+              >
+                <span>Find in Folder...</span>
+                <span style={shortcutStyle}>Ctrl+Shift+F</span>
+              </div>
+
+              <div style={menuDividerStyle} />
+
+              <div
+                onClick={fileClipboard ? handlePaste : undefined}
+                style={{
+                  ...menuItemStyle,
+                  opacity: fileClipboard ? 1 : 0.45,
+                  cursor: fileClipboard ? 'pointer' : 'default',
+                }}
+                onMouseEnter={fileClipboard ? onHover : undefined}
+                onMouseLeave={fileClipboard ? onUnhover : undefined}
+              >
+                <span>Paste</span>
+                <span style={shortcutStyle}>Ctrl+V</span>
+              </div>
+
+              <div style={menuDividerStyle} />
+
+              <div onClick={handleCopyPath} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Copy Path</span>
+              </div>
+              <div onClick={handleReveal} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Reveal in File Explorer</span>
+              </div>
+
+              <div style={menuDividerStyle} />
+
+              <div onClick={handleOpenFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Open Folder...</span>
+              </div>
+              <div onClick={handleOpenInNewWindow} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Open In New Window</span>
+              </div>
+              <div onClick={handleCloseFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Close Folder</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div onClick={handleNewUntitledFile} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>New File</span>
+                <span style={shortcutStyle}>Ctrl+N</span>
+              </div>
+              <div onClick={handleOpenFile} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Open File...</span>
+                <span style={shortcutStyle}>Ctrl+O</span>
+              </div>
+              <div onClick={handleOpenFolder} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Open Folder...</span>
+              </div>
+
+              <div style={menuDividerStyle} />
+
+              <div onClick={handleOpenInNewWindow} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
+                <span>Open In New Window</span>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* 4. SIDEBAR / DEFAULT FILE CONTEXT MENU                        */}
+      {/* ------------------------------------------------------------- */}
+      {source !== 'editor' && source !== 'tab' && source !== 'sidebar-empty' && (
         <>
           <div onClick={handleNewFile} style={menuItemStyle} onMouseEnter={onHover} onMouseLeave={onUnhover}>
             <span>New File...</span>

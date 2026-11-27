@@ -10,9 +10,8 @@ Only the latest stable release receives active security patches:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
-| 1.1.x   | :x:                |
-| 1.0.x   | :x:                |
+| 2.0.x   | :white_check_mark: |
+| 1.x     | :x:                |
 | < 1.0   | :x:                |
 
 ---
@@ -39,3 +38,5 @@ Xivig enforces multiple defense-in-depth layers:
 - **Node Integration Disabled**: `nodeIntegration: false` and `sandbox: true` on all web preferences.
 - **Locked Navigation**: WebContents navigation is strictly constrained; external links open exclusively via system browser (`shell.openExternal`).
 - **Path Traversal Defenses**: Built-in HTTP Live Server rigorously validates path boundaries against the workspace root.
+
+See also: [Extension System Security Design](docs/EXTENSION_SYSTEM_DESIGN.md) · [Code Signing Guide](docs/CODE_SIGNING.md)

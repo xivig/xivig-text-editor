@@ -1266,6 +1266,12 @@ export const CommandPalette: React.FC = () => {
       action: () => useUIStore.getState().openThemeEditor(),
     },
     {
+      id: 'preferences:formatting',
+      category: 'Preferences',
+      title: 'Formatting & Code Quality Settings...',
+      action: () => useUIStore.getState().openFormattingModal(),
+    },
+    {
       id: 'help:diagnostic-logs',
       category: 'Help',
       title: 'Diagnostic Logs, Extension Sandbox & System Health',

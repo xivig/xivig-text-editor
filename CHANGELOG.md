@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1] - 2026-11-27 — *Release 2.0.1 Stability, Link & Wiring Patch*
+
+### 🔧 Fixes & Wiring
+* **Terminal Process Cleanup**: Registered the missing `terminal:stop` IPC handler in `electron/main/index.ts` so closing terminal tabs cleanly terminates backend shell processes.
+* **UI & Modal Links**:
+  - Wired `FormattingSettingsModal` into `uiStore`, Tools menu, and Command Palette (`Preferences: Formatting & Code Quality Settings...`).
+  - Wired `onOpenCssHelpers` in `Sidebar.tsx` so the Flexbox and Grid Visual Studio buttons render and open from the Web Toolkit panel.
+  - Updated `Ctrl+Shift+N` in `App.tsx` to use `window.xivig.openNewWindow()` when running in Electron.
+  - Updated Help menu branding from `Twitter` (`https://twitter.com`) to `X (formerly Twitter)` (`https://x.com`).
+* **Explorer Blank-Space Context Menu & Code Signing**:
+  - Added blank-space Explorer context menu actions (`New File...`, `New Folder...`, `Refresh Explorer`, `Collapse Folders`, `Find in Folder...`, `Open Folder...`, `Close Folder`) with automated tests.
+  - Added Windows/macOS code-signing environment wiring and `docs/CODE_SIGNING.md`.
+* **Documentation & Release Links**:
+  - Fixed broken License badge anchor in `README.md` (`#-release-information--attributions`) and added cross-links across `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/HOW_TO.md`, and `docs/AUTO_UPDATER.md`.
+  - Updated version metadata and fallback strings consistently to `2.0.1`.
+
+---
+
 ## [2.0.0] - 2026-11-25 — *XIVIG TEXT EDITOR 2.0: The Ultimate Developer Workspace*
 
 > **XIVIG TEXT EDITOR 2.0**  

@@ -1,6 +1,6 @@
 {
   "name": "xivig-text-editor",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "productName": "Xivig Text Editor",
   "private": true,
   "description": "⚡ XIVIG TEXT EDITOR 2.0 - The Ultimate Developer Workspace. Ultra-fast, keyboard-first desktop code editor built for professional developers.",
@@ -34,6 +34,9 @@
     "appId": "com.xivig.texteditor",
     "productName": "Xivig Text Editor",
     "npmRebuild": false,
+    "asarUnpack": [
+      "**/node_modules/node-pty/**"
+    ],
     "directories": {
       "output": "release"
     },
@@ -57,7 +60,13 @@
           ]
         }
       ],
-      "icon": "public/logo.png"
+      "icon": "public/logo.png",
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      }
     },
     "nsis": {
       "oneClick": false,
@@ -112,6 +121,10 @@
       "category": "public.app-category.developer-tools",
       "icon": "public/logo.png",
       "artifactName": "Xivig-Text-Editor-${version}-mac.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "target": [
         {
           "target": "dmg",

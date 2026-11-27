@@ -48,7 +48,7 @@ export const Titlebar: React.FC = () => {
           />
         </div>
         <span style={brandTextStyle}>Xivig</span>
-        <span style={versionPillStyle}>v2.0.0</span>
+        <span style={versionPillStyle}>v2.0.1</span>
       </div>
 
       {/* Modern Centered Command Center Pill */}

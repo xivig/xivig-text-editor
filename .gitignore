@@ -9,3 +9,15 @@ release/
 *.zip
 test-results/
 playwright-report/
+
+# Code signing certificates & secrets (never commit private keys)
+*.pfx
+*.p12
+*.cer
+*.crt
+*.pem
+*.key
+*.mobileprovision
+.env
+.env.*
+build/certs/

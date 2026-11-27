@@ -771,6 +771,15 @@ export const Menubar: React.FC = () => {
         shortcut: 'Ctrl+Shift+X',
         action: () => setActiveSidebarView('extensions'),
       },
+      {
+        label: 'Developer Productivity Toolbox...',
+        shortcut: 'Ctrl+Alt+T',
+        action: () => useUIStore.getState().openDevToolbox(),
+      },
+      {
+        label: 'Formatting & Code Quality...',
+        action: () => useUIStore.getState().openFormattingModal(),
+      },
       { divider: true, label: '' },
       {
         label: 'Language Servers (LSP)...',
@@ -820,8 +829,8 @@ export const Menubar: React.FC = () => {
         action: () => window.open('https://github.com/xivig/xivig-text-editor/issues/new/choose', '_blank'),
       },
       {
-        label: 'Twitter',
-        action: () => window.open('https://twitter.com', '_blank'),
+        label: 'X (formerly Twitter)',
+        action: () => window.open('https://x.com', '_blank'),
       },
       { divider: true, label: '' },
       {

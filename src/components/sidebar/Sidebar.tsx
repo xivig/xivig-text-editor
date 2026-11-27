@@ -25,6 +25,7 @@ import {
 import { useFileStore } from '../../stores/fileStore';
 import { useGitStore } from '../../stores/gitStore';
 import { useEditorStore } from '../../stores/editorStore';
+import { useUIStore } from '../../stores/uiStore';
 import { FileItem } from '../../types/editor';
 import { FileIcon, FolderIcon } from '../common/FileIcon';
 import { ExtensionsView } from '../extensions/ExtensionsView';
@@ -110,7 +111,12 @@ export const Sidebar: React.FC = () => {
   const [promptInput, setPromptInput] = useState<string>('');
   const [commitMessage, setCommitMessage] = useState('');
   const [isCommitting, setIsCommitting] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: ContextMenuTarget } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    target: ContextMenuTarget;
+    source?: 'sidebar' | 'sidebar-empty';
+  } | null>(null);
   const [renameTarget, setRenameTarget] = useState<ContextMenuTarget | null>(null);
   const [renameInput, setRenameInput] = useState('');
 
@@ -278,6 +284,7 @@ export const Sidebar: React.FC = () => {
                 x: e.clientX,
                 y: e.clientY,
                 target: { name: item.name, path: item.path, isDirectory: item.isDirectory },
+                source: 'sidebar',
               });
             }}
             style={{
@@ -353,6 +360,30 @@ export const Sidebar: React.FC = () => {
           )}
         </div>
       );
+    });
+  };
+
+  const handleSidebarBlankContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeView !== 'explorer') return;
+    if (
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement ||
+      e.target instanceof HTMLSelectElement
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      target: {
+        name: currentFolderName || '',
+        path: currentFolderPath || '',
+        isDirectory: Boolean(currentFolderPath),
+      },
+      source: 'sidebar-empty',
     });
   };
 
@@ -494,7 +525,11 @@ export const Sidebar: React.FC = () => {
       )}
 
       {/* Content */}
-      <div style={sidebarContentStyle}>
+      <div
+        data-testid="sidebar-content"
+        style={sidebarContentStyle}
+        onContextMenu={handleSidebarBlankContextMenu}
+      >
         {activeView === 'explorer' && (
           <>
             {currentFolderPath ? (
@@ -966,7 +1001,9 @@ export const Sidebar: React.FC = () => {
         )}
 
         {activeView === 'debug' && <DebugPanel />}
-        {activeView === 'web' && <WebToolkitPanel />}
+        {activeView === 'web' && (
+          <WebToolkitPanel onOpenCssHelpers={(tab) => useUIStore.getState().openCssHelpers(tab)} />
+        )}
         {activeView === 'ai' && <AiAssistantPanel />}
       </div>
 
@@ -976,8 +1013,9 @@ export const Sidebar: React.FC = () => {
           x={contextMenu.x}
           y={contextMenu.y}
           target={contextMenu.target}
-          source="sidebar"
+          source={contextMenu.source || 'sidebar'}
           onClose={() => setContextMenu(null)}
+          onOpenFolder={handleOpenFolderDialog}
           onRename={(target) => {
             setRenameTarget(target);
             setRenameInput(target.name);

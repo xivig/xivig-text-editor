@@ -22,10 +22,11 @@ import { useFileStore } from '../../stores/fileStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { detectLanguageName } from '../editor/languageSupport';
+import pkg from '../../../package.json';
 
 export const WelcomeView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'modern' | 'markdown'>('modern');
-  const [appVersion, setAppVersion] = useState('1.3.0');
+  const [appVersion, setAppVersion] = useState(pkg.version || '2.0.1');
 
   const settings = useSettingsStore((state) => state.settings);
   const updateSettings = useSettingsStore((state) => state.updateSettings);

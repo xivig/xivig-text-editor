@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, ExternalLink, RefreshCw, ArrowUpCircle, AlertCircle, Download, RotateCw } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { UpdateCheckResult, UpdateProgress, DownloadedUpdateInfo } from '../../types/electron';
+import pkg from '../../../package.json';
 
 export const UpdateCheckModal: React.FC = () => {
   const isOpen = useUIStore((state) => state.isUpdateCheckOpen);
@@ -60,20 +61,22 @@ export const UpdateCheckModal: React.FC = () => {
           setIsLoading(false);
         })
         .catch((err) => {
+          const fallbackVer = pkg.version || '2.0.1';
           setResult({
             updateAvailable: false,
-            currentVersion: '1.3.0',
-            latestVersion: '1.3.0',
+            currentVersion: fallbackVer,
+            latestVersion: fallbackVer,
             error: err.message || 'Network error',
           });
           setIsLoading(false);
         });
     } else {
       setTimeout(() => {
+        const fallbackVer = pkg.version || '2.0.1';
         setResult({
           updateAvailable: false,
-          currentVersion: '1.3.0',
-          latestVersion: '1.3.0',
+          currentVersion: fallbackVer,
+          latestVersion: fallbackVer,
         });
         setIsLoading(false);
       }, 500);
@@ -441,7 +444,7 @@ export const UpdateCheckModal: React.FC = () => {
               </div>
 
               <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '6px', lineHeight: 1.5 }}>
-                You are running the newest version available: <strong>Release {(result?.currentVersion || '1.2.0').split('.').slice(0, 2).join('.')} (v{result?.currentVersion || '1.2.0'})</strong>.
+                You are running the newest version available: <strong>Release {(result?.currentVersion || pkg.version || '2.0.1').split('.').slice(0, 2).join('.')} (v{result?.currentVersion || pkg.version || '2.0.1'})</strong>.
               </div>
 
               <div

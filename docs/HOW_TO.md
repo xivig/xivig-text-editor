@@ -1,6 +1,6 @@
 # XIVIG TEXT EDITOR 2.0 — Comprehensive How-To Guide 📖
 
-Welcome to the official user manual and how-to guide for **XIVIG TEXT EDITOR 2.0 — The Ultimate Developer Workspace** (Release 2.0 — Build 2.0.0). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
+Welcome to the official user manual and how-to guide for **XIVIG TEXT EDITOR 2.0 — The Ultimate Developer Workspace** (Release 2.0.1 — Build 2.0.1). This document provides detailed, step-by-step instructions on utilizing every feature of Xivig to maximize your coding productivity.
 
 ### Product Principles
 - **Lightweight and Fast** • **Keyboard-First** • **Beautiful and Customizable** • **Intelligent Coding Assistance** • **Excellent Web Development Experience** • **Secure Extension Ecosystem** • **Reliable Across Windows, macOS and Linux**
@@ -37,7 +37,7 @@ Every feature in Xivig 2.0 is functionally implemented, customizable via setting
 ### Launching the Application
 - **Windows**: Run `Xivig Text Editor.exe` or launch from the Start Menu / Desktop shortcut.
 - **Linux**: Execute the `.AppImage` (ensure executable permission: `chmod +x Xivig-Text-Editor-*.AppImage`) or install the `.deb` package (`sudo dpkg -i xivig-text-editor_*.deb`).
-- **macOS**: Extract `Xivig-Text-Editor-1.3.0-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
+- **macOS**: Extract `Xivig-Text-Editor-2.0.1-mac.zip` (or `.dmg`) and move `Xivig Text Editor.app` to your `/Applications` folder. On first launch, right-click and select **Open** or run `xattr -cr "/Applications/Xivig Text Editor.app"`.
 
 ### First-Run Overview
 When you open Xivig Text Editor for the first time, you will be greeted by the **Welcome** screen.
@@ -246,7 +246,7 @@ Access every single feature, command, modal, and setting without touching the mo
 
 ## 12. Rainbow Brackets & Indentation Guides
 
-Xivig 1.3 includes built-in syntax-aware Rainbow Brackets and Indentation Guides:
+Xivig 2.0 includes built-in syntax-aware Rainbow Brackets and Indentation Guides:
 * **Bracket Depth Matching**: Opening and closing brackets (`()`, `{}`, `[]`) are matched based on the language's Lezer syntax tree. Both matching ends share identical colors from a 6-tier cyclic rainbow palette (Red ➔ Orange ➔ Yellow ➔ Green ➔ Cyan ➔ Purple).
 * **Indentation Guides**: Colored vertical guides align with code blocks according to their nesting level, making complex multi-nested structures immediately understandable.
 * **Toggling**:
@@ -372,6 +372,8 @@ Open the AI Assistant sidebar panel:
 **A**: Press `Ctrl+0` to restore standard 100% zoom. Use `Ctrl+=` to zoom in and `Ctrl+-` to zoom out.
 
 ---
+
+*See also: [README](../README.md) · [Changelog](../CHANGELOG.md) · [Release Notes](../release-notes.md) · [Security Policy](../SECURITY.md)*
 
 *Xivig Text Editor — Fast, Lightweight, and Keyboard-First.*  
 *Copyright © 2026 Xivig. All rights reserved.*

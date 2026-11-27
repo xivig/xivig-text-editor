@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Titlebar } from '../components/titlebar/Titlebar';
 import { Menubar } from '../components/menubar/Menubar';
 import { ActivityBar } from '../components/activitybar/ActivityBar';
@@ -132,7 +132,8 @@ export const App: React.FC = () => {
   const chordRef = React.useRef<string | null>(null);
   const chordTimeoutRef = React.useRef<any>(null);
 
-  const [isFormattingModalOpen, setIsFormattingModalOpen] = useState(false);
+  const isFormattingModalOpen = useUIStore((state) => state.isFormattingModalOpen);
+  const closeFormattingModal = useUIStore((state) => state.closeFormattingModal);
   const isProjectSwitcherOpen = useUIStore((state) => state.isProjectSwitcherOpen);
   const closeProjectSwitcherModal = useUIStore((state) => state.closeProjectSwitcherModal);
 
@@ -288,6 +289,8 @@ export const App: React.FC = () => {
         closeDiagnosticLog();
         closeCssHelpers();
         closeMarkdownTableEditor();
+        closeFormattingModal();
+        closeProjectSwitcherModal();
         chordRef.current = null;
         return;
       }
@@ -430,7 +433,11 @@ export const App: React.FC = () => {
       // New Window / Close Window (Ctrl+Shift+N / Ctrl+Shift+W)
       if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        window.open(window.location.href, '_blank');
+        if (window.xivig?.openNewWindow) {
+          window.xivig.openNewWindow();
+        } else {
+          window.open(window.location.href, '_blank');
+        }
         return;
       } else if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
@@ -957,7 +964,7 @@ export const App: React.FC = () => {
       <RemoveLicenseModal />
       <UpdateCheckModal />
       <LanguageServersModal />
-      <FormattingSettingsModal isOpen={isFormattingModalOpen} onClose={() => setIsFormattingModalOpen(false)} />
+      <FormattingSettingsModal isOpen={isFormattingModalOpen} onClose={closeFormattingModal} />
       <ProjectSwitcherModal isOpen={isProjectSwitcherOpen} onClose={closeProjectSwitcherModal} />
       <TasksModal />
       <DebugToolbar />

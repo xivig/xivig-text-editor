@@ -2,7 +2,15 @@
 
 > **A fast, extensible, cross-platform desktop code editor built for professional developers.**
 
-We are thrilled to announce the official release of **XIVIG TEXT EDITOR 2.0**!
+We are thrilled to announce **XIVIG TEXT EDITOR v2.0.1**!
+
+## 🔧 What's Fixed in v2.0.1
+- **Terminal IPC Cleanup**: Added the missing `terminal:stop` main-process IPC handler so closed terminal tabs cleanly terminate shell process trees.
+- **UI & Modal Wiring**: Connected `FormattingSettingsModal` to the Tools menu and Command Palette, wired the Web Toolkit panel's Flexbox/Grid CSS Studio buttons, fixed `Ctrl+Shift+N` new-window launching in Electron, and updated Help menu branding to **X (formerly Twitter)**.
+- **Explorer Context Menu & Signing**: Added Explorer blank-space context menu actions and Windows/macOS code-signing support (`docs/CODE_SIGNING.md`).
+- **Documentation & Links**: Fixed broken badge anchors and cross-linked all project guides (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/HOW_TO.md`, `docs/AUTO_UPDATER.md`).
+
+---
 
 ---
 
