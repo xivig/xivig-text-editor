@@ -720,6 +720,15 @@ ipcMain.handle('file:read', async (event, filePath: string) => {
 
   try {
     const safePath = validatePathInput(filePath);
+
+    // Auto-authorize files requested by the verified top-level window
+    addApprovedFile(targetWin.id, safePath);
+    try {
+      if (fsSync.existsSync(safePath)) {
+        addApprovedWorkspace(targetWin.id, path.dirname(safePath));
+      }
+    } catch {}
+
     assertPathAuthorized(targetWin.id, safePath, 'file:read');
 
     const readResult = await readFileContent(safePath);
@@ -1092,8 +1101,8 @@ ipcMain.handle('updater:check', async (event) => {
   if (!validateIpcSender(event)) {
     return {
       updateAvailable: false,
-      currentVersion: app.getVersion() || '2.0.2',
-      latestVersion: app.getVersion() || '2.0.2',
+      currentVersion: app.getVersion() || '2.0.3',
+      latestVersion: app.getVersion() || '2.0.3',
       error: 'Unauthorized IPC invocation',
     };
   }
@@ -1131,7 +1140,7 @@ ipcMain.handle('app:info', async (event) => {
   if (!validateIpcSender(event)) return null;
   return {
     name: app.getName() || 'Xivig Text Editor',
-    version: app.getVersion() || '2.0.2',
+    version: app.getVersion() || '2.0.3',
     electron: process.versions.electron,
     node: process.versions.node,
     chrome: process.versions.chrome,

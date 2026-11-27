@@ -330,7 +330,11 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
         parameterHintsExtension,
         codeIntelligenceKeymap,
         languageCompartmentRef.current.of(langExtension),
-        extensionCompartmentRef.current.of(extensionManager.getActiveCodeMirrorExtensions()),
+        extensionCompartmentRef.current.of(
+          extensionManager
+            .getActiveCodeMirrorExtensions()
+            .filter((e) => e !== rainbowBracketsPlugin && e !== rainbowBracketsTheme)
+        ),
         rainbowCompartmentRef.current.of(
           rainbowBrackets
             ? [rainbowBracketsPlugin, rainbowBracketsTheme, ...(rainbowIndentGuides ? [createIndentGuidesPlugin(tabSize)] : [])]
@@ -534,7 +538,9 @@ export const Editor: React.FC<EditorProps> = ({ pane = 'primary' }) => {
       if (viewRef.current) {
         viewRef.current.dispatch({
           effects: extensionCompartmentRef.current.reconfigure(
-            extensionManager.getActiveCodeMirrorExtensions()
+            extensionManager
+              .getActiveCodeMirrorExtensions()
+              .filter((e) => e !== rainbowBracketsPlugin && e !== rainbowBracketsTheme)
           ),
         });
       }

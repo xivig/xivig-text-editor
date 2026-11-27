@@ -35,7 +35,7 @@ export const AboutModal: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const currentVersion = appInfo?.version || pkg.version || '2.0.2';
+  const currentVersion = appInfo?.version || pkg.version || '2.0.3';
   const releaseMajorMinor = currentVersion.includes('.')
     ? currentVersion.split('.').slice(0, 2).join('.')
     : currentVersion;

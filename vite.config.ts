@@ -30,7 +30,7 @@ export default defineConfig({
     }),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.2'),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.3'),
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
   },
   resolve: {

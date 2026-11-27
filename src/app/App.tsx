@@ -75,6 +75,7 @@ import {
   requestLspCodeActions,
   executeLspCodeAction,
 } from '../lsp';
+import { isImageFile, isSvgFile } from '../utils/imageUtils';
 
 export const App: React.FC = () => {
   const createNewDocument = useEditorStore((state) => state.createNewDocument);
@@ -258,6 +259,78 @@ export const App: React.FC = () => {
       return unsubscribe;
     }
   }, [openDocument, setCurrentFolder]);
+
+  // Global drag-and-drop file opening support
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const filePath = (file as any).path || file.name;
+
+        if (window.xivig?.readFile && filePath) {
+          try {
+            const res = await window.xivig.readFile(filePath);
+            if (res.success && res.content !== undefined) {
+              openDocument({
+                path: filePath,
+                name: file.name,
+                content: res.content,
+                language: file.name,
+              });
+              continue;
+            }
+          } catch {}
+        }
+
+        // Fallback for browser FileReader (e.g. dev server or web preview)
+        const reader = new FileReader();
+        const isImg = isImageFile(file.name);
+        if (isImg && !isSvgFile(file.name)) {
+          reader.readAsDataURL(file);
+          reader.onload = () => {
+            openDocument({
+              path: null,
+              name: file.name,
+              content: reader.result as string,
+              language: file.name,
+            });
+          };
+        } else {
+          reader.readAsText(file);
+          reader.onload = () => {
+            openDocument({
+              path: null,
+              name: file.name,
+              content: reader.result as string,
+              language: file.name,
+            });
+          };
+        }
+      }
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [openDocument]);
 
   // Save session on window beforeunload
   useEffect(() => {

@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { EditorDocument } from '../../types/editor';
+import { useEditorStore } from '../../stores/editorStore';
 import {
   isSvgFile,
   getImageMimeType,
@@ -45,6 +46,48 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
 
   const isSvg = isSvgFile(doc.name || doc.path);
 
+  // Auto-fetch file content from disk if doc.content is not yet populated
+  useEffect(() => {
+    if ((!doc.content || doc.content.length === 0) && doc.path && window.xivig?.readFile) {
+      window.xivig.readFile(doc.path).then((res) => {
+        if (res.success && res.content) {
+          useEditorStore.setState((state) => ({
+            documents: state.documents.map((d) =>
+              d.id === doc.id ? { ...d, content: res.content!, isDirty: false } : d
+            ),
+          }));
+          setLoadError(null);
+        } else if (!res.success && res.error) {
+          setLoadError(res.error);
+        }
+      });
+    }
+  }, [doc.content, doc.id, doc.path]);
+
+  // Compute SVG sanitized markup & dimensions
+  const svgMeta = React.useMemo(() => {
+    if (!isSvg || !doc.content) return null;
+    try {
+      const { cleanSvg } = sanitizeSvg(doc.content);
+      const widthMatch = cleanSvg.match(/<svg\b[^>]*\bwidth\s*=\s*["']?([\d.]+)(?:px)?["']?/i);
+      const heightMatch = cleanSvg.match(/<svg\b[^>]*\bheight\s*=\s*["']?([\d.]+)(?:px)?["']?/i);
+      const viewBoxMatch = cleanSvg.match(/viewBox\s*=\s*["']?[\d.-]+[,\s]+[\d.-]+[,\s]+([\d.]+)[,\s]+([\d.]+)["']?/i);
+
+      let w = widthMatch ? parseFloat(widthMatch[1]) : viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 400;
+      let h = heightMatch ? parseFloat(heightMatch[1]) : viewBoxMatch ? parseFloat(viewBoxMatch[2]) : 400;
+      return { cleanSvg, width: Math.round(w), height: Math.round(h) };
+    } catch {
+      return null;
+    }
+  }, [isSvg, doc.content]);
+
+  useEffect(() => {
+    if (isSvg && svgMeta && !dimensions) {
+      setDimensions({ width: svgMeta.width, height: svgMeta.height });
+      setLoadError(null);
+    }
+  }, [isSvg, svgMeta, dimensions]);
+
   // Compute image source
   const imageSrc = React.useMemo(() => {
     if (!doc.content) return '';
@@ -53,7 +96,11 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
     }
     if (isSvg) {
       const { cleanSvg } = sanitizeSvg(doc.content);
-      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(cleanSvg)}`;
+      let preparedSvg = cleanSvg;
+      if (!preparedSvg.includes('xmlns=')) {
+        preparedSvg = preparedSvg.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(preparedSvg)}`;
     }
     // If raw base64 without prefix
     if (/^[A-Za-z0-9+/=]+$/.test(doc.content.trim().slice(0, 100))) {
@@ -393,21 +440,37 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ document: doc, onSwitc
               lineHeight: 0,
             }}
           >
-            <img
-              ref={imageRef}
-              src={imageSrc}
-              alt={doc.name}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              draggable={false}
-              style={{
-                maxWidth: 'none',
-                maxHeight: 'none',
-                display: 'block',
-                imageRendering: zoom > 2 ? 'pixelated' : 'auto',
-                pointerEvents: 'none',
-              }}
-            />
+            {isSvg && svgMeta ? (
+              <div
+                style={{
+                  width: `${dimensions?.width || svgMeta.width}px`,
+                  height: `${dimensions?.height || svgMeta.height}px`,
+                  maxWidth: 'none',
+                  maxHeight: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+                dangerouslySetInnerHTML={{ __html: svgMeta.cleanSvg }}
+              />
+            ) : (
+              <img
+                ref={imageRef}
+                src={imageSrc}
+                alt={doc.name}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                draggable={false}
+                style={{
+                  maxWidth: 'none',
+                  maxHeight: 'none',
+                  display: 'block',
+                  imageRendering: zoom > 2 ? 'pixelated' : 'auto',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
           </div>
         )}
 

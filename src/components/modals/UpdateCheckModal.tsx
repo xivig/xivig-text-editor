@@ -61,7 +61,7 @@ export const UpdateCheckModal: React.FC = () => {
           setIsLoading(false);
         })
         .catch((err) => {
-          const fallbackVer = pkg.version || '2.0.2';
+          const fallbackVer = pkg.version || '2.0.3';
           setResult({
             updateAvailable: false,
             currentVersion: fallbackVer,
@@ -72,7 +72,7 @@ export const UpdateCheckModal: React.FC = () => {
         });
     } else {
       setTimeout(() => {
-        const fallbackVer = pkg.version || '2.0.2';
+        const fallbackVer = pkg.version || '2.0.3';
         setResult({
           updateAvailable: false,
           currentVersion: fallbackVer,
@@ -444,7 +444,7 @@ export const UpdateCheckModal: React.FC = () => {
               </div>
 
               <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '6px', lineHeight: 1.5 }}>
-                You are running the newest version available: <strong>Release {(result?.currentVersion || pkg.version || '2.0.2').split('.').slice(0, 2).join('.')} (v{result?.currentVersion || pkg.version || '2.0.2'})</strong>.
+                You are running the newest version available: <strong>Release {(result?.currentVersion || pkg.version || '2.0.3').split('.').slice(0, 2).join('.')} (v{result?.currentVersion || pkg.version || '2.0.3'})</strong>.
               </div>
 
               <div

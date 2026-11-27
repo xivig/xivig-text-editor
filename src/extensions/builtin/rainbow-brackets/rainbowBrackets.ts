@@ -8,6 +8,7 @@ import {
 import { Range } from '@codemirror/state';
 import { syntaxTree, ensureSyntaxTree } from '@codemirror/language';
 import { RAINBOW_COLORS } from './settings';
+import './styles.css';
 
 const OPEN_TO_CLOSE: Record<string, string> = {
   '(': ')',
@@ -29,19 +30,44 @@ interface BracketStackItem {
 }
 
 /**
- * Checks if a syntax node (or any of its parents) is a comment, string, or regex literal.
+ * Checks if a syntax node is inside a comment, string, or regex literal.
+ * Real syntax brackets (which Lezer classifies as '(', ')', '[', ']', '{', '}')
+ * or brackets inside template string interpolations are not ignored.
  */
 function isIgnoredSyntaxNode(node: any): boolean {
+  if (!node) return false;
+  const selfName = node.name || '';
+  if (
+    selfName === '(' ||
+    selfName === ')' ||
+    selfName === '[' ||
+    selfName === ']' ||
+    selfName === '{' ||
+    selfName === '}' ||
+    selfName === 'InterpolationStart' ||
+    selfName === 'InterpolationEnd'
+  ) {
+    return false;
+  }
+
   let curr = node;
   while (curr) {
-    const name = curr.name || '';
+    const currName = curr.name || '';
     if (
-      name.includes('Comment') ||
-      name.includes('String') ||
-      name.includes('RegExp') ||
-      name === 'TemplateString' ||
-      name === 'EscapeSequence' ||
-      name === 'StringContent'
+      currName === 'Interpolation' ||
+      currName === 'ParenthesizedExpression' ||
+      currName === 'ArrayExpression' ||
+      currName === 'ObjectExpression' ||
+      currName === 'Block'
+    ) {
+      return false;
+    }
+    if (
+      currName.includes('Comment') ||
+      currName === 'String' ||
+      currName === 'StringContent' ||
+      currName.includes('RegExp') ||
+      currName === 'EscapeSequence'
     ) {
       return true;
     }
@@ -207,16 +233,34 @@ export function createRainbowDecorations(view: EditorView): DecorationSet {
 }
 
 /**
- * CodeMirror baseTheme for rainbow brackets.
- * Ensures the 6 depth colors override default punctuation themes.
+ * CodeMirror theme for rainbow brackets.
+ * High specificity selectors ensure the 6 depth colors override syntax highlighting.
  */
-export const rainbowBracketsTheme = EditorView.baseTheme({
-  '& .xivig-rainbow-bracket-red': { color: '#ff5370 !important', fontWeight: '600' },
-  '& .xivig-rainbow-bracket-orange': { color: '#ff9e64 !important', fontWeight: '600' },
-  '& .xivig-rainbow-bracket-yellow': { color: '#e6c07b !important', fontWeight: '600' },
-  '& .xivig-rainbow-bracket-green': { color: '#c3e88d !important', fontWeight: '600' },
-  '& .xivig-rainbow-bracket-cyan': { color: '#89ddff !important', fontWeight: '600' },
-  '& .xivig-rainbow-bracket-purple': { color: '#c792ea !important', fontWeight: '600' },
+export const rainbowBracketsTheme = EditorView.theme({
+  '& .xivig-rainbow-bracket-red, & span.xivig-rainbow-bracket-red': {
+    color: '#ff5370 !important',
+    fontWeight: '600 !important',
+  },
+  '& .xivig-rainbow-bracket-orange, & span.xivig-rainbow-bracket-orange': {
+    color: '#ff9e64 !important',
+    fontWeight: '600 !important',
+  },
+  '& .xivig-rainbow-bracket-yellow, & span.xivig-rainbow-bracket-yellow': {
+    color: '#e6c07b !important',
+    fontWeight: '600 !important',
+  },
+  '& .xivig-rainbow-bracket-green, & span.xivig-rainbow-bracket-green': {
+    color: '#c3e88d !important',
+    fontWeight: '600 !important',
+  },
+  '& .xivig-rainbow-bracket-cyan, & span.xivig-rainbow-bracket-cyan': {
+    color: '#89ddff !important',
+    fontWeight: '600 !important',
+  },
+  '& .xivig-rainbow-bracket-purple, & span.xivig-rainbow-bracket-purple': {
+    color: '#c792ea !important',
+    fontWeight: '600 !important',
+  },
 });
 
 /**

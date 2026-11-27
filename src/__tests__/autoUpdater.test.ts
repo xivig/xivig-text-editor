@@ -59,8 +59,8 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
   it('performs manual check when application is up to date', async () => {
     const upToDateResult: UpdateCheckResult = {
       updateAvailable: false,
-      currentVersion: '2.0.2',
-      latestVersion: '2.0.2',
+      currentVersion: '2.0.3',
+      latestVersion: '2.0.3',
     };
     mockXivig.checkForUpdates.mockResolvedValueOnce(upToDateResult);
 
@@ -69,7 +69,7 @@ describe('Auto-Updater Store & Lifecycle (VS Code-style In-Place Updates)', () =
     expect(result).toEqual(upToDateResult);
     expect(useUpdateStore.getState().isChecking).toBe(false);
     expect(useUpdateStore.getState().updateInfo).toEqual(upToDateResult);
-    expect(useUpdateStore.getState().statusMessage).toContain("You're up to date! Xivig v2.0.2 is the latest version.");
+    expect(useUpdateStore.getState().statusMessage).toContain("You're up to date! Xivig v2.0.3 is the latest version.");
     expect(useUpdateStore.getState().isBannerDismissed).toBe(false);
   });
 

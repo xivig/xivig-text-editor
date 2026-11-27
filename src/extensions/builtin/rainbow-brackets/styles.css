@@ -1,32 +1,44 @@
 /* Rainbow Brackets: 6 Cyclical Depth Colors */
+.cm-editor .xivig-rainbow-bracket-red,
+.cm-editor span.xivig-rainbow-bracket-red,
 .xivig-rainbow-bracket-red {
   color: #ff5370 !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
+.cm-editor .xivig-rainbow-bracket-orange,
+.cm-editor span.xivig-rainbow-bracket-orange,
 .xivig-rainbow-bracket-orange {
   color: #ff9e64 !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
+.cm-editor .xivig-rainbow-bracket-yellow,
+.cm-editor span.xivig-rainbow-bracket-yellow,
 .xivig-rainbow-bracket-yellow {
   color: #e6c07b !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
+.cm-editor .xivig-rainbow-bracket-green,
+.cm-editor span.xivig-rainbow-bracket-green,
 .xivig-rainbow-bracket-green {
   color: #c3e88d !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
+.cm-editor .xivig-rainbow-bracket-cyan,
+.cm-editor span.xivig-rainbow-bracket-cyan,
 .xivig-rainbow-bracket-cyan {
   color: #89ddff !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
+.cm-editor .xivig-rainbow-bracket-purple,
+.cm-editor span.xivig-rainbow-bracket-purple,
 .xivig-rainbow-bracket-purple {
   color: #c792ea !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
 /* Rainbow Indentation Guides */

@@ -2,9 +2,24 @@
 
 > **A fast, extensible, cross-platform desktop code editor built for professional developers.**
 
-We are thrilled to announce **XIVIG TEXT EDITOR v2.0.2**!
+We are thrilled to announce **XIVIG TEXT EDITOR v2.0.3**!
 
-## 🚀 What's New & Fixed in v2.0.2
+## 🚀 What's New & Fixed in v2.0.3
+
+### 🖼️ Image Viewer Self-Fetch & Global Drag-and-Drop
+- **Security Authorization Auto-Approval**: Fixed `file:read` security checking in the main process to auto-authorize file paths requested directly by the verified application window, fixing silent access denials on recent files, workspace files, and standalone opened files.
+- **Global Drag and Drop**: Added root window drag-and-drop listener in `App.tsx` enabling instant file opening and image rendering when files are dragged directly into the editor.
+- **Self-Fetching Image Content**: Added automatic background content retrieval in `ImageViewer` if document content is initially unpopulated upon tab activation.
+- **Inline Vector SVG Rendering**: Implemented sanitized inline vector SVG rendering with exact dimension calculation from width, height, or `viewBox`, eliminating Chromium data URL decoding failures and ensuring razor-sharp rendering at all zoom levels.
+
+### 🌈 Rainbow Brackets High-Specificity & Syntax Precision
+- **Syntax-Tree Bracket Token Precision**: Refined `isIgnoredSyntaxNode` to recognize exact Lezer punctuation tokens (`(`, `)`, `[`, `]`, `{`, `}`) and template string interpolations, avoiding false-positive suppression while accurately skipping brackets inside string and comment literals.
+- **Full Specificity Styling**: Switched `rainbowBracketsTheme` to an explicit `EditorView.theme` and added `.cm-editor span.xivig-rainbow-bracket-*` selectors with `!important` color and font-weight values to reliably override all dark and light syntax themes.
+- **Extension Compartment Deduplication**: Filtered rainbow brackets from the general extension compartment to guarantee single-instance mounting under the dedicated reactive `rainbowCompartmentRef`.
+
+---
+
+## 🚀 Improvements in v2.0.2
 
 ### 🖼️ Interactive Image Viewer (PNG, JPG, SVG, WebP, GIF, BMP, ICO)
 - **Direct Image Rendering**: Images now render visually directly inside editor document tabs instead of binary text decoding.
